@@ -829,8 +829,8 @@ const DATA = {
     { label:"2010 Build", value:55400 },
     { label:"2011 Build", value:55900 }
   ],
-  destination: 875,
   gasGuzzler: 1300,
+  destination: 875,
 
   exteriorColors: [
     { code:"300", name:"Alpine White", price:0, hex:"#f2f1ea", type:"Non-metallic" },
@@ -1608,8 +1608,8 @@ function buildToyotaStylePageOne(c) {
   out += pdfText("PRICE", 386, 714, 11.5, "F2");
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 386, 692, 178);
   out += pdfPriceRow("Factory Installed Packages & Accessories", moneyPdf(factoryTotal), 386, 671, 178);
-  out += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 386, 650, 178);
   out += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 386, 629, 178);
+  out += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 386, 650, 178);
   out += pdfPriceRow("Total Suggested Retail Price", moneyPdf(c.total), 386, 602, 178, true);
 
   out += pdfStrokeRect(372, 430, 208, 126, 0.72, 0.8);
