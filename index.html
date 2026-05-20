@@ -1750,8 +1750,9 @@ function buildToyotaStylePageThree(c) {
   ];
   c.packages.forEach(item => rows.push([`${item.code} ${item.name}`, moneyPdf(item.price)]));
   c.options.forEach(item => rows.push([`${item.code} ${item.name}`, moneyPdf(item.price)]));
-  rows.push(["Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler)]);
   rows.push(["Destination & Handling", moneyPdf(DATA.destination)]);
+  rows.push(["Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler)]);
+  
 
   rows.forEach((row, index) => {
     if (y > 126) {
