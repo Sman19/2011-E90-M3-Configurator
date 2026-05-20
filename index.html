@@ -1344,9 +1344,23 @@ function parseCSV(text) {
 
   return rows.map(values => {
     const obj = {};
+    const headerCounts = {};
+
     headers.forEach((header, index) => {
-      obj[header] = values[index] || "";
+      const cleanHeader = header || `Column ${index + 1}`;
+      const value = values[index] || "";
+
+      if (obj[cleanHeader] === undefined) {
+        obj[cleanHeader] = value;
+        headerCounts[cleanHeader] = 1;
+      } else {
+        obj[`${cleanHeader}.${headerCounts[cleanHeader]}`] = value;
+        headerCounts[cleanHeader] += 1;
+      }
+
+      obj[`__COL_${index + 1}`] = value;
     });
+
     return obj;
   });
 }
@@ -1445,9 +1459,10 @@ async function lookupVIN() {
     const vin = findCSVValue(match, ["VIN", "Vin", "vin"]);
     const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT"]);
     const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
-    const dealer = findCSVValue(match, ["DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER"]);
-    const msrpValue = findCSVValue(match, ["MSRP", "BASE MSRP", "Base MSRP", "BaseMSRP", "BASE_MSRP"]);
-    const packageText = findCSVValue(match, ["PACKAGES", "Packages", "Package", "OPTIONS", "Options", "Codes", "CODES", "L", "Column L"]) || Object.values(match).join(",");
+    const dealer = findCSVValue(match, ["DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER", "__COL_14"]);
+    const msrp55900Value = findCSVValue(match, ["MSRP", "BASE MSRP", "Base MSRP", "BaseMSRP", "BASE_MSRP"]);
+    const msrp55400Value = findCSVValue(match, ["MSRP.1", "BASE MSRP.1", "Base MSRP.1", "BaseMSRP.1", "BASE_MSRP.1"]);
+    const packageText = findCSVValue(match, ["PACKAGES", "Packages", "Package", "OPTIONS", "Options", "Codes", "CODES", "L", "Column L", "__COL_12"]) || Object.values(match).join(",");
 
     state.vin = vin;
     state.sellingDealer = dealer;
@@ -1458,16 +1473,24 @@ async function lookupVIN() {
     const matchedInterior = findMatchingInterior(interior);
     if (matchedInterior) state.interior = matchedInterior.code;
 
-    const cleanMSRP = Number(String(msrpValue).replace(/[$,]/g, ""));
-    if (cleanMSRP === 55400 || cleanMSRP === 55900) {
-      state.baseMSRP = cleanMSRP;
+    const msrp55900 = Number(String(msrp55900Value).replace(/[$,]/g, ""));
+    const msrp55400 = Number(String(msrp55400Value).replace(/[$,]/g, ""));
+
+    if (msrp55900 === 55900) {
+      state.baseMSRP = 55900;
+    } else if (msrp55400 === 55400) {
+      state.baseMSRP = 55400;
+    } else if (msrp55900 === 55400 || msrp55900 === 55900) {
+      state.baseMSRP = msrp55900;
+    } else if (msrp55400 === 55400 || msrp55400 === 55900) {
+      state.baseMSRP = msrp55400;
     }
 
     applyPackageCodes(packageText);
     enforceLockouts();
     renderAll();
 
-    note.textContent = `Loaded ${state.vin || input}${state.sellingDealer ? " | " + state.sellingDealer : ""}`;
+    note.textContent = `Loaded ${state.vin || input}${state.sellingDealer ? " | " + state.sellingDealer : ""} | Base MSRP ${money(state.baseMSRP)}`;
   } catch (error) {
     console.error(error);
     note.textContent = "CSV lookup failed. Check the console or CSV URL.";
