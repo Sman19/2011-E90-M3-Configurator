@@ -1612,51 +1612,276 @@ function downloadBlob(blob, filename) {
   }, 3000);
 }
 
+
+function moneyPdf(n) {
+  return Number(n || 0).toLocaleString("en-US", { style:"currency", currency:"USD", minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+function pdfTextSafe(value) {
+  return pdfClean(value).replace(/\s+/g, " ").trim();
+}
+
+function pdfStreamEscape(value) {
+  return pdfEscape(pdfTextSafe(value));
+}
+
+function pdfRect(x, y, w, h, gray = 1) {
+  return `q ${gray} ${gray} ${gray} rg ${x} ${y} ${w} ${h} re f Q\n`;
+}
+
+function pdfStrokeRect(x, y, w, h, gray = 0.82, width = 0.7) {
+  return `q ${gray} ${gray} ${gray} RG ${width} w ${x} ${y} ${w} ${h} re S Q\n`;
+}
+
+function pdfLine(x1, y1, x2, y2, gray = 0.80, width = 0.7) {
+  return `q ${gray} ${gray} ${gray} RG ${width} w ${x1} ${y1} m ${x2} ${y2} l S Q\n`;
+}
+
+function pdfText(text, x, y, size = 9, font = "F1", align = "left") {
+  const clean = pdfTextSafe(text);
+  const approx = clean.length * size * 0.48;
+  let tx = x;
+  if (align === "right") tx = x - approx;
+  if (align === "center") tx = x - approx / 2;
+  return `BT /${font} ${size} Tf ${tx.toFixed(2)} ${y.toFixed(2)} Td (${pdfStreamEscape(clean)}) Tj ET\n`;
+}
+
+function pdfTextBlock(lines, x, y, size = 8.2, leading = 10.8, maxChars = 60, font = "F1", maxY = 42) {
+  let out = "";
+  let cy = y;
+  lines.forEach(line => {
+    wrapPdfLine(line, maxChars).forEach(wrapped => {
+      if (cy >= maxY) {
+        out += pdfText(wrapped, x, cy, size, font);
+        cy -= leading;
+      }
+    });
+  });
+  return { out, y: cy };
+}
+
+function pdfPriceRow(label, value, x, y, w, bold = false) {
+  let out = "";
+  out += pdfText(label, x, y, bold ? 9.4 : 8.2, bold ? "F2" : "F1");
+  out += pdfText(value, x + w, y, bold ? 9.4 : 8.2, bold ? "F2" : "F1", "right");
+  out += pdfLine(x, y - 4, x + w, y - 4, 0.88, 0.5);
+  return out;
+}
+
+function parseDescLines(desc) {
+  return String(desc || "")
+    .split(/\n+/)
+    .map(s => s.replace(/^[-•]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+function drawPageFooter(pageNo, c) {
+  const vin = state.vin || "CONFIGURATOR BUILD";
+  return pdfLine(30, 31, 582, 31, 0.78, 0.6) +
+    pdfText(`2011 BMW M3 Sedan - ${vin}`, 30, 18, 7.4, "F2") +
+    pdfText(`Page ${pageNo}`, 582, 18, 7.4, "F1", "right") +
+    pdfText("Custom BMW V-Spec sheet for reference use only. Not an official BMW Monroney label.", 306, 18, 6.8, "F1", "center");
+}
+
+function buildToyotaStylePageOne(c) {
+  const buildDate = new Date().toLocaleDateString("en-US");
+  const factoryTotal = c.packageTotal + c.optionTotal + c.wheelPrice + c.transmission.price + c.interior.price + c.exterior.price;
+  let out = "";
+  out += pdfRect(0, 0, 612, 792, 1);
+  out += pdfText("BMW M ARCHIV", 32, 756, 18, "F2");
+  out += pdfText("Presented by CARBOI-CREATIONS", 32, 741, 8.8, "F1");
+  out += pdfText("2011 BMW M3 Sedan", 32, 705, 19, "F2");
+  out += pdfText("E90 M3", 32, 688, 12.5, "F2");
+  out += pdfText(`Generated: ${buildDate}`, 32, 671, 8.2, "F1");
+
+  out += pdfText(`Model: 2011 BMW M3 Sedan 4.0L V8 Rear-Wheel Drive`, 32, 645, 9.2, "F2");
+  out += pdfText(`VIN: ${state.vin || "Not loaded"}`, 32, 630, 8.8, "F1");
+  out += pdfText(`Selling Dealer: ${state.sellingDealer || "Not listed"}`, 32, 616, 8.8, "F1");
+  out += pdfText("Engine: S65 4.0L naturally aspirated V8", 32, 602, 8.8, "F1");
+  out += pdfText(`Transmission: ${c.transmission.code} ${c.transmission.name}`, 32, 588, 8.8, "F1");
+
+  out += pdfText("EXTERIOR", 32, 555, 9.4, "F2");
+  out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 32, 540, 12.5, "F2");
+  out += pdfText("INTERIOR", 32, 510, 9.4, "F2");
+  out += pdfText(`${c.interior.code} ${c.interior.name}`, 32, 495, 12.5, "F2");
+
+  out += pdfStrokeRect(372, 582, 208, 153, 0.72, 0.8);
+  out += pdfText("PRICE", 386, 714, 11.5, "F2");
+  out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 386, 692, 178);
+  out += pdfPriceRow("Factory Installed Packages & Accessories", moneyPdf(factoryTotal), 386, 671, 178);
+  out += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 386, 650, 178);
+  out += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 386, 629, 178);
+  out += pdfPriceRow("Total Suggested Retail Price", moneyPdf(c.total), 386, 602, 178, true);
+
+  out += pdfStrokeRect(372, 430, 208, 126, 0.72, 0.8);
+  out += pdfText("PERFORMANCE", 386, 535, 11.5, "F2");
+  out += pdfText("414 HP", 394, 501, 20, "F2");
+  out += pdfText("295 LB-FT", 497, 501, 20, "F2");
+  out += pdfText("Horsepower", 397, 486, 7.2, "F1");
+  out += pdfText("Torque", 507, 486, 7.2, "F1");
+  out += pdfText("EPA: 14 City / 20 Highway / 16 Combined", 386, 458, 8.2, "F1");
+  out += pdfText("0-60 MPH: approx. 4.5 sec with M DCT", 386, 443, 8.2, "F1");
+
+  out += pdfText("INSTALLED PACKAGES & ACCESSORIES", 32, 457, 11.2, "F2");
+  out += pdfLine(32, 449, 580, 449, 0.72, 0.9);
+  let y = 429;
+  const installed = [
+    ...c.packages.map(item => ({...item, type:"Package"})),
+    ...c.options.map(item => ({...item, type:"Option"}))
+  ];
+  if (c.transmission.price > 0) installed.unshift({...c.transmission, desc:"M Double Clutch Transmission with Drivelogic", type:"FIO"});
+  if (c.wheelPrice > 0) installed.unshift({...c.wheel, desc:"19 inch forged M light alloy wheels", type:"FIO", price:c.wheelPrice});
+  if (c.interior.price > 0) installed.unshift({...c.interior, desc:"Novillo leather upholstery selection", type:"FIO"});
+  if (c.exterior.price > 0) installed.unshift({...c.exterior, desc:c.exterior.code === "IND" ? "BMW Individual exterior paint selection" : "Metallic exterior paint", type:"FIO"});
+
+  if (!installed.length) {
+    out += pdfText("No additional packages or standalone options selected.", 32, y, 8.6, "F1");
+    y -= 18;
+  }
+
+  installed.slice(0, 7).forEach(item => {
+    out += pdfText(`${item.code || ""} ${item.name}`, 32, y, 9.2, "F2");
+    out += pdfText(item.type || "FIO", 486, y, 7.8, "F1", "right");
+    out += pdfText(moneyPdf(item.price || 0), 580, y, 8.2, "F2", "right");
+    y -= 13;
+    const descLines = parseDescLines(item.desc).slice(0, 3);
+    if (descLines.length) {
+      const block = pdfTextBlock(descLines.map(line => `. ${line}`), 46, y, 7.2, 9.0, 88, "F1", 176);
+      out += block.out;
+      y = block.y - 3;
+    }
+    out += pdfLine(32, y + 4, 580, y + 4, 0.90, 0.5);
+    y -= 7;
+  });
+
+  out += pdfPriceRow("Total Optional Equipment", moneyPdf(factoryTotal), 32, 144, 548, true);
+  out += pdfPriceRow("Vehicle Base Model", moneyPdf(state.baseMSRP), 32, 124, 548);
+  out += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 32, 104, 548);
+  out += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 32, 84, 548);
+  out += pdfText("FEATURES", 32, 56, 12, "F2");
+  out += drawPageFooter(1, c);
+  return out;
+}
+
+function buildToyotaStylePageTwo(c) {
+  let out = "";
+  out += pdfRect(0, 0, 612, 792, 1);
+  out += pdfText("Mechanical & Performance", 32, 754, 11.5, "F2");
+  let left = [
+    "Engine: S65 4.0-liter naturally aspirated V8",
+    "Power: 414 hp at 8,300 rpm",
+    "Torque: 295 lb-ft at 3,900 rpm",
+    "Redline: 8,400 rpm",
+    `Transmission: ${c.transmission.name}`,
+    "Drivetrain: Rear-wheel drive",
+    "Differential: Variable M Differential Lock",
+    "Steering: Hydraulic power steering",
+    "Brakes: M compound brake system",
+    "Suspension: M-tuned suspension geometry",
+    "Exhaust: Quad outlet M exhaust system",
+    "Engine management: Individual throttle bodies"
+  ];
+  let block = pdfTextBlock(left, 32, 735, 7.8, 11, 62, "F1", 408);
+  out += block.out;
+
+  out += pdfText("Exterior", 32, 393, 11.5, "F2");
+  const exteriorLines = [
+    `${c.exterior.code} ${c.exterior.name}`,
+    `${c.wheel.code} ${c.wheel.name}`,
+    "M aerodynamic bodywork with front and rear fascias",
+    "Aluminum hood with power dome",
+    "Flared front and rear wheel arches",
+    "Adaptive Xenon headlights",
+    "Shadowline exterior trim where equipped",
+    "M side gills and M exterior badging",
+    "Dual polished exhaust outlets on each side"
+  ];
+  block = pdfTextBlock(exteriorLines, 32, 374, 7.8, 11, 62, "F1", 48);
+  out += block.out;
+
+  out += pdfText("Interior", 318, 754, 11.5, "F2");
+  const interiorLines = [
+    `${c.interior.code} ${c.interior.name}`,
+    "M sport seats with driver-focused cockpit layout",
+    "M leather steering wheel with tri-color stitching",
+    "Anthracite headliner",
+    "Automatic climate control",
+    "On-board computer",
+    "M instrument cluster with variable warning zone",
+    "Power front seats where equipped",
+    "Heated front seats where equipped",
+    "Split fold-down rear seat where equipped",
+    "Interior trim selected by package or standalone option"
+  ];
+  block = pdfTextBlock(interiorLines, 318, 735, 7.8, 11, 62, "F1", 408);
+  out += block.out;
+
+  out += pdfText("Audio, Technology & Convenience", 318, 393, 11.5, "F2");
+  const techLines = [
+    "Navigation System where equipped",
+    "BMW Assist with Bluetooth where equipped",
+    "iPod and USB adapter where equipped",
+    "Enhanced Premium Sound where equipped",
+    "Satellite Radio where equipped",
+    "BMW Apps where equipped",
+    "Comfort Access keyless entry where equipped",
+    "Park Distance Control where equipped",
+    "Automatic High Beams where equipped",
+    "Anti-theft alarm system where equipped"
+  ];
+  block = pdfTextBlock(techLines, 318, 374, 7.8, 11, 62, "F1", 48);
+  out += block.out;
+
+  out += drawPageFooter(2, c);
+  return out;
+}
+
+function buildToyotaStylePageThree(c) {
+  let out = "";
+  out += pdfRect(0, 0, 612, 792, 1);
+  out += pdfText("Selected Build Detail", 32, 754, 12, "F2");
+  out += pdfLine(32, 745, 580, 745, 0.72, 0.9);
+  let y = 724;
+  const rows = [
+    ["Base MSRP", moneyPdf(state.baseMSRP)],
+    [`Exterior - ${c.exterior.code} ${c.exterior.name}`, moneyPdf(c.exterior.price)],
+    [`Interior - ${c.interior.code} ${c.interior.name}`, moneyPdf(c.interior.price)],
+    [`Transmission - ${c.transmission.code} ${c.transmission.name}`, moneyPdf(c.transmission.price)],
+    [`Wheels - ${c.wheel.code} ${c.wheel.name}`, moneyPdf(c.wheelPrice)]
+  ];
+  c.packages.forEach(item => rows.push([`${item.code} ${item.name}`, moneyPdf(item.price)]));
+  c.options.forEach(item => rows.push([`${item.code} ${item.name}`, moneyPdf(item.price)]));
+  rows.push(["Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler)]);
+  rows.push(["Destination & Handling", moneyPdf(DATA.destination)]);
+
+  rows.forEach((row, index) => {
+    if (y > 126) {
+      out += pdfText(row[0], 32, y, index === 0 ? 8.8 : 8.1, index === 0 ? "F2" : "F1");
+      out += pdfText(row[1], 580, y, index === 0 ? 8.8 : 8.1, index === 0 ? "F2" : "F1", "right");
+      out += pdfLine(32, y - 5, 580, y - 5, 0.90, 0.5);
+      y -= 18;
+    }
+  });
+
+  out += pdfText("Total Suggested Retail Price", 32, 96, 12, "F2");
+  out += pdfText(moneyPdf(c.total), 580, 96, 12, "F2", "right");
+
+  out += pdfText("Disclaimer", 32, 62, 8.2, "F2");
+  const disclaimer = "This document is a custom configurator-generated BMW V-Spec sheet created for enthusiast reference and nostalgia. Pricing, equipment grouping, and option availability should be verified against original BMW documentation. This is not an official BMW window sticker, Monroney label, dealer invoice, or manufacturer document.";
+  out += pdfTextBlock([disclaimer], 32, 49, 6.4, 8.0, 142, "F1", 34).out;
+  out += drawPageFooter(3, c);
+  return out;
+}
+
 function downloadBMWBuildSheetPDF() {
   renderAll();
 
   const c = calculate();
-  const date = new Date().toLocaleDateString();
-  const selectedPackages = c.packages.length ? c.packages.map(p => `${p.code} ${p.name} - ${money(p.price)}`) : ["None"];
-  const selectedOptions = c.options.length ? c.options.map(o => `${o.code} ${o.name} - ${money(o.price)}`) : ["None"];
-
-  const lines = [
-    "BMW Individual Build Sheet",
-    "2011 BMW M3 Sedan (E90)",
-    `Generated: ${date}`,
-    `VIN: ${state.vin || "Not loaded"}`,
-    `Selling Dealer: ${state.sellingDealer || "Not listed"}`,
-    "",
-    "VEHICLE CONFIGURATION",
-    `Exterior: ${c.exterior.code} ${c.exterior.name} - ${money(c.exterior.price)}`,
-    `Interior: ${c.interior.code} ${c.interior.name} - ${money(c.interior.price)}`,
-    `Transmission: ${c.transmission.code} ${c.transmission.name} - ${money(c.transmission.price)}`,
-    `Wheels: ${c.wheel.code} ${c.wheel.name} - ${money(c.wheelPrice)}`,
-    "",
-    "PRICING SUMMARY",
-    `Base MSRP: ${money(state.baseMSRP)}`,
-    `Destination & Handling: ${money(DATA.destination)}`,
-    `Gas Guzzler Tax: ${money(DATA.gasGuzzler)}`,
-    `Packages Total: ${money(c.packageTotal)}`,
-    `Options Total: ${money(c.optionTotal)}`,
-    `Total Suggested Retail Price: ${money(c.total)}`,
-    "",
-    "PACKAGES",
-    ...selectedPackages,
-    "",
-    "STANDALONE OPTIONS",
-    ...selectedOptions,
-    "",
-    "Custom configurator build sheet for reference use only. Not an official BMW Monroney label."
+  const pages = [
+    buildToyotaStylePageOne(c),
+    buildToyotaStylePageTwo(c),
+    buildToyotaStylePageThree(c)
   ];
-
-  const content = [
-    "q 0.04 0.05 0.07 rg 0 720 612 72 re f Q",
-    "q 0.00 0.30 0.60 rg 0 714 612 6 re f Q",
-    "q 0.93 0.93 0.93 rg 32 84 548 590 re f Q",
-    "q 1 1 1 rg 38 90 536 578 re f Q",
-    buildPdfTextObject(lines)
-  ].join("\n");
 
   const objects = [];
   const addObj = body => {
@@ -1665,9 +1890,16 @@ function downloadBMWBuildSheetPDF() {
   };
 
   addObj("<< /Type /Catalog /Pages 2 0 R >>");
-  addObj("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
-  addObj("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>");
-  addObj(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  addObj("<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>");
+
+  const pageObjectNumbers = [3,5,7];
+  const contentObjectNumbers = [4,6,8];
+
+  pages.forEach((content, i) => {
+    addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 9 0 R /F2 10 0 R >> >> /Contents ${contentObjectNumbers[i]} 0 R >>`);
+    addObj(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  });
+
   addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
 
@@ -1688,7 +1920,7 @@ function downloadBMWBuildSheetPDF() {
 
   const blob = new Blob([pdf], { type: "application/pdf" });
   const vinPart = state.vin ? state.vin.slice(-7) : `${c.exterior.code}-${c.wheel.code}`;
-  downloadBlob(blob, `2011-BMW-M3-build-sheet-${makeSafeFileName(vinPart)}.pdf`);
+  downloadBlob(blob, `2011-BMW-M3-vspec-${makeSafeFileName(vinPart)}.pdf`);
 }
 
 $("copyBuildBtn").onclick = () => {
