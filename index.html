@@ -884,6 +884,10 @@ function disabledOptionReason(code) {
     return "Included with ZCP";
   }
 
+  if (code === "6FL" && state.packages.has("ZCV")) {
+    return "Included with ZCV";
+  }
+
   if (hasPremiumPackage()) {
     if (["4MX", "4MY", "4MZ"].includes(code)) {
       return "Included/selected within Premium Package";
