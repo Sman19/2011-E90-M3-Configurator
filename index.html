@@ -437,6 +437,22 @@ button, input {
   font-size: 12px;
 }
 
+.msrp-select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #101826;
+  color: var(--text);
+  border-radius: 7px;
+  padding: 12px 14px;
+  font-weight: 800;
+  outline: none;
+}
+
+.msrp-select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(22,119,255,.28);
+}
+
 .full-btn {
   margin-top: 13px;
   width: 100%;
@@ -704,6 +720,15 @@ textarea {
         <div class="swatch-row" id="exteriorGrid"></div>
       </div>
 
+      <div class="section">
+        <h2>Base MSRP</h2>
+        <select id="msrpSelect" class="msrp-select" aria-label="Base MSRP">
+          <option value="55400">$55,400 — 2010 Build</option>
+          <option value="55900">$55,900 — 2011 Build</option>
+        </select>
+        <p class="note">Base MSRP depends on build timing, not transmission.</p>
+      </div>
+
       <div class="lower-grid">
         <div class="section">
           <h2>2. Interior</h2>
@@ -773,7 +798,10 @@ const EXTERIOR_PHOTOS = {
 };
 
 const DATA = {
-  baseMSRP: 55400,
+  baseMSRPOptions: [
+    { label:"2010 Build", value:55400 },
+    { label:"2011 Build", value:55900 }
+  ],
   destination: 875,
   gasGuzzler: 1300,
 
@@ -866,6 +894,7 @@ const state = {
   interior: "NCSW",
   transmission: "6MT",
   wheel: "STD",
+  baseMSRP: 55400,
   packages: new Set(),
   options: new Set(),
   showAllInteriors: false
@@ -935,7 +964,7 @@ function calculate() {
   const wheelPrice = s.wheel.code === "2MT" ? s.wheel.price : 0;
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
-  const total = DATA.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal;
+  const total = state.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal;
   return { ...s, wheelPrice, packageTotal, optionTotal, total };
 }
 
@@ -1096,7 +1125,7 @@ function buildOutput() {
   const c = calculate();
   return {
     model: "2011 BMW M3 Sedan (E90)",
-    baseMSRP: DATA.baseMSRP,
+    baseMSRP: state.baseMSRP,
     destinationCharge: DATA.destination,
     gasGuzzlerTax: DATA.gasGuzzler,
     exterior: c.exterior,
@@ -1126,7 +1155,7 @@ function renderSummary() {
 
   const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice;
   $("summaryLines").innerHTML = `
-    <div class="summary-line"><span>Base Vehicle<small>2011 BMW E90 M3 Sedan</small></span><strong>${money(DATA.baseMSRP)}</strong></div>
+    <div class="summary-line"><span>Base Vehicle<small>2011 BMW E90 M3 Sedan</small></span><strong>${money(state.baseMSRP)}</strong></div>
     <div class="summary-line"><span>Exterior Color<small>● ${c.exterior.code} ${c.exterior.name}</small></span><strong>${money(c.exterior.price)}</strong></div>
     <div class="summary-line"><span>Interior<small>● ${c.interior.code} ${c.interior.name}</small></span><strong>${money(c.interior.price)}</strong></div>
     <div class="summary-line"><span>Transmission<small>${c.transmission.code} ${c.transmission.name}</small></span><strong>${money(c.transmission.price)}</strong></div>
@@ -1145,16 +1174,27 @@ function renderSummary() {
   $("buildOutput").value = JSON.stringify(buildOutput(), null, 2);
 }
 
+function renderMSRPSelector() {
+  const select = $("msrpSelect");
+  if (select) select.value = String(state.baseMSRP);
+}
+
 function renderAll() {
   enforceLockouts();
   renderExterior();
   renderInteriors();
   renderTransmissions();
   renderWheels();
+  renderMSRPSelector();
   renderChecks("packageList", DATA.packages, "packages");
   renderChecks("optionList", DATA.standaloneOptions, "options");
   renderSummary();
 }
+
+$("msrpSelect").onchange = e => {
+  state.baseMSRP = Number(e.target.value);
+  renderAll();
+};
 
 $("toggleInteriorsBtn").onclick = () => {
   state.showAllInteriors = !state.showAllInteriors;
@@ -1200,7 +1240,7 @@ function downloadBMWBuildSheetPDF() {
     `Wheels: ${c.wheel.code} ${c.wheel.name} - ${money(c.wheelPrice)}`,
     "",
     "PRICING SUMMARY",
-    `Base MSRP: ${money(DATA.baseMSRP)}`,
+    `Base MSRP: ${money(state.baseMSRP)}`,
     `Destination & Handling: ${money(DATA.destination)}`,
     `Gas Guzzler Tax: ${money(DATA.gasGuzzler)}`,
     `Packages Total: ${money(c.packageTotal)}`,
@@ -1286,6 +1326,7 @@ $("resetBtn").onclick = () => {
   state.interior = "NCSW";
   state.transmission = "6MT";
   state.wheel = "STD";
+  state.baseMSRP = 55400;
   state.packages.clear();
   state.options.clear();
   state.showAllInteriors = false;
