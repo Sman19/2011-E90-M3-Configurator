@@ -610,6 +610,7 @@ textarea {
   .wheel-grid { grid-template-columns: 1fr; }
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
@@ -774,31 +775,29 @@ const DATA = {
   ],
 
   interiors: [
-    { code:"NCSW", name:"Black Novillo Leather", price:0, basePrice:950, premiumPrice:0, hex:"#111111" },
-    { code:"NDSW", name:"Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, hex:"#090909" },
-    { code:"NCH1", name:"Silver Novillo Leather", price:0, basePrice:950, premiumPrice:0, hex:"#c8c3ba" },
-    { code:"NDH1", name:"Silver Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, hex:"#d0ccc5" },
-    { code:"NCH2", name:"Fox Red Novillo Leather", price:0, basePrice:950, premiumPrice:0, hex:"#8f1f1f" },
-    { code:"NDH2", name:"Fox Red Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, hex:"#a72828" },
-    { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, basePrice:950, premiumPrice:0, hex:"#c5aa7f" },
-    { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, hex:"#d0b88d" },
-    {
-      code:"NCH4",
-      name:"Silver Novillo / Black / Black Novillo Leather",
-      price:0,
-      basePrice:1250,
-      premiumPrice:300,
-      gradient:"linear-gradient(135deg,#d4d0c9 0%,#d4d0c9 50%,#111111 50%,#111111 100%)"
-    },
-    {
-      code:"NCH5",
-      name:"Fox Red Novillo / Black / Black Novillo Leather",
-      price:0,
-      basePrice:1250,
-      premiumPrice:300,
-      gradient:"linear-gradient(135deg,#9f2323 0%,#9f2323 50%,#111111 50%,#111111 100%)"
-    }
-  ],
+ { code:"NCSW", name:"Black Novillo Leather", price:0, hex:"#111111" },
+ { code:"NDSW", name:"Black Extended Novillo Leather", price:0, hex:"#090909" },
+ { code:"NCH1", name:"Silver Novillo Leather", price:0, hex:"#c8c3ba" },
+ { code:"NDH1", name:"Silver Extended Novillo Leather", price:0, hex:"#d0ccc5" },
+ { code:"NCH2", name:"Fox Red Novillo Leather", price:0, hex:"#8f1f1f" },
+ { code:"NDH2", name:"Fox Red Extended Novillo Leather", price:0, hex:"#a72828" },
+ { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, hex:"#c5aa7f" },
+ { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, hex:"#d0b88d" },
+
+ {
+   code:"NCH4",
+   name:"Silver Novillo / Black / Black Novillo Leather",
+   price:0,
+   gradient:"linear-gradient(135deg,#d4d0c9 0%,#d4d0c9 50%,#111111 50%,#111111 100%)"
+ },
+
+ {
+   code:"NCH5",
+   name:"Fox Red Novillo / Black / Black Novillo Leather",
+   price:0,
+   gradient:"linear-gradient(135deg,#9f2323 0%,#9f2323 50%,#111111 50%,#111111 100%)"
+ }
+],
 
   transmissions: [
     { code:"6MT", name:"6-Speed Manual", price:0, icon:"●" },
@@ -862,9 +861,7 @@ function hasPremiumPackage() {
 }
 
 function getInteriorPrice(item) {
-  if (!item) return 0;
-  const price = hasPremiumPackage() ? item.premiumPrice : item.basePrice;
-  return Number.isFinite(Number(price)) ? Number(price) : Number(item.price || 0);
+  return hasPremiumPackage() ? item.premiumPrice : item.basePrice;
 }
 
 function pricedInterior(item) {
@@ -948,7 +945,7 @@ function renderInteriors() {
     const btn = document.createElement("button");
     btn.className = "choice-card" + (state.interior === item.code ? " active" : "");
     btn.innerHTML = `
-      <div class="material" style="--mat:${i.gradient || i.hex}"></div>
+      <div class="material" style="--mat:${item.gradient || item.hex}"></div>
       <span class="choice-code">${item.code}</span>
       <span class="choice-name">${item.name}</span>
       <span class="choice-price">${money(price)}</span>
@@ -1105,104 +1102,211 @@ $("toggleOptionsBtn").onclick = () => {
   $("toggleOptionsBtn").textContent = $("optionsDrawer").classList.contains("show") ? "Hide Options" : "View All Options";
 };
 
-function pdfEscape(value) {
-  return String(value ?? "").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
-}
-
-function buildPdfTextObject(lines) {
-  let out = "BT\n/F1 10 Tf\n40 742 Td\n14 TL\n";
-  lines.forEach((line, index) => {
-    if (index === 0) out += "/F2 20 Tf\n";
-    if (index === 1) out += "/F1 9 Tf\n";
-    if (index === 3) out += "/F2 12 Tf\n";
-    out += `(${pdfEscape(line)}) Tj\nT*\n`;
+async function loadImageDataUrl(src) {
+  if (!src) return null;
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (err) {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
   });
-  out += "ET\n";
-  return out;
 }
 
-function downloadBMWBuildSheetPDF() {
-  renderAll();
-  const c = calculate();
-  const date = new Date().toLocaleDateString();
-  const selectedPackages = c.packages.length ? c.packages.map(p => `${p.code} ${p.name} - ${money(p.price)}`) : ["None"];
-  const selectedOptions = c.options.length ? c.options.map(o => `${o.code} ${o.name} - ${money(o.price)}`) : ["None"];
-
-  const lines = [
-    "BMW Individual Build Sheet",
-    "2011 BMW M3 Sedan (E90)",
-    `Generated: ${date}`,
-    "VEHICLE CONFIGURATION",
-    `Exterior: ${c.exterior.code} ${c.exterior.name} - ${money(c.exterior.price)}`,
-    `Interior: ${c.interior.code} ${c.interior.name} - ${money(c.interior.price)}`,
-    `Transmission: ${c.transmission.code} ${c.transmission.name} - ${money(c.transmission.price)}`,
-    `Wheels: ${c.wheel.code} ${c.wheel.name} - ${money(c.wheelPrice)}`,
-    "",
-    "PRICING SUMMARY",
-    `Base MSRP: ${money(DATA.baseMSRP)}`,
-    `Destination & Handling: ${money(DATA.destination)}`,
-    `Gas Guzzler Tax: ${money(DATA.gasGuzzler)}`,
-    `Packages Total: ${money(c.packageTotal)}`,
-    `Options Total: ${money(c.optionTotal)}`,
-    `Total Suggested Retail Price: ${money(c.total)}`,
-    "",
-    "PACKAGES",
-    ...selectedPackages,
-    "",
-    "STANDALONE OPTIONS",
-    ...selectedOptions,
-    "",
-    "This is a custom configurator build sheet for reference use only. It is not an official BMW Monroney label."
+function buildPdfLineItems(c) {
+  const rows = [
+    ["Base MSRP", "2011 BMW M3 Sedan", DATA.baseMSRP],
+    ["Destination Charge", "", DATA.destination],
+    ["Gas Guzzler Tax", "", DATA.gasGuzzler],
+    ["Exterior", `${c.exterior.code} ${c.exterior.name}`, c.exterior.price],
+    ["Interior", `${c.interior.code} ${c.interior.name}`, c.interior.price],
+    ["Transmission", `${c.transmission.code} ${c.transmission.name}`, c.transmission.price],
+    ["Wheels", `${c.wheel.code} ${c.wheel.name}`, c.wheelPrice]
   ];
 
-  const content = [
-    "q 0.04 0.05 0.07 rg 0 720 612 72 re f Q",
-    "q 0.00 0.30 0.60 rg 0 714 612 6 re f Q",
-    "q 0.93 0.93 0.93 rg 32 96 548 570 re f Q",
-    "q 1 1 1 rg 38 102 536 558 re f Q",
-    buildPdfTextObject(lines)
-  ].join("\n");
-
-  const objects = [];
-  const addObj = body => { objects.push(body); return objects.length; };
-  addObj("<< /Type /Catalog /Pages 2 0 R >>");
-  addObj("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
-  addObj("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>");
-  addObj(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
-  addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
-  addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
-
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  objects.forEach((body, i) => {
-    offsets.push(pdf.length);
-    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
-  });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach(offset => { pdf += `${String(offset).padStart(10, "0")} 00000 n \n`; });
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-
-  const blob = new Blob([pdf], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `2011-BMW-M3-build-sheet-${c.exterior.code}-${c.wheel.code}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  c.packages.forEach(item => rows.push(["Package", `${item.code} ${item.name}`, item.price]));
+  c.options.forEach(item => rows.push(["Option", `${item.code} ${item.name}`, item.price]));
+  return rows;
 }
 
-$("copyBuildBtn").onclick = () => {
+function drawPdfFooter(doc, pageW, pageH) {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(110, 110, 110);
+  doc.text("Configurator build sheet generated from user-selected equipment. Pricing is for reference only and is not an official BMW Monroney label.", 40, pageH - 32, { maxWidth: pageW - 80 });
+}
+
+async function downloadBMWBuildSheetPDF() {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("PDF library did not load. Check your internet connection, then try Save Build again.");
+    return;
+  }
+
+  const c = calculate();
+  const build = buildOutput();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 40;
+  const date = new Date().toLocaleDateString();
+
+  // Header
+  doc.setFillColor(10, 13, 18);
+  doc.rect(0, 0, pageW, 86, "F");
+  doc.setFillColor(0, 76, 153);
+  doc.rect(0, 82, pageW, 4, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.text("BMW M3", margin, 36);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.text("2011 E90 Sedan Build Sheet", margin, 58);
+  doc.setFontSize(9);
+  doc.text(`Generated ${date}`, pageW - margin, 36, { align: "right" });
+  doc.text("Configurator Summary", pageW - margin, 58, { align: "right" });
+
+  // Hero card
+  let y = 112;
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(margin, y, pageW - margin * 2, 178, 10, 10, "F");
+  doc.setDrawColor(210, 214, 220);
+  doc.roundedRect(margin, y, pageW - margin * 2, 178, 10, 10, "S");
+
+  const imgData = await loadImageDataUrl(build.previewImage);
+  if (imgData) {
+    try {
+      doc.addImage(imgData, "PNG", margin + 18, y + 24, 300, 115, undefined, "FAST");
+    } catch (err) {}
+  }
+
+  doc.setTextColor(12, 18, 28);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text("2011 BMW M3 Sedan", margin + 335, y + 42);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(70, 76, 86);
+  doc.text("U.S. E90 Configuration", margin + 335, y + 60);
+
+  const specY = y + 92;
+  const specRows = [
+    ["Exterior", `${c.exterior.code} ${c.exterior.name}`],
+    ["Interior", `${c.interior.code} ${c.interior.name}`],
+    ["Transmission", `${c.transmission.code} ${c.transmission.name}`],
+    ["Wheels", `${c.wheel.code} ${c.wheel.name}`]
+  ];
+  specRows.forEach((row, idx) => {
+    const yy = specY + idx * 16;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(32, 38, 48);
+    doc.text(row[0] + ":", margin + 335, yy);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(70, 76, 86);
+    doc.text(row[1], margin + 415, yy, { maxWidth: pageW - margin - 415 });
+  });
+
+  // MSRP table
+  y = 326;
+  doc.setTextColor(12, 18, 28);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("Selected Equipment & Pricing", margin, y);
+  y += 18;
+
+  doc.setFillColor(17, 24, 35);
+  doc.rect(margin, y, pageW - margin * 2, 24, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(9);
+  doc.text("TYPE", margin + 10, y + 16);
+  doc.text("DESCRIPTION", margin + 95, y + 16);
+  doc.text("MSRP", pageW - margin - 10, y + 16, { align: "right" });
+  y += 24;
+
+  const rows = buildPdfLineItems(c).filter(row => row[2] !== 0 || ["Base MSRP", "Destination Charge", "Gas Guzzler Tax"].includes(row[0]));
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  rows.forEach((row, idx) => {
+    if (y > pageH - 92) {
+      drawPdfFooter(doc, pageW, pageH);
+      doc.addPage();
+      y = 52;
+    }
+    if (idx % 2 === 0) {
+      doc.setFillColor(248, 249, 251);
+      doc.rect(margin, y, pageW - margin * 2, 22, "F");
+    }
+    doc.setTextColor(45, 51, 60);
+    doc.setFont("helvetica", "bold");
+    doc.text(row[0], margin + 10, y + 15);
+    doc.setFont("helvetica", "normal");
+    doc.text(row[1] || "—", margin + 95, y + 15, { maxWidth: 325 });
+    doc.text(money(row[2]), pageW - margin - 10, y + 15, { align: "right" });
+    y += 22;
+  });
+
+  y += 12;
+  doc.setDrawColor(17, 24, 35);
+  doc.line(pageW - 260, y, pageW - margin, y);
+  y += 28;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(12, 18, 28);
+  doc.text("Total Suggested MSRP", pageW - 260, y);
+  doc.setFontSize(20);
+  doc.text(money(c.total), pageW - margin, y, { align: "right" });
+
+  // Packages/options descriptions
+  const detailItems = [...c.packages, ...c.options];
+  if (detailItems.length) {
+    y += 42;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Equipment Details", margin, y);
+    y += 18;
+    doc.setFontSize(8.5);
+    detailItems.forEach(item => {
+      const text = `${item.code} ${item.name}${item.desc ? " — " + item.desc.replace(/\n/g, " ") : ""}`;
+      const lines = doc.splitTextToSize(text, pageW - margin * 2);
+      if (y + lines.length * 11 > pageH - 48) {
+        drawPdfFooter(doc, pageW, pageH);
+        doc.addPage();
+        y = 52;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(35, 42, 52);
+      doc.text(lines, margin, y);
+      y += lines.length * 11 + 8;
+    });
+  }
+
+  drawPdfFooter(doc, pageW, pageH);
+  const fileSafeExterior = c.exterior.code.toLowerCase();
+  const fileSafeWheel = c.wheel.code.toLowerCase();
+  doc.save(`2011-BMW-M3-build-sheet-${fileSafeExterior}-${fileSafeWheel}.pdf`);
+}
+
+$("copyBuildBtn").onclick = async () => {
   const btn = $("copyBuildBtn");
-  btn.textContent = "Downloading...";
+  btn.textContent = "Generating PDF...";
   try {
-    downloadBMWBuildSheetPDF();
+    await downloadBMWBuildSheetPDF();
     btn.textContent = "Downloaded";
   } catch (err) {
     console.error(err);
-    alert("Build sheet PDF could not be generated. Check the browser console for details.");
+    alert("The PDF could not be generated. Check the browser console for details.");
     btn.textContent = "PDF Error";
   }
   setTimeout(() => btn.textContent = "▣ Save Build", 1200);
