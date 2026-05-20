@@ -1466,7 +1466,14 @@ async function lookupVIN() {
     // Do not use the dollar amount in those cells as the base value, because those cells can contain full MSRP totals.
     const msrp55900Value = findCSVValue(match, ["MSRP", "BASE MSRP", "Base MSRP", "BaseMSRP", "BASE_MSRP"]);
     const msrp55400Value = findCSVValue(match, ["MSRP.1", "BASE MSRP.1", "Base MSRP.1", "BaseMSRP.1", "BASE_MSRP.1"]);
-    const packageText = findCSVValue(match, ["PACKAGES", "Packages", "Package", "OPTIONS", "Options", "Codes", "CODES", "L", "Column L", "__COL_12"]) || Object.values(match).join(",");
+    // Package/option codes can live in different exports depending on the CSV version.
+    // Column H is the main BMW option-code column for this configurator CSV.
+    // Column L is kept as a fallback for older versions of the file.
+    const packageTextParts = [
+      findCSVValue(match, ["PACKAGE CODES", "Package Codes", "OPTION CODES", "Option Codes", "PACKAGES", "Packages", "Package", "OPTIONS", "Options", "Codes", "CODES", "H", "Column H", "__COL_8"]),
+      findCSVValue(match, ["L", "Column L", "__COL_12"])
+    ].filter(Boolean);
+    const packageText = packageTextParts.length ? packageTextParts.join(",") : Object.values(match).join(",");
 
     state.vin = vin;
     state.sellingDealer = dealer;
