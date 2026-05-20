@@ -22,12 +22,137 @@
     <aside class="summary"><div class="card summary-card"><div class="badge">Total Suggested Retail Price</div><div class="total" id="totalPrice">$57,575</div><div class="compat" id="compatBox"></div><div id="lineItems" style="margin-top:14px;"></div></div><div class="card summary-card"><h2 style="margin-top:0;">Build Output</h2><textarea id="buildOutput" readonly></textarea><p class="note">Use this JSON for your VIN/database project, sticker generator, or package-code mapper.</p></div></aside>
   </main>
   <script>
-    const DATA={exteriorColors:[{code:"300",name:"Alpine White",price:0,hex:"#f2f1ea",type:"Non-metallic"},{code:"668",name:"Jet Black",price:0,hex:"#050505",type:"Non-metallic"},{code:"A29",name:"Silverstone Metallic II",price:550,hex:"#bfc8cf",type:"Metallic"},{code:"A30",name:"Interlagos Blue Metallic",price:550,hex:"#263d87",type:"Metallic"},{code:"A52",name:"Space Gray Metallic",price:550,hex:"#63686c",type:"Metallic"},{code:"A73",name:"Jerez Black Metallic",price:550,hex:"#10131d",type:"Metallic"},{code:"A75",name:"Melbourne Red Metallic",price:550,hex:"#a20d16",type:"Metallic"},{code:"A76",name:"Deep Sea Blue Metallic",price:550,hex:"#182d4f",type:"Metallic"},{code:"A96",name:"Mineral White Metallic",price:550,hex:"#f1eee5",type:"Metallic"},{code:"B05",name:"Le Mans Blue Metallic",price:550,hex:"#143f8f",type:"Metallic"},{code:"IND",name:"BMW Individual Paint",price:5000,hex:"linear-gradient(135deg,#6b2cff,#00c2ff,#f5d76e,#ff4d4d)",type:"Individual / Custom"}],interiors:[{code:"NCSW",name:"Black Novillo Leather",price:0,hex:"#111111"},{code:"NCH1",name:"Silver Novillo Leather",price:0,hex:"#c8c3ba"},{code:"NCH2",name:"Fox Red Novillo Leather",price:0,hex:"#8f1f1f"},{code:"NCND",name:"Bamboo Beige Novillo Leather",price:0,hex:"#c5aa7f"},{code:"NDH2",name:"Fox Red Extended Novillo Leather",price:0,hex:"#a72828"},{code:"NDH1",name:"Silver Extended Novillo Leather",price:0,hex:"#d0ccc5"},{code:"NDSW",name:"Black Extended Novillo Leather",price:0,hex:"#090909"},{code:"NDND",name:"Bamboo Beige Extended Novillo Leather",price:0,hex:"#d0b88d"}],transmissions:[{code:"6MT",name:"6-Speed Manual",price:0,desc:"Standard manual transmission"},{code:"2MK",name:"M Double-Clutch Transmission",price:2900,desc:"M DCT with Drivelogic"}],packages:[{code:"ZCP",name:"Competition Package",price:2500,desc:"- Dynamic Damper Control"},{code:"ZCV",name:"Convenience Package",price:2900,desc:"- Anti-theft alarm system\n- Comfort Access keyless entry\n- Park Distance Control (rear)\n- Navigation System\n- Voice-Command\n- iPod & USB adapter\n- Real Time Traffic Information"},{code:"ZCW",name:"Cold Weather Package",price:1000,desc:"- Split fold-down rear seat\n- Heated front seats\n- Retractable headlight washers"},{code:"ZP2",name:"Premium Package 2",price:2500,desc:"Variant code from source sheet"},{code:"ZP2.1",name:"Premium Package 2",price:2500,desc:"Variant code from source sheet"},{code:"ZP2.2",name:"Premium Package 2",price:2500,desc:"Variant code from source sheet"},{code:"ZP2.3",name:"Premium Package 2",price:2500,desc:"Variant code from source sheet"},{code:"ZP2.4",name:"Premium Package 2",price:2500,desc:"- Power-folding auto mirrors\n- Universal garage-door opener\n- Power front seats\n- Carbon Leather interior trim\n- Interior mirror with compass\n- BMW Assist w/enhanced BT & USB"},{code:"ZP3",name:"Premium Package 3",price:2500,desc:"Variant code from source sheet"},{code:"ZP3.1",name:"Premium Package 3",price:2500,desc:"Variant code from source sheet"},{code:"ZP3.2",name:"Premium Package 3",price:2500,desc:"Variant code from source sheet"},{code:"ZP3.3",name:"Premium Package 3",price:2500,desc:"Variant code from source sheet"},{code:"ZP3.4",name:"Premium Package 3",price:2500,desc:"- Power-folding auto mirrors\n- Universal garage-door opener\n- Power front seats\n- Carbon Leather interior trim\n- Interior mirror with compass\n- BMW Assist w/enhanced BT & USB"}],standaloneOptions:[{code:"223",name:"Dynamic Damper Control",price:1000,desc:"Adaptive damping control"},{code:"2MT",name:"19\" Alloy Double-Spoke Wheels",price:1250,desc:"Factory 19-inch wheel option"},{code:"4MX",name:"Brushed Aluminum Trim",price:500,desc:"Interior trim"},{code:"4MY",name:"Carbon Leather Interior Trim",price:500,desc:"Interior trim"},{code:"4MZ",name:"Walnut Interior Trim",price:500,desc:"Interior trim"},{code:"403",name:"Moonroof",price:1050,desc:"Power moonroof"},{code:"417",name:"Power Rear Sunshade",price:575,desc:"Power rear sunshade with manual side/rear shades"},{code:"465",name:"Split-Fold Down Rear Seat",price:475,desc:"Folding rear seat"},{code:"494",name:"Heated Front Seats",price:500,desc:"Heated driver and passenger front seats"},{code:"302",name:"Alarm System",price:500,desc:"Anti-theft alarm system"},{code:"507",name:"Rear Park Distance Control",price:380,desc:"Rear parking sensors"},{code:"5AC",name:"Automatic High Beams",price:250,desc:"Automatic high-beam assistant"},{code:"609",name:"Navigation System",price:2100,desc:"Factory navigation"},{code:"6FL",name:"iPod & USB Adapter",price:400,desc:"USB audio interface"},{code:"639",name:"BMW Assist w. Bluetooth",price:750,desc:"BMW Assist with Bluetooth"},{code:"6NF",name:"Smartphone Integration",price:150,desc:"Smartphone integration"},{code:"655",name:"Satellite Radio",price:350,desc:"Satellite radio prep/service hardware"},{code:"6NR",name:"BMW Apps",price:250,desc:"BMW Apps integration"},{code:"752",name:"Enhanced Premium Sound",price:1900,desc:"Enhanced premium audio system"},{code:"771",name:"Titanium Shadow Trim",price:0,desc:"Exterior shadowline style trim"},{code:"XE2",name:"Individual Fine Wood Trim Maple Wood Anthracite",price:1080,desc:"BMW Individual interior trim"}]};
+    const DATA={
+
+exteriorColors:[
+{code:"300",name:"Alpine White",price:0,hex:"#f2f1ea",type:"Non-metallic"},
+{code:"668",name:"Jet Black",price:0,hex:"#050505",type:"Non-metallic"},
+{code:"A29",name:"Silverstone Metallic II",price:550,hex:"#bfc8cf",type:"Metallic"},
+{code:"A30",name:"Interlagos Blue Metallic",price:550,hex:"#263d87",type:"Metallic"},
+{code:"A52",name:"Space Gray Metallic",price:550,hex:"#63686c",type:"Metallic"},
+{code:"A73",name:"Jerez Black Metallic",price:550,hex:"#10131d",type:"Metallic"},
+{code:"A75",name:"Melbourne Red Metallic",price:550,hex:"#a20d16",type:"Metallic"},
+{code:"A76",name:"Deep Sea Blue Metallic",price:550,hex:"#182d4f",type:"Metallic"},
+{code:"A96",name:"Mineral White Metallic",price:550,hex:"#f1eee5",type:"Metallic"},
+{code:"B05",name:"Le Mans Blue Metallic",price:550,hex:"#143f8f",type:"Metallic"},
+{code:"IND",name:"BMW Individual Paint",price:5000,hex:"linear-gradient(135deg,#6b2cff,#00c2ff,#f5d76e,#ff4d4d)",type:"Individual / Custom"}
+],
+
+interiors:[
+{code:"NCSW",name:"Black Novillo Leather",price:0,hex:"#111111"},
+{code:"NCH1",name:"Silver Novillo Leather",price:0,hex:"#c8c3ba"},
+{code:"NCH2",name:"Fox Red Novillo Leather",price:0,hex:"#8f1f1f"},
+{code:"NCND",name:"Bamboo Beige Novillo Leather",price:0,hex:"#c5aa7f"},
+{code:"NDH2",name:"Fox Red Extended Novillo Leather",price:0,hex:"#a72828"},
+{code:"NDH1",name:"Silver Extended Novillo Leather",price:0,hex:"#d0ccc5"},
+{code:"NDSW",name:"Black Extended Novillo Leather",price:0,hex:"#090909"},
+{code:"NDND",name:"Bamboo Beige Extended Novillo Leather",price:0,hex:"#d0b88d"}
+],
+
+transmissions:[
+{code:"6MT",name:"6-Speed Manual",price:0,desc:"Standard manual transmission"},
+{code:"2MK",name:"M Double-Clutch Transmission",price:2900,desc:"M DCT with Drivelogic"}
+],
+
+packages:[
+{
+code:"ZCP",
+name:"Competition Package",
+price:2500,
+desc:`- Dynamic Damper Control`
+},
+{
+code:"ZCV",
+name:"Convenience Package",
+price:2900,
+desc:`- Anti theft alarm system
+- Comfort Access keyless entry
+- Park Distance Control (rear)
+- Navigation System
+- Voice Command
+- iPod & USB adapter
+- Real Time Traffic Information`
+},
+{
+code:"ZCW",
+name:"Cold Weather Package",
+price:1000,
+desc:`- Split fold down rear seat
+- Heated front seats
+- Retractable headlight washers`
+},
+{
+code:"ZP2",
+name:"Premium Package 2",
+price:2500,
+desc:`- Power folding auto mirrors
+- Universal garage door opener
+- Power front seats
+- Interior mirror with compass
+- BMW Assist with enhanced Bluetooth & USB
+
+Choose one trim:
+- 4MX Blue Gray Aluminum Trim
+- 4MY Carbon Leather Interior Trim
+- 4MZ Sycamore Anthracite Wood Trim`
+},
+{
+code:"ZP3",
+name:"Premium Package 3",
+price:2500,
+desc:`- Power folding auto mirrors
+- Universal garage door opener
+- Power front seats
+- Interior mirror with compass
+- BMW Assist with enhanced Bluetooth & USB
+
+Choose one trim:
+- 4MX Blue Gray Aluminum Trim
+- 4MY Carbon Leather Interior Trim
+- 4MZ Sycamore Anthracite Wood Trim`
+}
+],
+
+standaloneOptions:[
+{code:"223",name:"Dynamic Damper Control",price:1000,desc:"Adaptive damping control"},
+{code:"2MT",name:'19" Alloy Double Spoke Wheels',price:1250,desc:"Factory 19 inch wheel option"},
+{code:"4MX",name:"Blue Gray Aluminum Trim",price:500,desc:"Interior trim"},
+{code:"4MY",name:"Carbon Leather Interior Trim",price:500,desc:"Interior trim"},
+{code:"4MZ",name:"Sycamore Anthracite Wood Trim",price:500,desc:"Interior trim"},
+{code:"403",name:"Moonroof",price:1050,desc:"Power moonroof"},
+{code:"417",name:"Power Rear Sunshade",price:575,desc:"Power rear sunshade with manual side/rear shades"},
+{code:"465",name:"Split Fold Down Rear Seat",price:475,desc:"Folding rear seat"},
+{code:"494",name:"Heated Front Seats",price:500,desc:"Heated driver and passenger front seats"},
+{code:"302",name:"Alarm System",price:500,desc:"Anti theft alarm system"},
+{code:"507",name:"Rear Park Distance Control",price:380,desc:"Rear parking sensors"},
+{code:"5AC",name:"Automatic High Beams",price:250,desc:"Automatic high beam assistant"},
+{code:"609",name:"Navigation System",price:2100,desc:"Factory navigation"},
+{code:"6FL",name:"iPod & USB Adapter",price:400,desc:"USB audio interface"},
+{code:"639",name:"BMW Assist with Bluetooth",price:750,desc:"BMW Assist with Bluetooth"},
+{code:"6NF",name:"Smartphone Integration",price:150,desc:"Smartphone integration"},
+{code:"655",name:"Satellite Radio",price:350,desc:"Satellite radio prep/service hardware"},
+{code:"6NR",name:"BMW Apps",price:250,desc:"BMW Apps integration"},
+{code:"752",name:"Enhanced Premium Sound",price:1900,desc:"Enhanced premium audio system"},
+{code:"771",name:"Titanium Shadow Trim",price:0,desc:"Exterior shadowline style trim"},
+{code:"XE2",name:"Individual Fine Wood Trim Maple Anthracite",price:1080,desc:"BMW Individual interior trim"}
+]
+
+};
     const state={exterior:"300",interior:"NCSW",transmission:"6MT",packages:new Set(),options:new Set()};
     const $=id=>document.getElementById(id); const money=n=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}); const cleanNum=v=>Number(String(v).replace(/[$,\s]/g,""))||0; const findByCode=(list,code)=>list.find(item=>item.code===code);
     function renderOptionGrid(containerId,list,key){const container=$(containerId);container.innerHTML="";list.forEach(item=>{const div=document.createElement("div");div.className="option-card"+(state[key]===item.code?" active":"");div.innerHTML=`${item.hex?`<div class="swatch" style="--swatch:${item.hex}"></div>`:""}<div class="option-title">${item.code} · ${item.name}</div><div class="option-meta">${item.type||item.desc||""}</div><div class="option-meta price">${money(item.price)}</div>`;div.addEventListener("click",()=>{state[key]=item.code;renderAll()});container.appendChild(div)})}
     function renderChecks(containerId,list,setName){const container=$(containerId);container.innerHTML="";list.forEach(item=>{const checked=state[setName].has(item.code);const row=document.createElement("label");row.className="check-row";row.innerHTML=`<input type="checkbox" ${checked?"checked":""}/><div><div class="check-title">${item.code} · ${item.name}</div><div class="check-desc">${item.desc||""}</div></div><div class="price">${money(item.price)}</div>`;row.querySelector("input").addEventListener("change",e=>{if(e.target.checked)state[setName].add(item.code);else state[setName].delete(item.code);enforcePackageGroups(item.code,setName);renderAll()});container.appendChild(row)})}
-    function enforcePackageGroups(code,setName){if(setName!=="packages")return;const groups=[["ZP2","ZP2.1","ZP2.2","ZP2.3","ZP2.4"],["ZP3","ZP3.1","ZP3.2","ZP3.3","ZP3.4"]];groups.forEach(group=>{if(group.includes(code)&&state.packages.has(code))group.forEach(c=>{if(c!==code)state.packages.delete(c)})})}
+    function enforcePackageGroups(code,setName){
+      if(setName!=="packages")return;
+      const groups=[["ZP2"],["ZP3"]];
+      groups.forEach(group=>{
+        if(group.includes(code)&&state.packages.has(code)){
+          group.forEach(c=>{
+            if(c!==code)state.packages.delete(c)
+          })
+        }
+      })
+    }
     function selectedItems(){const exterior=findByCode(DATA.exteriorColors,state.exterior);const interior=findByCode(DATA.interiors,state.interior);const transmission=findByCode(DATA.transmissions,state.transmission);const packages=[...state.packages].map(code=>findByCode(DATA.packages,code)).filter(Boolean);const options=[...state.options].map(code=>findByCode(DATA.standaloneOptions,code)).filter(Boolean);return{exterior,interior,transmission,packages,options}}
     function calculate(){const base=cleanNum($("basePriceInput").value);const destination=cleanNum($("destinationInput").value);const gas=cleanNum($("gasInput").value);const{exterior,interior,transmission,packages,options}=selectedItems();const lineItems=[{code:"MSRP",name:"Base MSRP",price:base},{code:exterior.code,name:exterior.name,price:exterior.price},{code:interior.code,name:interior.name,price:interior.price},{code:transmission.code,name:transmission.name,price:transmission.price},...packages,...options,{code:"DEST",name:"Destination Charge",price:destination},{code:"GGT",name:"Gas Guzzler Tax",price:gas}].filter(item=>item&&(item.price!==0||["MSRP","DEST","GGT"].includes(item.code)));const total=lineItems.reduce((sum,item)=>sum+cleanNum(item.price),0);return{total,lineItems,base,destination,gas,...selectedItems()}}
     function compatibilityWarnings(){const warnings=[];if(state.packages.has("ZCP")&&state.options.has("223"))warnings.push("ZCP already includes Dynamic Damper Control, so standalone 223 may be duplicate.");if(state.packages.has("ZCV")){["302","507","609","6FL"].forEach(code=>{if(state.options.has(code))warnings.push(`ZCV may already include ${code}, so check for duplicate pricing.`)})}if(state.packages.has("ZCW")){["465","494"].forEach(code=>{if(state.options.has(code))warnings.push(`ZCW may already include ${code}, so check for duplicate pricing.`)})}const hasPremium=[...state.packages].some(c=>c.startsWith("ZP2")||c.startsWith("ZP3"));if(hasPremium){["4MY","639"].forEach(code=>{if(state.options.has(code))warnings.push(`Premium Package may already include ${code}, so check for duplicate pricing.`)})}const trims=["4MX","4MY","4MZ","771","XE2"].filter(code=>state.options.has(code));if(trims.length>1)warnings.push(`Multiple trim options selected (${trims.join(", ")}). Usually only one interior trim should be selected.`);return warnings}
