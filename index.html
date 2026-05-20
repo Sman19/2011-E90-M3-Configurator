@@ -1,166 +1,610 @@
-<!DOCTYPE html>
+from pathlib import Path
+import base64, mimetypes, textwrap, json, os, re
+
+def data_uri(path):
+    p = Path(path)
+    mime = mimetypes.guess_type(p.name)[0] or "image/jpeg"
+    return f"data:{mime};base64," + base64.b64encode(p.read_bytes()).decode("ascii")
+
+wheel_imgs = {}
+for key, path in {
+    "STD18": '/mnt/data/18" Standard.jpg',
+    "2MT": '/mnt/data/19" 2MT.jpg',
+    "ZCP": '/mnt/data/ZCP 19" 359M.webp',
+}.items():
+    if Path(path).exists():
+        wheel_imgs[key] = data_uri(path)
+    else:
+        wheel_imgs[key] = ""
+
+html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2011 BMW E90 M3 Sedan Configurator</title>
-  <style>
-    :root { --bg:#090b10; --panel:#121722; --text:#f4f7fb; --muted:#9ca8ba; --line:rgba(255,255,255,.12); --accent:#8fa8ff; --danger:#ff7b7b; --shadow:0 24px 80px rgba(0,0,0,.45); --radius:22px; }
-    *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:radial-gradient(circle at 20% 0%,rgba(94,120,255,.22),transparent 32%),radial-gradient(circle at 90% 10%,rgba(255,80,80,.10),transparent 26%),linear-gradient(180deg,#07090d 0%,#0d1119 100%);color:var(--text);min-height:100vh}
-    header{max-width:1380px;margin:0 auto;padding:34px 22px 18px;display:flex;justify-content:space-between;align-items:flex-end;gap:18px}.eyebrow{color:var(--accent);text-transform:uppercase;letter-spacing:.18em;font-weight:800;font-size:12px;margin-bottom:8px}h1{margin:0;font-size:clamp(34px,5vw,68px);line-height:.92;letter-spacing:-.06em}.subtitle{color:var(--muted);max-width:650px;line-height:1.55;margin:14px 0 0}.top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}button,select,input[type=text]{font:inherit}button{border:0;border-radius:999px;padding:12px 17px;color:white;background:rgba(255,255,255,.10);cursor:pointer;transition:transform .15s ease,background .15s ease;font-weight:800}button:hover{transform:translateY(-1px);background:rgba(255,255,255,.16)}button.primary{background:linear-gradient(135deg,#627cff,#9aaaff);color:#080b12}button.danger{background:rgba(255,123,123,.18);color:#ffd5d5}
-    main{max-width:1380px;margin:0 auto;padding:10px 22px 60px;display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:20px;align-items:start}.card{background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.035));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}.preview{min-height:580px;display:grid;grid-template-rows:auto 1fr auto}.preview-top{padding:20px;display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:1px solid var(--line)}.badge{border:1px solid var(--line);border-radius:999px;padding:7px 11px;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}.stage{position:relative;padding:28px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at center,rgba(255,255,255,.14),transparent 31%),linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.18))}.car-wrap{width:min(100%,760px);transform:translateY(10px)}.car-svg{width:100%;height:auto;filter:drop-shadow(0 42px 38px rgba(0,0,0,.58))}.paint-layer{fill:var(--paint,#f4f4ef);transition:fill .25s ease}.paint-dark{fill:color-mix(in srgb,var(--paint,#f4f4ef) 72%,black)}.glass{fill:rgba(21,31,45,.96)}.trim{fill:#0a0d12}.wheel{fill:#151922;stroke:#59616f;stroke-width:4}.rotor{fill:#bcc3cc}.caliper{fill:#d64242}.tire{fill:#050608}.shadow-oval{width:76%;height:34px;background:rgba(0,0,0,.44);filter:blur(14px);border-radius:50%;margin:-12px auto 0}.spec-strip{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:rgba(0,0,0,.16)}.spec{padding:15px 16px;border-right:1px solid var(--line)}.spec:last-child{border-right:0}.spec span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:900}.spec strong{display:block;margin-top:5px;font-size:18px}.config{display:grid;gap:18px}.section{padding:20px}.section h2{margin:0 0 14px;font-size:22px;letter-spacing:-.025em}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}.option-card{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:18px;padding:13px;cursor:pointer;min-height:98px;transition:transform .15s ease,border-color .15s ease,background .15s ease;position:relative}.option-card:hover{transform:translateY(-1px);background:rgba(255,255,255,.075)}.option-card.active{border-color:rgba(143,168,255,.9);box-shadow:0 0 0 3px rgba(143,168,255,.13) inset}.swatch{width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);margin-bottom:10px;background:var(--swatch)}.option-title{font-weight:900;line-height:1.2}.option-meta{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.35}.price{color:#dbe4ff;font-weight:900}.controls-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.field{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:18px;padding:13px}.field label{display:block;color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}.field select,.field input[type=text]{width:100%;border:0;border-radius:12px;padding:11px 12px;background:rgba(0,0,0,.25);color:white;outline:none}.check-list{display:grid;gap:10px}.check-row{display:grid;grid-template-columns:22px 1fr auto;gap:12px;align-items:start;border:1px solid var(--line);border-radius:17px;padding:13px;background:rgba(255,255,255,.045)}.check-row input{width:18px;height:18px;accent-color:#8fa8ff;margin-top:2px}.check-title{font-weight:900}.check-desc{color:var(--muted);margin-top:4px;font-size:13px;line-height:1.4;white-space:pre-line}.summary{position:sticky;top:18px;display:grid;gap:14px}.summary-card{padding:20px}.total{font-size:38px;font-weight:950;letter-spacing:-.045em;margin:4px 0 0}.line-item{display:grid;grid-template-columns:1fr auto;gap:12px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.14);color:#d8deeb;font-size:14px}.line-item:last-child{border-bottom:0}.line-item small{display:block;color:var(--muted);margin-top:2px}.compat{color:var(--danger);background:rgba(255,123,123,.12);border:1px solid rgba(255,123,123,.25);border-radius:14px;padding:12px;font-size:13px;line-height:1.45;display:none;margin-top:12px}.compat.show{display:block}textarea{width:100%;min-height:220px;resize:vertical;background:#06080d;color:#dbe4ff;border:1px solid var(--line);border-radius:16px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.45}.note{color:var(--muted);font-size:12px;line-height:1.45;margin-top:10px}@media(max-width:1060px){header{align-items:flex-start;flex-direction:column}main{grid-template-columns:1fr}.summary{position:relative;top:auto}}@media(max-width:680px){.spec-strip{grid-template-columns:repeat(2,1fr)}.spec:nth-child(2){border-right:0}.preview-top{flex-direction:column;align-items:flex-start}.top-actions{justify-content:flex-start}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2011 BMW E90 M3 Sedan Configurator</title>
+<style>
+:root {{
+  --bg:#05080d;
+  --panel:#0d131d;
+  --panel2:#111927;
+  --text:#f4f7fb;
+  --muted:#a9b2c0;
+  --line:rgba(255,255,255,.12);
+  --blue:#1f7bff;
+  --blue2:#0058d6;
+  --danger:#ff7b7b;
+  --paint:#f2f1ea;
+  --radius:14px;
+  --shadow:0 18px 55px rgba(0,0,0,.42);
+}}
+*{{box-sizing:border-box}}
+body{{
+  margin:0;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(34,123,255,.16), transparent 30%),
+    radial-gradient(circle at 90% 8%, rgba(60,100,170,.12), transparent 26%),
+    linear-gradient(180deg,#05080d,#070b12 55%,#05070b);
+  min-height:100vh;
+}}
+button,input,select{{font:inherit}}
+.header{{
+  max-width:1560px;
+  margin:0 auto;
+  padding:20px 16px 10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+}}
+.title h1{{margin:0;font-size:30px;line-height:1;letter-spacing:-.04em;text-transform:uppercase}}
+.title p{{margin:8px 0 0;color:var(--muted);font-size:18px}}
+.actions{{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}}
+.btn{{
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035));
+  color:var(--text);
+  padding:13px 22px;
+  border-radius:7px;
+  font-weight:850;
+  cursor:pointer;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+}}
+.btn.primary{{border-color:rgba(31,123,255,.7);background:linear-gradient(180deg,#2c86ff,#155fcf)}}
+.btn:hover{{filter:brightness(1.1)}}
+
+.layout{{
+  max-width:1560px;
+  margin:0 auto;
+  padding:12px 16px 42px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 405px;
+  gap:16px;
+}}
+.left{{display:grid;gap:10px}}
+.panel{{
+  background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.025));
+  border:1px solid var(--line);
+  border-radius:8px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}}
+.preview{{
+  min-height:438px;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  background:#d8d8d8;
+  color:#10151e;
+}}
+.preview-tools{{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 16px 0;
+  gap:12px;
+}}
+.view-tabs{{display:flex;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.08)}}
+.view-tab{{padding:12px 22px;border:0;border-right:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.30);font-weight:850;color:#1b2028}}
+.view-tab:last-child{{border-right:0}}
+.view-tab.active{{background:#0d1725;color:#dff0ff}}
+.theme-tabs{{display:flex;border-radius:7px;overflow:hidden;background:rgba(0,0,0,.25)}}
+.theme-tabs button{{border:0;background:rgba(0,0,0,.25);color:white;padding:11px 18px;font-size:18px}}
+.stage{{display:grid;place-items:center;padding:8px 24px 0;overflow:hidden}}
+.car-wrap{{width:min(100%,960px)}}
+.car-svg{{width:100%;height:auto;filter:drop-shadow(0 30px 25px rgba(0,0,0,.28))}}
+.paint-layer{{fill:var(--paint);transition:fill .2s ease}}
+.paint-dark{{fill:color-mix(in srgb,var(--paint) 72%,black)}}
+.glass{{fill:#1d2a35}}
+.trim{{fill:#080b0f}}
+.tire{{fill:#070707}}
+.wheel{{fill:#c7cbd1;stroke:#515861;stroke-width:4}}
+.rotor{{fill:#b8bec7}}
+.caliper{{fill:#ce2727}}
+.preview-caption{{text-align:center;padding:8px 16px 12px;color:#1d2430;font-size:14px}}
+
+.options-grid{{
+  display:grid;
+  grid-template-columns:1.12fr .72fr .72fr;
+  gap:8px;
+}}
+.section{{
+  padding:14px;
+  background:linear-gradient(180deg,rgba(15,24,37,.96),rgba(8,13,21,.96));
+  border:1px solid var(--line);
+  border-radius:8px;
+  box-shadow:0 12px 35px rgba(0,0,0,.25);
+}}
+.section.full{{grid-column:1/-1}}
+.section h2{{
+  margin:0 0 12px;
+  font-size:16px;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+}}
+.swatch-row{{display:grid;grid-template-columns:repeat(11,1fr);gap:10px}}
+.swatch-card{{border:0;background:transparent;color:var(--text);cursor:pointer;padding:0;text-align:center}}
+.swatch-box{{
+  width:100%;
+  aspect-ratio:1.16;
+  border-radius:7px;
+  border:1px solid rgba(255,255,255,.45);
+  background:var(--swatch);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.20);
+}}
+.swatch-card.active .swatch-box{{outline:3px solid var(--blue);outline-offset:2px}}
+.swatch-code{{display:block;margin-top:8px;font-size:14px;font-weight:850}}
+.swatch-name{{display:block;color:#c7d0df;font-size:12px;line-height:1.15;min-height:30px}}
+.swatch-price{{color:#5ca2ff;font-size:13px;font-weight:850}}
+
+.choice-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px}}
+.choice-card{{border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.045);padding:10px;color:var(--text);cursor:pointer;text-align:center;min-height:122px}}
+.choice-card.active{{border-color:var(--blue);box-shadow:0 0 0 2px rgba(31,123,255,.35)}}
+.material{{height:74px;border-radius:7px;background:var(--mat);border:1px solid rgba(255,255,255,.18);margin-bottom:8px}}
+.choice-code{{display:block;font-weight:900;color:#58a4ff}}
+.choice-name{{display:block;font-size:12px;line-height:1.2;color:#d5dae4}}
+.choice-price{{display:block;color:#e3e9f4;margin-top:4px}}
+
+.wheel-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}}
+.wheel-card{{border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.045);padding:10px;color:var(--text);cursor:pointer;text-align:center;min-height:170px}}
+.wheel-card.active{{border-color:var(--blue);box-shadow:0 0 0 2px rgba(31,123,255,.35)}}
+.wheel-card img{{width:100%;height:84px;object-fit:cover;border-radius:6px;margin-bottom:8px;background:#222}}
+.note{{color:var(--muted);font-size:12px;margin:8px 0 0;line-height:1.35}}
+
+.side{{display:grid;gap:12px;align-content:start;position:sticky;top:12px}}
+.summary-card{{padding:16px 18px;background:linear-gradient(180deg,rgba(17,27,42,.97),rgba(8,13,21,.97))}}
+.summary-card h2{{margin:4px 0 18px;font-size:18px;text-transform:uppercase}}
+.summary-line{{display:grid;grid-template-columns:1fr auto;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px}}
+.summary-line span{{color:#f0f4fb}}
+.summary-line small{{display:block;color:var(--muted);margin-top:2px;line-height:1.25}}
+.total-row{{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;padding:16px 0 8px;font-size:20px;font-weight:900;text-transform:uppercase}}
+.total-price{{font-size:30px;letter-spacing:-.04em}}
+.summary-btn{{width:100%;margin-top:8px;border:0;background:linear-gradient(180deg,#2c86ff,#155fcf);color:white;border-radius:7px;padding:14px;font-weight:900;cursor:pointer;text-transform:uppercase}}
+
+.check-list{{display:grid;gap:0}}
+.check-row{{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:start;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px}}
+.check-row input{{width:18px;height:18px;accent-color:var(--blue)}}
+.check-title{{font-weight:850}}
+.check-desc{{white-space:pre-line;color:var(--muted);font-size:12px;margin-top:5px;line-height:1.35}}
+.price{{color:#e2e8f2}}
+.more-btn{{width:100%;margin-top:12px;border:1px solid var(--line);background:rgba(255,255,255,.055);color:white;padding:11px;border-radius:6px;text-transform:uppercase;font-weight:850;cursor:pointer}}
+
+.drawer{{display:none;margin-top:12px}}
+.drawer.show{{display:block}}
+.compat{{display:none;margin:10px 0 0;padding:10px;border-radius:8px;border:1px solid rgba(255,123,123,.35);background:rgba(255,123,123,.12);color:#ffd4d4;font-size:12px;line-height:1.35}}
+.compat.show{{display:block}}
+textarea{{width:100%;min-height:185px;resize:vertical;background:#05080d;color:#d9e7ff;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.4}}
+
+@media(max-width:1180px){{
+  .layout{{grid-template-columns:1fr}}
+  .side{{position:relative;top:auto}}
+}}
+@media(max-width:760px){{
+  .header{{flex-direction:column}}
+  .options-grid{{grid-template-columns:1fr}}
+  .swatch-row{{grid-template-columns:repeat(3,1fr)}}
+  .wheel-grid{{grid-template-columns:1fr}}
+  .view-tabs{{display:none}}
+}}
+</style>
 </head>
 <body>
-  <header><div><div class="eyebrow">CARBOI-CREATIONS</div><h1>2011 E90 M3 Sedan Configurator</h1><p class="subtitle">Interactive U.S.-style configurator for the 2011 BMW M3 Sedan. Includes exterior/interior colors, transmission, packages, standalone options, destination, gas guzzler tax, and build-code output.</p></div><div class="top-actions"><button class="primary" id="copyBuildBtn">Copy Build JSON</button><button id="copySummaryBtn">Copy Summary</button><button class="danger" id="resetBtn">Reset</button></div></header>
-  <main>
-    <section class="config">
-      <div class="card preview"><div class="preview-top"><div><div class="badge" id="buildCodeBadge">E90 M3 CONFIG</div><h2 style="margin:8px 0 0;">Live Preview</h2></div><div class="badge">S65 V8 · Sedan</div></div><div class="stage"><div class="car-wrap"><svg class="car-svg" viewBox="0 0 900 330" role="img" aria-label="Stylized 2011 BMW E90 M3 Sedan side profile"><path class="paint-layer" d="M112 205 C135 159 181 132 250 122 L355 82 C392 67 457 63 526 75 L643 116 C720 123 775 150 807 196 L831 201 C852 205 865 220 864 239 L862 250 L803 250 C798 207 766 178 723 178 C679 178 647 207 642 250 L279 250 C274 207 242 178 198 178 C154 178 122 207 117 250 L78 250 C61 250 49 239 50 223 L52 215 C62 211 82 207 112 205 Z"/><path class="paint-dark" d="M132 198 C152 166 191 144 255 136 L364 98 C401 83 457 80 516 89 L625 126 C699 133 748 157 779 196 C633 184 360 178 132 198 Z" opacity=".32"/><path class="glass" d="M285 130 L374 96 C392 90 423 86 451 87 L451 135 Z"/><path class="glass" d="M462 88 C486 88 515 92 536 99 L614 130 L474 135 Z"/><path class="glass" d="M628 135 L685 151 C716 160 741 178 755 196 L644 184 Z"/><path class="trim" d="M266 143 L632 143 L635 151 L254 151 Z" opacity=".7"/><path class="trim" d="M76 223 C227 211 642 211 861 226 L861 250 L803 250 C798 207 766 178 723 178 C679 178 647 207 642 250 L279 250 C274 207 242 178 198 178 C154 178 122 207 117 250 L78 250 C61 250 49 239 50 223 Z" opacity=".22"/><rect class="trim" x="128" y="206" width="84" height="12" rx="6" opacity=".55"/><rect class="trim" x="374" y="162" width="36" height="8" rx="4" opacity=".8"/><rect class="trim" x="559" y="163" width="36" height="8" rx="4" opacity=".8"/><path class="trim" d="M790 199 L847 208 C857 211 862 220 861 229 L792 220 Z" opacity=".7"/><g transform="translate(198 250)"><circle class="tire" r="63"/><circle class="wheel" r="43"/><circle class="rotor" r="25"/><circle class="trim" r="8"/><path class="caliper" d="M25 -13 C43 -2 43 17 25 26 L18 14 C26 7 27 -2 18 -9 Z"/></g><g transform="translate(723 250)"><circle class="tire" r="63"/><circle class="wheel" r="43"/><circle class="rotor" r="25"/><circle class="trim" r="8"/><path class="caliper" d="M25 -13 C43 -2 43 17 25 26 L18 14 C26 7 27 -2 18 -9 Z"/></g></svg><div class="shadow-oval"></div></div></div><div class="spec-strip"><div class="spec"><span>Exterior</span><strong id="specExterior">Alpine White</strong></div><div class="spec"><span>Interior</span><strong id="specInterior">Black Novillo</strong></div><div class="spec"><span>Transmission</span><strong id="specTrans">6MT</strong></div><div class="spec"><span>MSRP</span><strong id="specMsrp">$57,575</strong></div></div></div>
-      <div class="card section"><h2>Model & Pricing Settings</h2><div class="controls-row"><div class="field"><label for="basePriceInput">Base MSRP</label><input id="basePriceInput" type="text" value="55400" /></div><div class="field"><label for="destinationInput">Destination Charge</label><input id="destinationInput" type="text" value="875" /></div><div class="field"><label for="gasInput">Gas Guzzler Tax</label><input id="gasInput" type="text" value="1300" /></div><div class="field"><label for="baseMode">Base MSRP Preset</label><select id="baseMode"><option value="55400">MSRP.1 / 6MT - $55,400</option><option value="55900">MSRP - $55,900</option></select></div></div><p class="note">This starts from your sheet values. Total = Base MSRP + selected paint/packages/options + destination + gas guzzler tax.</p></div>
-      <div class="card section"><h2>Exterior Colors</h2><div class="grid" id="exteriorGrid"></div></div><div class="card section"><h2>Interior Upholstery</h2><div class="grid" id="interiorGrid"></div></div><div class="card section"><h2>Transmission</h2><div class="grid" id="transmissionGrid"></div></div><div class="card section"><h2>Packages</h2><div class="check-list" id="packageList"></div></div><div class="card section"><h2>Standalone Options</h2><div class="check-list" id="optionList"></div></div>
-    </section>
-    <aside class="summary"><div class="card summary-card"><div class="badge">Total Suggested Retail Price</div><div class="total" id="totalPrice">$57,575</div><div class="compat" id="compatBox"></div><div id="lineItems" style="margin-top:14px;"></div></div><div class="card summary-card"><h2 style="margin-top:0;">Build Output</h2><textarea id="buildOutput" readonly></textarea><p class="note">Use this JSON for your VIN/database project, sticker generator, or package-code mapper.</p></div></aside>
-  </main>
-  <script>
-    const DATA={
+<header class="header">
+  <div class="title">
+    <h1>2011 BMW E90 M3 Sedan Configurator</h1>
+    <p>Build your ultimate driving machine.</p>
+  </div>
+  <div class="actions">
+    <button class="btn" id="resetBtn">Reset Build</button>
+    <button class="btn" id="copyBuildBtn">Save Build</button>
+    <button class="btn primary" id="copySummaryBtn">View Summary</button>
+  </div>
+</header>
 
-exteriorColors:[
-{code:"300",name:"Alpine White",price:0,hex:"#f2f1ea",type:"Non-metallic"},
-{code:"668",name:"Jet Black",price:0,hex:"#050505",type:"Non-metallic"},
-{code:"A29",name:"Silverstone Metallic II",price:550,hex:"#bfc8cf",type:"Metallic"},
-{code:"A30",name:"Interlagos Blue Metallic",price:550,hex:"#263d87",type:"Metallic"},
-{code:"A52",name:"Space Gray Metallic",price:550,hex:"#63686c",type:"Metallic"},
-{code:"A73",name:"Jerez Black Metallic",price:550,hex:"#10131d",type:"Metallic"},
-{code:"A75",name:"Melbourne Red Metallic",price:550,hex:"#a20d16",type:"Metallic"},
-{code:"A76",name:"Deep Sea Blue Metallic",price:550,hex:"#182d4f",type:"Metallic"},
-{code:"A96",name:"Mineral White Metallic",price:550,hex:"#f1eee5",type:"Metallic"},
-{code:"B05",name:"Le Mans Blue Metallic",price:550,hex:"#143f8f",type:"Metallic"},
-{code:"IND",name:"BMW Individual Paint",price:5000,hex:"linear-gradient(135deg,#6b2cff,#00c2ff,#f5d76e,#ff4d4d)",type:"Individual / Custom"}
-],
+<main class="layout">
+  <section class="left">
+    <div class="preview panel">
+      <div class="preview-tools">
+        <div class="view-tabs">
+          <button class="view-tab active">🚙 Side View</button>
+          <button class="view-tab">🚘 Front View</button>
+          <button class="view-tab">🚘 Rear View</button>
+        </div>
+        <div class="theme-tabs"><button>☼</button><button>☾</button></div>
+      </div>
+      <div class="stage">
+        <div class="car-wrap">
+          <svg class="car-svg" viewBox="0 0 900 330" role="img" aria-label="Stylized 2011 BMW E90 M3 Sedan side profile">
+            <path class="paint-layer" d="M112 205 C135 159 181 132 250 122 L355 82 C392 67 457 63 526 75 L643 116 C720 123 775 150 807 196 L831 201 C852 205 865 220 864 239 L862 250 L803 250 C798 207 766 178 723 178 C679 178 647 207 642 250 L279 250 C274 207 242 178 198 178 C154 178 122 207 117 250 L78 250 C61 250 49 239 50 223 L52 215 C62 211 82 207 112 205 Z"/>
+            <path class="paint-dark" d="M132 198 C152 166 191 144 255 136 L364 98 C401 83 457 80 516 89 L625 126 C699 133 748 157 779 196 C633 184 360 178 132 198 Z" opacity=".32"/>
+            <path class="glass" d="M285 130 L374 96 C392 90 423 86 451 87 L451 135 Z"/>
+            <path class="glass" d="M462 88 C486 88 515 92 536 99 L614 130 L474 135 Z"/>
+            <path class="glass" d="M628 135 L685 151 C716 160 741 178 755 196 L644 184 Z"/>
+            <path class="trim" d="M266 143 L632 143 L635 151 L254 151 Z" opacity=".7"/>
+            <path class="trim" d="M76 223 C227 211 642 211 861 226 L861 250 L803 250 C798 207 766 178 723 178 C679 178 647 207 642 250 L279 250 C274 207 242 178 198 178 C154 178 122 207 117 250 L78 250 C61 250 49 239 50 223 Z" opacity=".22"/>
+            <rect class="trim" x="128" y="206" width="84" height="12" rx="6" opacity=".55"/>
+            <rect class="trim" x="374" y="162" width="36" height="8" rx="4" opacity=".8"/>
+            <rect class="trim" x="559" y="163" width="36" height="8" rx="4" opacity=".8"/>
+            <path class="trim" d="M790 199 L847 208 C857 211 862 220 861 229 L792 220 Z" opacity=".7"/>
+            <g transform="translate(198 250)"><circle class="tire" r="63"/><circle class="wheel" r="43"/><circle class="rotor" r="25"/><circle class="trim" r="8"/><path class="caliper" d="M25 -13 C43 -2 43 17 25 26 L18 14 C26 7 27 -2 18 -9 Z"/></g>
+            <g transform="translate(723 250)"><circle class="tire" r="63"/><circle class="wheel" r="43"/><circle class="rotor" r="25"/><circle class="trim" r="8"/><path class="caliper" d="M25 -13 C43 -2 43 17 25 26 L18 14 C26 7 27 -2 18 -9 Z"/></g>
+          </svg>
+        </div>
+      </div>
+      <div class="preview-caption" id="previewCaption">Shown with 18 inch Style 260M Wheels (Standard)</div>
+    </div>
 
-interiors:[
-{code:"NCSW",name:"Black Novillo Leather",price:0,hex:"#111111"},
-{code:"NCH1",name:"Silver Novillo Leather",price:0,hex:"#c8c3ba"},
-{code:"NCH2",name:"Fox Red Novillo Leather",price:0,hex:"#8f1f1f"},
-{code:"NCND",name:"Bamboo Beige Novillo Leather",price:0,hex:"#c5aa7f"},
-{code:"NDH2",name:"Fox Red Extended Novillo Leather",price:0,hex:"#a72828"},
-{code:"NDH1",name:"Silver Extended Novillo Leather",price:0,hex:"#d0ccc5"},
-{code:"NDSW",name:"Black Extended Novillo Leather",price:0,hex:"#090909"},
-{code:"NDND",name:"Bamboo Beige Extended Novillo Leather",price:0,hex:"#d0b88d"}
-],
+    <div class="section full">
+      <h2>1. Exterior Color <span id="indPriceLabel" style="float:right;color:#58a4ff;font-size:13px;font-weight:700"></span></h2>
+      <div class="swatch-row" id="exteriorGrid"></div>
+    </div>
 
-transmissions:[
-{code:"6MT",name:"6-Speed Manual",price:0,desc:"Standard manual transmission"},
-{code:"2MK",name:"M Double-Clutch Transmission",price:2900,desc:"M DCT with Drivelogic"}
-],
+    <div class="options-grid">
+      <div class="section">
+        <h2>2. Interior</h2>
+        <div class="choice-grid" id="interiorGrid"></div>
+      </div>
+      <div class="section">
+        <h2>3. Transmission</h2>
+        <div class="choice-grid" id="transmissionGrid"></div>
+      </div>
+      <div class="section">
+        <h2>4. Wheel Option</h2>
+        <div class="wheel-grid" id="wheelGrid"></div>
+        <p class="note">Wheels shown are representative using your uploaded reference images.</p>
+      </div>
+    </div>
+  </section>
 
-packages:[
-{
-code:"ZCP",
-name:"Competition Package",
-price:2500,
-desc:`- Dynamic Damper Control`
-},
-{
-code:"ZCV",
-name:"Convenience Package",
-price:2900,
-desc:`- Anti theft alarm system
-- Comfort Access keyless entry
-- Park Distance Control (rear)
-- Navigation System
-- Voice Command
-- iPod & USB adapter
-- Real Time Traffic Information`
-},
-{
-code:"ZCW",
-name:"Cold Weather Package",
-price:1000,
-desc:`- Split fold down rear seat
-- Heated front seats
-- Retractable headlight washers`
-},
-{
-code:"ZP2",
-name:"Premium Package 2",
-price:2500,
-desc:`- Power folding auto mirrors
-- Universal garage door opener
-- Power front seats
-- Interior mirror with compass
-- BMW Assist with enhanced Bluetooth & USB
+  <aside class="side">
+    <div class="panel summary-card">
+      <h2>Build Summary</h2>
+      <div id="summaryLines"></div>
+      <div class="compat" id="compatBox"></div>
+      <div class="total-row"><span>Total</span><span class="total-price" id="totalPrice">$0</span></div>
+      <button class="summary-btn" id="copySummaryBtn2">View Detailed Summary ›</button>
+    </div>
 
-Choose one trim:
-- 4MX Blue Gray Aluminum Trim
-- 4MY Carbon Leather Interior Trim
-- 4MZ Sycamore Anthracite Wood Trim`
-},
-{
-code:"ZP3",
-name:"Premium Package 3",
-price:2500,
-desc:`- Power folding auto mirrors
-- Universal garage door opener
-- Power front seats
-- Interior mirror with compass
-- BMW Assist with enhanced Bluetooth & USB
+    <div class="panel summary-card">
+      <h2>Packages</h2>
+      <div class="check-list" id="packageList"></div>
+      <button class="more-btn" id="toggleOptionsBtn">View All Options</button>
+      <div class="drawer" id="optionsDrawer">
+        <div class="check-list" id="optionList"></div>
+      </div>
+    </div>
 
-Choose one trim:
-- 4MX Blue Gray Aluminum Trim
-- 4MY Carbon Leather Interior Trim
-- 4MZ Sycamore Anthracite Wood Trim`
-}
-],
+    <div class="panel summary-card">
+      <h2>Build Output</h2>
+      <textarea id="buildOutput" readonly></textarea>
+    </div>
+  </aside>
+</main>
 
-standaloneOptions:[
-{code:"223",name:"Dynamic Damper Control",price:1000,desc:"Adaptive damping control"},
-{code:"2MT",name:'19" Alloy Double Spoke Wheels',price:1250,desc:"Factory 19 inch wheel option"},
-{code:"4MX",name:"Blue Gray Aluminum Trim",price:500,desc:"Interior trim"},
-{code:"4MY",name:"Carbon Leather Interior Trim",price:500,desc:"Interior trim"},
-{code:"4MZ",name:"Sycamore Anthracite Wood Trim",price:500,desc:"Interior trim"},
-{code:"403",name:"Moonroof",price:1050,desc:"Power moonroof"},
-{code:"417",name:"Power Rear Sunshade",price:575,desc:"Power rear sunshade with manual side/rear shades"},
-{code:"465",name:"Split Fold Down Rear Seat",price:475,desc:"Folding rear seat"},
-{code:"494",name:"Heated Front Seats",price:500,desc:"Heated driver and passenger front seats"},
-{code:"302",name:"Alarm System",price:500,desc:"Anti theft alarm system"},
-{code:"507",name:"Rear Park Distance Control",price:380,desc:"Rear parking sensors"},
-{code:"5AC",name:"Automatic High Beams",price:250,desc:"Automatic high beam assistant"},
-{code:"609",name:"Navigation System",price:2100,desc:"Factory navigation"},
-{code:"6FL",name:"iPod & USB Adapter",price:400,desc:"USB audio interface"},
-{code:"639",name:"BMW Assist with Bluetooth",price:750,desc:"BMW Assist with Bluetooth"},
-{code:"6NF",name:"Smartphone Integration",price:150,desc:"Smartphone integration"},
-{code:"655",name:"Satellite Radio",price:350,desc:"Satellite radio prep/service hardware"},
-{code:"6NR",name:"BMW Apps",price:250,desc:"BMW Apps integration"},
-{code:"752",name:"Enhanced Premium Sound",price:1900,desc:"Enhanced premium audio system"},
-{code:"771",name:"Titanium Shadow Trim",price:0,desc:"Exterior shadowline style trim"},
-{code:"XE2",name:"Individual Fine Wood Trim Maple Anthracite",price:1080,desc:"BMW Individual interior trim"}
-]
+<script>
+const WHEEL_IMAGES={{
+  STD18:{json.dumps(wheel_imgs["STD18"])},
+  "2MT":{json.dumps(wheel_imgs["2MT"])},
+  ZCP:{json.dumps(wheel_imgs["ZCP"])}
+}};
 
-};
-    const state={exterior:"300",interior:"NCSW",transmission:"6MT",packages:new Set(),options:new Set()};
-    const $=id=>document.getElementById(id); const money=n=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}); const cleanNum=v=>Number(String(v).replace(/[$,\s]/g,""))||0; const findByCode=(list,code)=>list.find(item=>item.code===code);
-    function renderOptionGrid(containerId,list,key){const container=$(containerId);container.innerHTML="";list.forEach(item=>{const div=document.createElement("div");div.className="option-card"+(state[key]===item.code?" active":"");div.innerHTML=`${item.hex?`<div class="swatch" style="--swatch:${item.hex}"></div>`:""}<div class="option-title">${item.code} · ${item.name}</div><div class="option-meta">${item.type||item.desc||""}</div><div class="option-meta price">${money(item.price)}</div>`;div.addEventListener("click",()=>{state[key]=item.code;renderAll()});container.appendChild(div)})}
-    function renderChecks(containerId,list,setName){const container=$(containerId);container.innerHTML="";list.forEach(item=>{const checked=state[setName].has(item.code);const row=document.createElement("label");row.className="check-row";row.innerHTML=`<input type="checkbox" ${checked?"checked":""}/><div><div class="check-title">${item.code} · ${item.name}</div><div class="check-desc">${item.desc||""}</div></div><div class="price">${money(item.price)}</div>`;row.querySelector("input").addEventListener("change",e=>{if(e.target.checked)state[setName].add(item.code);else state[setName].delete(item.code);enforcePackageGroups(item.code,setName);renderAll()});container.appendChild(row)})}
-    function enforcePackageGroups(code,setName){
-      if(setName!=="packages")return;
-      const groups=[["ZP2"],["ZP3"]];
-      groups.forEach(group=>{
-        if(group.includes(code)&&state.packages.has(code)){
-          group.forEach(c=>{
-            if(c!==code)state.packages.delete(c)
-          })
-        }
-      })
-    }
-    function selectedItems(){const exterior=findByCode(DATA.exteriorColors,state.exterior);const interior=findByCode(DATA.interiors,state.interior);const transmission=findByCode(DATA.transmissions,state.transmission);const packages=[...state.packages].map(code=>findByCode(DATA.packages,code)).filter(Boolean);const options=[...state.options].map(code=>findByCode(DATA.standaloneOptions,code)).filter(Boolean);return{exterior,interior,transmission,packages,options}}
-    function calculate(){const base=cleanNum($("basePriceInput").value);const destination=cleanNum($("destinationInput").value);const gas=cleanNum($("gasInput").value);const{exterior,interior,transmission,packages,options}=selectedItems();const lineItems=[{code:"MSRP",name:"Base MSRP",price:base},{code:exterior.code,name:exterior.name,price:exterior.price},{code:interior.code,name:interior.name,price:interior.price},{code:transmission.code,name:transmission.name,price:transmission.price},...packages,...options,{code:"DEST",name:"Destination Charge",price:destination},{code:"GGT",name:"Gas Guzzler Tax",price:gas}].filter(item=>item&&(item.price!==0||["MSRP","DEST","GGT"].includes(item.code)));const total=lineItems.reduce((sum,item)=>sum+cleanNum(item.price),0);return{total,lineItems,base,destination,gas,...selectedItems()}}
-    function compatibilityWarnings(){const warnings=[];if(state.packages.has("ZCP")&&state.options.has("223"))warnings.push("ZCP already includes Dynamic Damper Control, so standalone 223 may be duplicate.");if(state.packages.has("ZCV")){["302","507","609","6FL"].forEach(code=>{if(state.options.has(code))warnings.push(`ZCV may already include ${code}, so check for duplicate pricing.`)})}if(state.packages.has("ZCW")){["465","494"].forEach(code=>{if(state.options.has(code))warnings.push(`ZCW may already include ${code}, so check for duplicate pricing.`)})}const hasPremium=[...state.packages].some(c=>c.startsWith("ZP2")||c.startsWith("ZP3"));if(hasPremium){["4MY","639"].forEach(code=>{if(state.options.has(code))warnings.push(`Premium Package may already include ${code}, so check for duplicate pricing.`)})}const trims=["4MX","4MY","4MZ","771","XE2"].filter(code=>state.options.has(code));if(trims.length>1)warnings.push(`Multiple trim options selected (${trims.join(", ")}). Usually only one interior trim should be selected.`);return warnings}
-    function buildOutput(){const c=calculate();return{model:"2011 BMW M3 Sedan (E90)",baseMSRP:c.base,destinationCharge:c.destination,gasGuzzlerTax:c.gas,exterior:c.exterior,interior:c.interior,transmission:c.transmission,packages:c.packages,standaloneOptions:c.options,selectedCodes:[c.exterior.code,c.interior.code,c.transmission.code,...c.packages.map(p=>p.code),...c.options.map(o=>o.code),"DEST","GGT"],totalMSRP:c.total}}
-    function plainSummary(){const out=buildOutput();return`${out.model}\nExterior: ${out.exterior.code} ${out.exterior.name}\nInterior: ${out.interior.code} ${out.interior.name}\nTransmission: ${out.transmission.code} ${out.transmission.name}\nPackages/Options: ${out.selectedCodes.join(", ")}\nTotal MSRP: ${money(out.totalMSRP)}`}
-    function renderSummary(){const c=calculate();$("totalPrice").textContent=money(c.total);$("specMsrp").textContent=money(c.total);$("specExterior").textContent=c.exterior.name;$("specInterior").textContent=c.interior.name.replace(" Novillo Leather","");$("specTrans").textContent=c.transmission.code;$("buildCodeBadge").textContent=[c.exterior.code,c.interior.code,c.transmission.code].join(" · ");document.documentElement.style.setProperty("--paint",c.exterior.hex.startsWith("linear")?"#8fa8ff":c.exterior.hex);$("lineItems").innerHTML=c.lineItems.map(item=>`<div class="line-item"><div>${item.code} · ${item.name}<small>${item.desc?item.desc.split("\n")[0].replace("- ",""):""}</small></div><strong>${money(item.price)}</strong></div>`).join("");const warnings=compatibilityWarnings();const box=$("compatBox");box.className="compat"+(warnings.length?" show":"");box.innerHTML=warnings.length?`<strong>Check duplicates:</strong><br>${warnings.join("<br>")}`:"";$("buildOutput").value=JSON.stringify(buildOutput(),null,2)}
-    function renderAll(){renderOptionGrid("exteriorGrid",DATA.exteriorColors,"exterior");renderOptionGrid("interiorGrid",DATA.interiors,"interior");renderOptionGrid("transmissionGrid",DATA.transmissions,"transmission");renderChecks("packageList",DATA.packages,"packages");renderChecks("optionList",DATA.standaloneOptions,"options");renderSummary()}
-    ["basePriceInput","destinationInput","gasInput"].forEach(id=>$(id).addEventListener("input",renderSummary));$("baseMode").addEventListener("change",e=>{$("basePriceInput").value=e.target.value;renderSummary()});$("copyBuildBtn").addEventListener("click",async()=>{await navigator.clipboard.writeText($("buildOutput").value);$("copyBuildBtn").textContent="Copied";setTimeout(()=>$("copyBuildBtn").textContent="Copy Build JSON",1000)});$("copySummaryBtn").addEventListener("click",async()=>{await navigator.clipboard.writeText(plainSummary());$("copySummaryBtn").textContent="Copied";setTimeout(()=>$("copySummaryBtn").textContent="Copy Summary",1000)});$("resetBtn").addEventListener("click",()=>{state.exterior="300";state.interior="NCSW";state.transmission="6MT";state.packages.clear();state.options.clear();$("baseMode").value="55400";$("basePriceInput").value="55400";$("destinationInput").value="875";$("gasInput").value="1300";renderAll()});renderAll();
-  </script>
+const DATA={{
+  exteriorColors:[
+    {{code:"300",name:"Alpine White",price:0,hex:"#f2f1ea",type:"Non-metallic"}},
+    {{code:"668",name:"Jet Black",price:0,hex:"#050505",type:"Non-metallic"}},
+    {{code:"A29",name:"Silverstone Metallic II",price:550,hex:"#bfc8cf",type:"Metallic"}},
+    {{code:"A30",name:"Interlagos Blue Metallic",price:550,hex:"#263d87",type:"Metallic"}},
+    {{code:"A52",name:"Space Gray Metallic",price:550,hex:"#63686c",type:"Metallic"}},
+    {{code:"A73",name:"Jerez Black Metallic",price:550,hex:"#10131d",type:"Metallic"}},
+    {{code:"A75",name:"Melbourne Red Metallic",price:550,hex:"#a20d16",type:"Metallic"}},
+    {{code:"A76",name:"Deep Sea Blue Metallic",price:550,hex:"#182d4f",type:"Metallic"}},
+    {{code:"A96",name:"Mineral White Metallic",price:550,hex:"#f1eee5",type:"Metallic"}},
+    {{code:"B05",name:"Le Mans Blue Metallic",price:550,hex:"#143f8f",type:"Metallic"}},
+    {{code:"IND",name:"BMW Individual Paint",price:5000,hex:"linear-gradient(135deg,#6b2cff,#00c2ff,#f5d76e,#ff4d4d)",paintHex:"#8fa8ff",type:"Individual / Custom"}}
+  ],
+  interiors:[
+    {{code:"NCSW",name:"Black Novillo Leather",price:0,hex:"#111111"}},
+    {{code:"NCH1",name:"Silver Novillo Leather",price:0,hex:"#c8c3ba"}},
+    {{code:"NCH2",name:"Fox Red Novillo Leather",price:0,hex:"#8f1f1f"}},
+    {{code:"NCND",name:"Bamboo Beige Novillo Leather",price:0,hex:"#c5aa7f"}},
+    {{code:"NDH2",name:"Fox Red Extended Novillo Leather",price:0,hex:"#a72828"}},
+    {{code:"NDH1",name:"Silver Extended Novillo Leather",price:0,hex:"#d0ccc5"}},
+    {{code:"NDSW",name:"Black Extended Novillo Leather",price:0,hex:"#090909"}},
+    {{code:"NDND",name:"Bamboo Beige Extended Novillo Leather",price:0,hex:"#d0b88d"}}
+  ],
+  transmissions:[
+    {{code:"6MT",name:"6-Speed Manual",price:0,desc:"Standard manual transmission"}},
+    {{code:"2MK",name:"M Double-Clutch Transmission",price:2900,desc:"M DCT with Drivelogic"}}
+  ],
+  wheels:[
+    {{code:"STD18",name:"18 inch Style 260M",price:0,desc:"Standard",image:WHEEL_IMAGES.STD18}},
+    {{code:"2MT",name:"19 inch Style 220M",price:1250,desc:"Option Code 2MT",image:WHEEL_IMAGES["2MT"]}},
+    {{code:"ZCP",name:"19 inch Style 359M",price:0,desc:"Included with ZCP",image:WHEEL_IMAGES.ZCP}}
+  ],
+  packages:[
+    {{code:"ZCP",name:"Competition Package",price:2500,desc:"- Dynamic Damper Control\\n- 19 inch Style 359M wheels"}},
+    {{code:"ZCV",name:"Convenience Package",price:2900,desc:"- Anti theft alarm system\\n- Comfort Access keyless entry\\n- Park Distance Control (rear)\\n- Navigation System\\n- Voice Command\\n- iPod & USB adapter\\n- Real Time Traffic Information"}},
+    {{code:"ZCW",name:"Cold Weather Package",price:1000,desc:"- Split fold down rear seat\\n- Heated front seats\\n- Retractable headlight washers"}},
+    {{code:"ZP2",name:"Premium Package 2",price:2500,desc:"- Power folding auto mirrors\\n- Universal garage door opener\\n- Power front seats\\n- Interior mirror with compass\\n- BMW Assist with enhanced Bluetooth & USB\\n\\nChoose one trim:\\n- 4MX Blue Gray Aluminum Trim\\n- 4MY Carbon Leather Interior Trim\\n- 4MZ Sycamore Anthracite Wood Trim"}},
+    {{code:"ZP3",name:"Premium Package 3",price:2500,desc:"- Power folding auto mirrors\\n- Universal garage door opener\\n- Power front seats\\n- Interior mirror with compass\\n- BMW Assist with enhanced Bluetooth & USB\\n\\nChoose one trim:\\n- 4MX Blue Gray Aluminum Trim\\n- 4MY Carbon Leather Interior Trim\\n- 4MZ Sycamore Anthracite Wood Trim"}}
+  ],
+  standaloneOptions:[
+    {{code:"223",name:"Dynamic Damper Control",price:1000,desc:"Adaptive damping control"}},
+    {{code:"4MX",name:"Blue Gray Aluminum Trim",price:500,desc:"Interior trim"}},
+    {{code:"4MY",name:"Carbon Leather Interior Trim",price:500,desc:"Interior trim"}},
+    {{code:"4MZ",name:"Sycamore Anthracite Wood Trim",price:500,desc:"Interior trim"}},
+    {{code:"403",name:"Moonroof",price:1050,desc:"Power moonroof"}},
+    {{code:"417",name:"Power Rear Sunshade",price:575,desc:"Power rear sunshade with manual side/rear shades"}},
+    {{code:"465",name:"Split Fold Down Rear Seat",price:475,desc:"Folding rear seat"}},
+    {{code:"494",name:"Heated Front Seats",price:500,desc:"Heated driver and passenger front seats"}},
+    {{code:"302",name:"Alarm System",price:500,desc:"Anti theft alarm system"}},
+    {{code:"507",name:"Rear Park Distance Control",price:380,desc:"Rear parking sensors"}},
+    {{code:"5AC",name:"Automatic High Beams",price:250,desc:"Automatic high beam assistant"}},
+    {{code:"609",name:"Navigation System",price:2100,desc:"Factory navigation"}},
+    {{code:"6FL",name:"iPod & USB Adapter",price:400,desc:"USB audio interface"}},
+    {{code:"639",name:"BMW Assist with Bluetooth",price:750,desc:"BMW Assist with Bluetooth"}},
+    {{code:"6NF",name:"Smartphone Integration",price:150,desc:"Smartphone integration"}},
+    {{code:"655",name:"Satellite Radio",price:350,desc:"Satellite radio prep/service hardware"}},
+    {{code:"6NR",name:"BMW Apps",price:250,desc:"BMW Apps integration"}},
+    {{code:"752",name:"Enhanced Premium Sound",price:1900,desc:"Enhanced premium audio system"}},
+    {{code:"771",name:"Titanium Shadow Trim",price:0,desc:"Exterior shadowline style trim"}},
+    {{code:"XE2",name:"Individual Fine Wood Trim Maple Anthracite",price:1080,desc:"BMW Individual interior trim"}}
+  ]
+}};
+
+const state={{
+  exterior:"300",
+  interior:"NCSW",
+  transmission:"6MT",
+  wheel:"STD18",
+  packages:new Set(),
+  options:new Set()
+}};
+
+const $=id=>document.getElementById(id);
+const money=n=>Number(n||0).toLocaleString("en-US",{{style:"currency",currency:"USD",maximumFractionDigits:0}});
+const cleanNum=v=>Number(String(v).replace(/[$,\\s]/g,""))||0;
+const findByCode=(list,code)=>list.find(item=>item.code===code);
+
+function selectedItems(){{
+  const exterior=findByCode(DATA.exteriorColors,state.exterior);
+  const interior=findByCode(DATA.interiors,state.interior);
+  const transmission=findByCode(DATA.transmissions,state.transmission);
+  const wheel=findByCode(DATA.wheels,state.wheel);
+  const packages=[...state.packages].map(code=>findByCode(DATA.packages,code)).filter(Boolean);
+  const options=[...state.options].map(code=>findByCode(DATA.standaloneOptions,code)).filter(Boolean);
+  return {{exterior,interior,transmission,wheel,packages,options}};
+}}
+
+function setWheel(code){{
+  state.wheel=code;
+  if(code==="2MT"){{
+    state.packages.delete("ZCP");
+  }}
+  if(code==="ZCP"){{
+    state.packages.add("ZCP");
+  }}
+  if(code==="STD18"){{
+    state.packages.delete("ZCP");
+  }}
+  renderAll();
+}}
+
+function calculate(){{
+  const base=cleanNum($("basePriceInput")?.value || "55400");
+  const destination=cleanNum($("destinationInput")?.value || "875");
+  const gas=cleanNum($("gasInput")?.value || "1300");
+  const s=selectedItems();
+  const wheelCharge=s.wheel.code==="2MT" ? {{code:"2MT",name:s.wheel.name,price:s.wheel.price,desc:s.wheel.desc}} : null;
+  const lineItems=[
+    {{code:"MSRP",name:"Base Vehicle",price:base,desc:"2011 BMW E90 M3 Sedan"}},
+    {{code:s.exterior.code,name:s.exterior.name,price:s.exterior.price,desc:"Exterior Color"}},
+    {{code:s.interior.code,name:s.interior.name,price:s.interior.price,desc:"Interior"}},
+    {{code:s.transmission.code,name:s.transmission.name,price:s.transmission.price,desc:"Transmission"}},
+    wheelCharge,
+    ...s.packages,
+    ...s.options,
+    {{code:"DEST",name:"Destination & Handling",price:destination,desc:""}},
+    {{code:"GGT",name:"Gas Guzzler Tax",price:gas,desc:""}}
+  ].filter(Boolean).filter(item=>item.price!==0 || ["MSRP","DEST","GGT"].includes(item.code));
+  const total=lineItems.reduce((sum,item)=>sum+cleanNum(item.price),0);
+  return {{...s,base,destination,gas,lineItems,total}};
+}}
+
+function renderExterior(){{
+  const wrap=$("exteriorGrid");
+  wrap.innerHTML="";
+  DATA.exteriorColors.forEach(item=>{{
+    const btn=document.createElement("button");
+    btn.className="swatch-card"+(state.exterior===item.code?" active":"");
+    btn.innerHTML=`<div class="swatch-box" style="--swatch:${{item.hex}}"></div>
+      <span class="swatch-code">${{item.code}}</span>
+      <span class="swatch-name">${{item.name}}</span>
+      <span class="swatch-price">${{item.price?money(item.price):""}}</span>`;
+    btn.onclick=()=>{{state.exterior=item.code;renderAll()}};
+    wrap.appendChild(btn);
+  }});
+}}
+
+function renderInteriors(){{
+  const wrap=$("interiorGrid");
+  wrap.innerHTML="";
+  DATA.interiors.slice(0,4).forEach(item=>{{
+    const btn=document.createElement("button");
+    btn.className="choice-card"+(state.interior===item.code?" active":"");
+    btn.innerHTML=`<div class="material" style="--mat:${{item.hex}}"></div>
+      <span class="choice-code">${{item.code}}</span>
+      <span class="choice-name">${{item.name}}</span>`;
+    btn.onclick=()=>{{state.interior=item.code;renderAll()}};
+    wrap.appendChild(btn);
+  }});
+}}
+
+function renderTransmissions(){{
+  const wrap=$("transmissionGrid");
+  wrap.innerHTML="";
+  DATA.transmissions.forEach(item=>{{
+    const btn=document.createElement("button");
+    btn.className="choice-card"+(state.transmission===item.code?" active":"");
+    btn.innerHTML=`<span class="choice-code" style="font-size:28px;margin-top:18px">${{item.code==="6MT"?"◉":"◈"}}</span>
+      <span class="choice-code">${{item.code}}</span>
+      <span class="choice-name">${{item.name}}</span>
+      <span class="choice-price">${{money(item.price)}}</span>`;
+    btn.onclick=()=>{{state.transmission=item.code;renderAll()}};
+    wrap.appendChild(btn);
+  }});
+}}
+
+function renderWheels(){{
+  const wrap=$("wheelGrid");
+  wrap.innerHTML="";
+  DATA.wheels.forEach(item=>{{
+    const btn=document.createElement("button");
+    btn.className="wheel-card"+(state.wheel===item.code?" active":"");
+    btn.innerHTML=`<img src="${{item.image}}" alt="${{item.name}}">
+      <span class="choice-code">${{item.code==="STD18"?"STD":item.code}}</span>
+      <span class="choice-name">${{item.name}}</span>
+      <span class="choice-price">${{item.code==="ZCP"?"Included with ZCP":money(item.price)}}</span>`;
+    btn.onclick=()=>setWheel(item.code);
+    wrap.appendChild(btn);
+  }});
+}}
+
+function renderChecks(containerId,list,setName){{
+  const container=$(containerId);
+  container.innerHTML="";
+  list.forEach(item=>{{
+    const checked=state[setName].has(item.code);
+    const row=document.createElement("label");
+    row.className="check-row";
+    row.innerHTML=`<input type="checkbox" ${{checked?"checked":""}}>
+      <div><div class="check-title">${{item.code}} ${{item.name}}</div><div class="check-desc">${{item.desc||""}}</div></div>
+      <div class="price">${{money(item.price)}}</div>`;
+    row.querySelector("input").onchange=e=>{{
+      if(e.target.checked) state[setName].add(item.code);
+      else state[setName].delete(item.code);
+
+      if(item.code==="ZCP"){{
+        state.wheel=e.target.checked ? "ZCP" : "STD18";
+      }}
+      renderAll();
+    }};
+    container.appendChild(row);
+  }});
+}}
+
+function compatibilityWarnings(){{
+  const warnings=[];
+  if(state.packages.has("ZCP")&&state.options.has("223"))warnings.push("ZCP already includes Dynamic Damper Control, so standalone 223 may be duplicate.");
+  if(state.wheel==="2MT"&&state.packages.has("ZCP"))warnings.push("ZCP includes Style 359M wheels, so 2MT should not be combined with ZCP.");
+  if(state.packages.has("ZCV"))["302","507","609","6FL"].forEach(code=>{{if(state.options.has(code))warnings.push(`ZCV may already include ${{code}}, so check duplicate pricing.`)}});
+  if(state.packages.has("ZCW"))["465","494"].forEach(code=>{{if(state.options.has(code))warnings.push(`ZCW may already include ${{code}}, so check duplicate pricing.`)}});
+  const trims=["4MX","4MY","4MZ","771","XE2"].filter(code=>state.options.has(code));
+  if(trims.length>1)warnings.push(`Multiple trim options selected (${{trims.join(", ")}}). Usually only one interior trim should be selected.`);
+  return warnings;
+}}
+
+function buildOutput(){{
+  const c=calculate();
+  return {{
+    model:"2011 BMW M3 Sedan (E90)",
+    baseMSRP:c.base,
+    destinationCharge:c.destination,
+    gasGuzzlerTax:c.gas,
+    exterior:c.exterior,
+    interior:c.interior,
+    transmission:c.transmission,
+    wheel:c.wheel,
+    packages:c.packages,
+    standaloneOptions:c.options,
+    selectedCodes:[c.exterior.code,c.interior.code,c.transmission.code,c.wheel.code,...c.packages.map(p=>p.code),...c.options.map(o=>o.code),"DEST","GGT"],
+    totalMSRP:c.total
+  }};
+}}
+
+function plainSummary(){{
+  const out=buildOutput();
+  return `${{out.model}}\\nExterior: ${{out.exterior.code}} ${{out.exterior.name}}\\nInterior: ${{out.interior.code}} ${{out.interior.name}}\\nTransmission: ${{out.transmission.code}} ${{out.transmission.name}}\\nWheel: ${{out.wheel.code}} ${{out.wheel.name}}\\nPackages/Options: ${{out.selectedCodes.join(", ")}}\\nTotal MSRP: ${{money(out.totalMSRP)}}`;
+}}
+
+function renderSummary(){{
+  const c=calculate();
+  $("totalPrice").textContent=money(c.total);
+
+  document.documentElement.style.setProperty("--paint", c.exterior.paintHex || (c.exterior.hex.startsWith("linear") ? "#8fa8ff" : c.exterior.hex));
+  $("previewCaption").textContent=`Shown with ${{c.wheel.name}} (${{c.wheel.desc}})`;
+  $("indPriceLabel").textContent=state.exterior==="IND" ? "BMW Individual Paint  " + money(5000) : "";
+
+  const baseLines=[
+    {{label:"Base Vehicle",detail:"2011 BMW E90 M3 Sedan",price:c.base}},
+    {{label:"Exterior Color",detail:`${{c.exterior.code}} ${{c.exterior.name}}`,price:c.exterior.price}},
+    {{label:"Interior",detail:`${{c.interior.code}} ${{c.interior.name}}`,price:c.interior.price}},
+    {{label:"Transmission",detail:`${{c.transmission.code}} ${{c.transmission.name}}`,price:c.transmission.price}},
+    {{label:"Wheel Option",detail:`${{c.wheel.code}} ${{c.wheel.name}}`,price:c.wheel.code==="2MT"?c.wheel.price:0}},
+    {{label:"Options & Packages",detail:`${{c.packages.length+c.options.length}} selected`,price:[...c.packages,...c.options].reduce((s,x)=>s+x.price,0)}},
+    {{label:"Destination & Handling",detail:"",price:c.destination}},
+    {{label:"Gas Guzzler Tax",detail:"",price:c.gas}}
+  ];
+
+  $("summaryLines").innerHTML=baseLines.map(line=>`<div class="summary-line"><span>${{line.label}}<small>${{line.detail}}</small></span><strong>${{money(line.price)}}</strong></div>`).join("");
+
+  const warnings=compatibilityWarnings();
+  const box=$("compatBox");
+  box.className="compat"+(warnings.length?" show":"");
+  box.innerHTML=warnings.length?`<strong>Check duplicates:</strong><br>${{warnings.join("<br>")}}`:"";
+
+  $("buildOutput").value=JSON.stringify(buildOutput(),null,2);
+}}
+
+function renderAll(){{
+  renderExterior();
+  renderInteriors();
+  renderTransmissions();
+  renderWheels();
+  renderChecks("packageList",DATA.packages,"packages");
+  renderChecks("optionList",DATA.standaloneOptions,"options");
+  renderSummary();
+}}
+
+$("toggleOptionsBtn").onclick=()=>{{
+  $("optionsDrawer").classList.toggle("show");
+  $("toggleOptionsBtn").textContent=$("optionsDrawer").classList.contains("show") ? "Hide Options" : "View All Options";
+}};
+$("copyBuildBtn").onclick=async()=>{{await navigator.clipboard.writeText($("buildOutput").value);$("copyBuildBtn").textContent="Saved";setTimeout(()=>$("copyBuildBtn").textContent="Save Build",1000)}};
+$("copySummaryBtn").onclick=async()=>{{await navigator.clipboard.writeText(plainSummary());$("copySummaryBtn").textContent="Copied";setTimeout(()=>$("copySummaryBtn").textContent="View Summary",1000)}};
+$("copySummaryBtn2").onclick=async()=>{{await navigator.clipboard.writeText(plainSummary());$("copySummaryBtn2").textContent="Copied";setTimeout(()=>$("copySummaryBtn2").textContent="View Detailed Summary ›",1000)}};
+$("resetBtn").onclick=()=>{{
+  state.exterior="300";state.interior="NCSW";state.transmission="6MT";state.wheel="STD18";state.packages.clear();state.options.clear();renderAll();
+}};
+
+renderAll();
+</script>
 </body>
 </html>
+'''
+
+out = Path("/mnt/data/e90_m3_configurator_v2.html")
+out.write_text(html, encoding="utf-8")
+out
