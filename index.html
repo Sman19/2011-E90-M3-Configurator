@@ -944,7 +944,7 @@ function renderInteriors() {
     const btn = document.createElement("button");
     btn.className = "choice-card" + (state.interior === item.code ? " active" : "");
     btn.innerHTML = `
-      <div class="material" style="--mat:${i.gradient || i.hex}"></div>
+      <div class="material" style="--mat:${item.gradient || item.hex}"></div>
       <span class="choice-code">${item.code}</span>
       <span class="choice-name">${item.name}</span>
       <span class="choice-price">${money(price)}</span>
