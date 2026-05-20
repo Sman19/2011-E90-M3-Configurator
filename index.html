@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+from pathlib import Path
+
+html = r'''<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -18,9 +20,7 @@
   --paint: #f2f1ea;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -32,9 +32,7 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
-button, input {
-  font: inherit;
-}
+button, input { font: inherit; }
 
 .page {
   max-width: 1560px;
@@ -98,9 +96,7 @@ button, input {
   font-weight: 800;
 }
 
-#vinSearch::placeholder {
-  color: rgba(255,255,255,.55);
-}
+#vinSearch::placeholder { color: rgba(255,255,255,.55); }
 
 #vinSearch:focus {
   outline: none;
@@ -120,9 +116,7 @@ button, input {
   text-transform: uppercase;
 }
 
-#vinSearchBtn:hover {
-  filter: brightness(1.08);
-}
+#vinSearchBtn:hover { filter: brightness(1.08); }
 
 #vinSearchNote {
   color: #9fb6d5;
@@ -149,9 +143,7 @@ button, input {
   background: linear-gradient(180deg, #2384ff, #155ed0);
 }
 
-.btn:hover {
-  filter: brightness(1.1);
-}
+.btn:hover { filter: brightness(1.1); }
 
 .layout {
   display: grid;
@@ -160,10 +152,7 @@ button, input {
   align-items: start;
 }
 
-.left {
-  display: grid;
-  gap: 10px;
-}
+.left { display: grid; gap: 10px; }
 
 .panel {
   border: 1px solid var(--line);
@@ -229,19 +218,19 @@ button, input {
   font-size: 18px;
 }
 
- .car-stage{
-    height:360px;
-    width:100%;
-    overflow:hidden;
-    position:relative;
+.car-stage {
+  height: 360px;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
 }
 
-.car-wrap{
-    width:100%;
-    height:100%;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+.car-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content:center;
+  align-items:center;
 }
 
 .car-svg {
@@ -251,47 +240,32 @@ button, input {
   filter: drop-shadow(0 24px 20px rgba(0,0,0,.25));
 }
 
-.car-svg.is-hidden {
-  display: none;
+.car-svg.is-hidden { display: none; }
+
+.car-photo {
+  display:none;
+  position:absolute;
+  width:78%;
+  height:auto;
+  max-width:none;
+  max-height:none;
+  transform:scale(1.30) translateY(-4px);
+  object-fit:contain;
+  object-position:center center;
+  filter:drop-shadow(0 24px 20px rgba(0,0,0,.25));
 }
 
-.car-photo{
-    display:none;
-    position:absolute;
-    width:78%;
-    height:auto;
-    max-width:none;
-    max-height:none;
-    transform:scale(1.30) translateY(-4px);
-    object-fit:contain;
-    object-position:center center;
-    filter:drop-shadow(0 24px 20px rgba(0,0,0,.25));
-}
-
-.car-photo.show{
-    display:block;
-}
+.car-photo.show { display:block; }
 
 .paint-layer {
   fill: var(--paint);
   transition: fill .22s ease;
 }
 
-.paint-dark {
-  fill: color-mix(in srgb, var(--paint) 72%, black);
-}
-
-.glass {
-  fill: #182331;
-}
-
-.trim {
-  fill: #090d12;
-}
-
-.tire {
-  fill: #050505;
-}
+.paint-dark { fill: color-mix(in srgb, var(--paint) 72%, black); }
+.glass { fill: #182331; }
+.trim { fill: #090d12; }
+.tire { fill: #050505; }
 
 .wheel-main {
   fill: #d1d5db;
@@ -299,13 +273,8 @@ button, input {
   stroke-width: 4;
 }
 
-.rotor {
-  fill: #b8bec7;
-}
-
-.caliper {
-  fill: #d62020;
-}
+.rotor { fill: #b8bec7; }
+.caliper { fill: #d62020; }
 
 .caption {
   text-align: center;
@@ -399,9 +368,7 @@ button, input {
   gap: 10px;
 }
 
-.choice-grid.two {
-  grid-template-columns: repeat(2, 1fr);
-}
+.choice-grid.two { grid-template-columns: repeat(2, 1fr); }
 
 .choice-card {
   border: 1px solid var(--line);
@@ -414,7 +381,8 @@ button, input {
   text-align: center;
 }
 
-.choice-card.active {
+.choice-card.active,
+.wheel-card.active {
   border-color: var(--blue);
   box-shadow: 0 0 0 2px rgba(22,119,255,.36);
 }
@@ -477,11 +445,6 @@ button, input {
   text-align: center;
 }
 
-.wheel-card.active {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(22,119,255,.36);
-}
-
 .wheel-card img {
   width: 100%;
   height: 82px;
@@ -533,9 +496,7 @@ button, input {
   top: 12px;
 }
 
-.summary {
-  padding: 18px;
-}
+.summary { padding: 18px; }
 
 .summary h2 {
   margin: 2px 0 16px;
@@ -559,9 +520,7 @@ button, input {
   line-height: 1.25;
 }
 
-.summary-line strong {
-  font-weight: 500;
-}
+.summary-line strong { font-weight: 500; }
 
 .total-row {
   display: grid;
@@ -591,9 +550,7 @@ button, input {
   text-transform: uppercase;
 }
 
-.check-list {
-  display: grid;
-}
+.check-list { display: grid; }
 
 .check-row {
   display: grid;
@@ -616,9 +573,7 @@ button, input {
   cursor: not-allowed;
 }
 
-.check-row.locked input {
-  cursor: not-allowed;
-}
+.check-row.locked input { cursor: not-allowed; }
 
 .lock-note {
   color: #8fbfff;
@@ -629,9 +584,7 @@ button, input {
   margin-top: 5px;
 }
 
-.check-title {
-  font-weight: 800;
-}
+.check-title { font-weight: 800; }
 
 .check-desc {
   color: var(--muted);
@@ -641,18 +594,14 @@ button, input {
   margin-top: 5px;
 }
 
-.price {
-  color: #d9e0ea;
-}
+.price { color: #d9e0ea; }
 
 .drawer {
   display: none;
   margin-top: 12px;
 }
 
-.drawer.show {
-  display: block;
-}
+.drawer.show { display: block; }
 
 .compat {
   display: none;
@@ -666,9 +615,7 @@ button, input {
   line-height: 1.35;
 }
 
-.compat.show {
-  display: block;
-}
+.compat.show { display: block; }
 
 textarea {
   width: 100%;
@@ -781,7 +728,6 @@ textarea {
               </g>
             </svg>
           </div>
-          
         </div>
 
         <div class="caption" id="previewCaption">Shown with 18 inch Style 260M Wheels (Standard)</div>
@@ -862,17 +808,12 @@ const WHEEL_IMAGES = {
   ZCP: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/e18bff0e746f3948a76c666eb9cd13fbbee991cc/19%22%20ZCP.png"
 };
 
-// Exterior photo previews. Add more photos here as you create them.
-// Keep the file in the same GitHub folder as index.html for this path to work.
 const EXTERIOR_PHOTOS = {
   "300": {
-  STD: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/c47fd5f8841ec1921e53bbe70fd3f2a0d3ac8e38/Alpine%20White%2018%22.png",
-
-  "2MT": "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/c47fd5f8841ec1921e53bbe70fd3f2a0d3ac8e38/Alpine%20White%2019%22%202MT.png",
-
-  ZCP: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/c47fd5f8841ec1921e53bbe70fd3f2a0d3ac8e38/Alpine%20White%20ZCP.png"
-},
-
+    STD: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/c47fd5f8841ec1921e53bbe70fd3f2a0d3ac8e38/Alpine%20White%2018%22.png",
+    "2MT": "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/c47fd5f8841ec1921e53bbe70fd3f2a0d3ac8e38/Alpine%20White%2019%22%202MT.png",
+    ZCP: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/c47fd5f8841ec1921e53bbe70fd3f2a0d3ac8e38/Alpine%20White%20ZCP.png"
+  },
   "668": {
     STD: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/90fdc6c8bbf1b32a2a79ec63a378b2076416bd44/Jet%20Black.png",
     "2MT": "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/90fdc6c8bbf1b32a2a79ec63a378b2076416bd44/Jet%20Black%2019%22%202MT.png",
@@ -914,22 +855,8 @@ const DATA = {
     { code:"NDH2", name:"Fox Red Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, hex:"#a72828" },
     { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, basePrice:950, premiumPrice:0, hex:"#c5aa7f" },
     { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, hex:"#d0b88d" },
-    {
-      code:"NCH4",
-      name:"Silver Novillo / Black / Black Novillo Leather",
-      price:0,
-      basePrice:1250,
-      premiumPrice:300,
-      gradient:"linear-gradient(135deg,#d4d0c9 0%,#d4d0c9 50%,#111111 50%,#111111 100%)"
-    },
-    {
-      code:"NCH5",
-      name:"Fox Red Novillo / Black / Black Novillo Leather",
-      price:0,
-      basePrice:1250,
-      premiumPrice:300,
-      gradient:"linear-gradient(135deg,#9f2323 0%,#9f2323 50%,#111111 50%,#111111 100%)"
-    }
+    { code:"NCH4", name:"Silver Novillo / Black / Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, gradient:"linear-gradient(135deg,#d4d0c9 0%,#d4d0c9 50%,#111111 50%,#111111 100%)" },
+    { code:"NCH5", name:"Fox Red Novillo / Black / Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, gradient:"linear-gradient(135deg,#9f2323 0%,#9f2323 50%,#111111 50%,#111111 100%)" }
   ],
 
   transmissions: [
@@ -997,24 +924,15 @@ function hasPremiumPackage() {
 }
 
 function disabledOptionReason(code) {
-  if (code === "223" && state.packages.has("ZCP")) {
-    return "Included with ZCP";
+  if (code === "223" && state.packages.has("ZCP")) return "Included with ZCP";
+
+  if (["302","322","507","609","6FL"].includes(code) && state.packages.has("ZCV")) {
+    return "Included with ZCV";
   }
 
-  if (
-    ["302","322","507","609","6FL"].includes(code) &&
-    state.packages.has("ZCV")
-    ){
-        return "Included with ZCV";
-    }
-
   if (hasPremiumPackage()) {
-    if (["4MX", "4MY", "4MZ"].includes(code)) {
-      return "Included/selected within Premium Package";
-    }
-    if (code === "639") {
-      return "Included with Premium Package";
-    }
+    if (["4MX", "4MY", "4MZ"].includes(code)) return "Included/selected within Premium Package";
+    if (code === "639") return "Included with Premium Package";
   }
 
   return "";
@@ -1036,9 +954,35 @@ function pricedInterior(item) {
   return { ...item, price: getInteriorPrice(item) };
 }
 
+/* UPDATED METALLIC PAINT PRICING RULE:
+   300 Alpine White = $0
+   668 Jet Black = $0
+   Any color marked type:"Metallic" = $550
+   IND BMW Individual Paint = $5,000
+*/
+function getExteriorPrice(item) {
+  if (!item) return 0;
+
+  const code = String(item.code || "").toUpperCase();
+  const type = String(item.type || "").toLowerCase();
+
+  if (code === "300" || code === "668") return 0;
+  if (code === "IND") return 5000;
+  if (type.includes("metallic")) return 550;
+
+  return Number(item.price || 0);
+}
+
+function pricedExterior(item) {
+  return {
+    ...item,
+    price: getExteriorPrice(item)
+  };
+}
+
 function selectedItems() {
   return {
-    exterior: findByCode(DATA.exteriorColors, state.exterior),
+    exterior: pricedExterior(findByCode(DATA.exteriorColors, state.exterior)),
     interior: pricedInterior(findByCode(DATA.interiors, state.interior)),
     transmission: findByCode(DATA.transmissions, state.transmission),
     wheel: findByCode(DATA.wheels, state.wheel),
@@ -1090,8 +1034,10 @@ function renderExterior() {
   const wrap = $("exteriorGrid");
   wrap.innerHTML = "";
   DATA.exteriorColors.forEach(item => {
+    const price = getExteriorPrice(item);
     const btn = document.createElement("button");
     btn.className = "swatch-card" + (state.exterior === item.code ? " active" : "");
+    btn.title = `${item.code} ${item.name} - ${money(price)}`;
     btn.innerHTML = `
       <div class="swatch-box" style="--swatch:${item.hex}"></div>
       <span class="swatch-code">${item.code}</span>
@@ -1242,7 +1188,7 @@ function renderSummary() {
   document.documentElement.style.setProperty("--paint", paint);
   updateCarPreview(c);
 
-  $("caption" in window ? "previewCaption" : "previewCaption").textContent = `Shown with ${c.wheel.name} (${c.wheel.desc})`;
+  $("previewCaption").textContent = `Shown with ${c.wheel.name} (${c.wheel.desc})`;
   $("indLabel").textContent = c.exterior.code === "IND" ? "BMW Individual Paint    " + money(5000) : "";
 
   const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice;
@@ -1283,7 +1229,6 @@ function renderAll() {
   renderChecks("optionList", DATA.standaloneOptions, "options");
   renderSummary();
 }
-
 
 function normalizeText(value) {
   return String(value || "").trim();
@@ -1369,9 +1314,7 @@ async function loadCSV() {
   if (vinRows.length) return vinRows;
 
   const response = await fetch(CSV_URL, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`CSV could not be loaded (${response.status})`);
-  }
+  if (!response.ok) throw new Error(`CSV could not be loaded (${response.status})`);
 
   const text = await response.text();
   vinRows = parseCSV(text);
@@ -1417,19 +1360,12 @@ function applyPackageCodes(packageText) {
     }
   });
 
-  if (text.includes("2MK")) {
-    state.transmission = "2MK";
-  } else {
-    state.transmission = "6MT";
-  }
+  if (text.includes("2MK")) state.transmission = "2MK";
+  else state.transmission = "6MT";
 
-  if (state.packages.has("ZCP")) {
-    state.wheel = "ZCP";
-  } else if (text.includes("2MT")) {
-    state.wheel = "2MT";
-  } else {
-    state.wheel = "STD";
-  }
+  if (state.packages.has("ZCP")) state.wheel = "ZCP";
+  else if (text.includes("2MT")) state.wheel = "2MT";
+  else state.wheel = "STD";
 }
 
 async function lookupVIN() {
@@ -1460,15 +1396,10 @@ async function lookupVIN() {
     const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT"]);
     const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
     const dealer = findCSVValue(match, ["DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER", "__COL_14"]);
-    // Base MSRP logic:
-    // CSV column MSRP means the car uses the $55,900 base.
-    // CSV column MSRP.1 means the car uses the $55,400 base.
-    // Do not use the dollar amount in those cells as the base value, because those cells can contain full MSRP totals.
+
     const msrp55900Value = findCSVValue(match, ["MSRP", "BASE MSRP", "Base MSRP", "BaseMSRP", "BASE_MSRP"]);
     const msrp55400Value = findCSVValue(match, ["MSRP.1", "BASE MSRP.1", "Base MSRP.1", "BaseMSRP.1", "BASE_MSRP.1"]);
-    // Package/option codes can live in different exports depending on the CSV version.
-    // Column H is the main BMW option-code column for this configurator CSV.
-    // Column L is kept as a fallback for older versions of the file.
+
     const packageTextParts = [
       findCSVValue(match, ["PACKAGE CODES", "Package Codes", "OPTION CODES", "Option Codes", "PACKAGES", "Packages", "Package", "OPTIONS", "Options", "Codes", "CODES", "H", "Column H", "__COL_8"]),
       findCSVValue(match, ["L", "Column L", "__COL_12"])
@@ -1487,11 +1418,8 @@ async function lookupVIN() {
     const hasMSRP55900 = normalizeText(msrp55900Value) !== "";
     const hasMSRP55400 = normalizeText(msrp55400Value) !== "";
 
-    if (hasMSRP55900) {
-      state.baseMSRP = 55900;
-    } else if (hasMSRP55400) {
-      state.baseMSRP = 55400;
-    }
+    if (hasMSRP55900) state.baseMSRP = 55900;
+    else if (hasMSRP55400) state.baseMSRP = 55400;
 
     applyPackageCodes(packageText);
     enforceLockouts();
@@ -1504,9 +1432,7 @@ async function lookupVIN() {
   }
 }
 
-if ($("vinSearchBtn")) {
-  $("vinSearchBtn").onclick = lookupVIN;
-}
+if ($("vinSearchBtn")) $("vinSearchBtn").onclick = lookupVIN;
 
 if ($("vinSearch")) {
   $("vinSearch").addEventListener("keydown", event => {
@@ -1566,32 +1492,6 @@ function wrapPdfLine(line, maxLength = 86) {
   return lines;
 }
 
-function buildPdfTextObject(lines) {
-  const outputLines = [];
-  lines.forEach(line => {
-    wrapPdfLine(line).forEach(wrapped => outputLines.push(wrapped));
-  });
-
-  let out = "BT\n/F2 18 Tf\n40 742 Td\n14 TL\n";
-
-  outputLines.forEach((line, index) => {
-    if (index === 1) out += "/F1 10 Tf\n";
-    if (line === "VEHICLE CONFIGURATION" || line === "PRICING SUMMARY" || line === "PACKAGES" || line === "STANDALONE OPTIONS") {
-      out += "/F2 12 Tf\n";
-    }
-    out += `(${pdfEscape(line)}) Tj\nT*\n`;
-    if (line === "" || line === "VEHICLE CONFIGURATION" || line === "PRICING SUMMARY" || line === "PACKAGES" || line === "STANDALONE OPTIONS") {
-      out += "T*\n";
-    }
-    if (line === "VEHICLE CONFIGURATION" || line === "PRICING SUMMARY" || line === "PACKAGES" || line === "STANDALONE OPTIONS") {
-      out += "/F1 10 Tf\n";
-    }
-  });
-
-  out += "ET\n";
-  return out;
-}
-
 function makeSafeFileName(value) {
   return String(value || "build")
     .replace(/[^a-z0-9-_]+/gi, "-")
@@ -1600,11 +1500,6 @@ function makeSafeFileName(value) {
 }
 
 function downloadBlob(blob, filename) {
-  if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-    window.navigator.msSaveOrOpenBlob(blob, filename);
-    return;
-  }
-
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -1618,7 +1513,6 @@ function downloadBlob(blob, filename) {
     URL.revokeObjectURL(url);
   }, 3000);
 }
-
 
 function moneyPdf(n) {
   return Number(n || 0).toLocaleString("en-US", { style:"currency", currency:"USD", minimumFractionDigits:2, maximumFractionDigits:2 });
@@ -1682,7 +1576,7 @@ function parseDescLines(desc) {
     .filter(Boolean);
 }
 
-function drawPageFooter(pageNo, c) {
+function drawPageFooter(pageNo) {
   const vin = state.vin || "CONFIGURATOR BUILD";
   return pdfLine(30, 31, 582, 31, 0.78, 0.6) +
     pdfText(`2011 BMW M3 Sedan - ${vin}`, 30, 18, 7.4, "F2") +
@@ -1766,7 +1660,7 @@ function buildToyotaStylePageOne(c) {
   out += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 32, 104, 548);
   out += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 32, 84, 548);
   out += pdfText("FEATURES", 32, 56, 12, "F2");
-  out += drawPageFooter(1, c);
+  out += drawPageFooter(1);
   return out;
 }
 
@@ -1839,7 +1733,7 @@ function buildToyotaStylePageTwo(c) {
   block = pdfTextBlock(techLines, 318, 374, 7.8, 11, 62, "F1", 48);
   out += block.out;
 
-  out += drawPageFooter(2, c);
+  out += drawPageFooter(2);
   return out;
 }
 
@@ -1876,7 +1770,7 @@ function buildToyotaStylePageThree(c) {
   out += pdfText("Disclaimer", 32, 62, 8.2, "F2");
   const disclaimer = "This document is a custom configurator-generated BMW V-Spec sheet created for enthusiast reference and nostalgia. Pricing, equipment grouping, and option availability should be verified against original BMW documentation. This is not an official BMW window sticker, Monroney label, dealer invoice, or manufacturer document.";
   out += pdfTextBlock([disclaimer], 32, 49, 6.4, 8.0, 142, "F1", 34).out;
-  out += drawPageFooter(3, c);
+  out += drawPageFooter(3);
   return out;
 }
 
@@ -1899,7 +1793,6 @@ function downloadBMWBuildSheetPDF() {
   addObj("<< /Type /Catalog /Pages 2 0 R >>");
   addObj("<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>");
 
-  const pageObjectNumbers = [3,5,7];
   const contentObjectNumbers = [4,6,8];
 
   pages.forEach((content, i) => {
@@ -1976,3 +1869,8 @@ renderAll();
 </script>
 </body>
 </html>
+'''
+
+path = Path("/mnt/data/2011-e90-m3-configurator-updated.html")
+path.write_text(html, encoding="utf-8")
+print(f"Created: {path}")
