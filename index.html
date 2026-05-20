@@ -774,17 +774,29 @@ const DATA = {
   ],
 
   interiors: [
-    { code:"NCSW", name:"Black Novillo Leather", basePrice:950, premiumPrice:0, hex:"#111111" },
-    { code:"NDSW", name:"Black Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#090909" },
-    { code:"NCH1", name:"Silver Novillo Leather", basePrice:950, premiumPrice:0, hex:"#c8c3ba" },
-    { code:"NDH1", name:"Silver Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#d0ccc5" },
-    { code:"NCH2", name:"Fox Red Novillo Leather", basePrice:950, premiumPrice:0, hex:"#8f1f1f" },
-    { code:"NDH2", name:"Fox Red Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#a72828" },
-    { code:"NCH3", name:"Bamboo Beige Novillo Leather", basePrice:950, premiumPrice:0, hex:"#c5aa7f" },
-    { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#d0b88d" },
-    { code:"NCH4", name:"Silver Novillo/Black/Black Novillo Leather", basePrice:1250, premiumPrice:300, hex:"#c9c1b4" },
-    { code:"NCH5", name:"Fox Red Novillo/Black/Black Novillo Leather", basePrice:1250, premiumPrice:300, hex:"#8f1f1f" }
-  ],
+ { code:"NCSW", name:"Black Novillo Leather", price:0, hex:"#111111" },
+ { code:"NDSW", name:"Black Extended Novillo Leather", price:0, hex:"#090909" },
+ { code:"NCH1", name:"Silver Novillo Leather", price:0, hex:"#c8c3ba" },
+ { code:"NDH1", name:"Silver Extended Novillo Leather", price:0, hex:"#d0ccc5" },
+ { code:"NCH2", name:"Fox Red Novillo Leather", price:0, hex:"#8f1f1f" },
+ { code:"NDH2", name:"Fox Red Extended Novillo Leather", price:0, hex:"#a72828" },
+ { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, hex:"#c5aa7f" },
+ { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, hex:"#d0b88d" },
+
+ {
+   code:"NCH4",
+   name:"Silver Novillo / Black / Black Novillo Leather",
+   price:0,
+   gradient:"linear-gradient(135deg,#d4d0c9 0%,#d4d0c9 50%,#111111 50%,#111111 100%)"
+ },
+
+ {
+   code:"NCH5",
+   name:"Fox Red Novillo / Black / Black Novillo Leather",
+   price:0,
+   gradient:"linear-gradient(135deg,#9f2323 0%,#9f2323 50%,#111111 50%,#111111 100%)"
+ }
+]
 
   transmissions: [
     { code:"6MT", name:"6-Speed Manual", price:0, icon:"●" },
@@ -932,7 +944,7 @@ function renderInteriors() {
     const btn = document.createElement("button");
     btn.className = "choice-card" + (state.interior === item.code ? " active" : "");
     btn.innerHTML = `
-      <div class="material" style="--mat:${item.hex}"></div>
+      <div class="material" style="--mat:${i.gradient || i.hex}"></div>
       <span class="choice-code">${item.code}</span>
       <span class="choice-name">${item.name}</span>
       <span class="choice-price">${money(price)}</span>
