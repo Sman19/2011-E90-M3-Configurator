@@ -690,7 +690,7 @@ textarea {
         <div class="section">
           <h2>2. Interior</h2>
           <div class="choice-grid" id="interiorGrid"></div>
-          <button class="full-btn">View All Interior Options (8)</button>
+          <button class="full-btn" id="toggleInteriorsBtn">View All Interior Options (10)</button>
         </div>
 
         <div class="section">
@@ -774,16 +774,16 @@ const DATA = {
   ],
 
   interiors: [
-    { code:"NCSW", name:"Black Novillo Leather", price:0, hex:"#111111" },
-    { code:"NDSW", name:"Black Extended Novillo Leather", price:0, hex:"#090909" },
-    { code:"NCH1", name:"Silver Novillo Leather", price:0, hex:"#c8c3ba" },
-    { code:"NDH1", name:"Silver Extended Novillo Leather", price:0, hex:"#d0ccc5" },
-    { code:"NCH2", name:"Fox Red Novillo Leather", price:0, hex:"#8f1f1f" },
-    { code:"NDH2", name:"Fox Red Extended Novillo Leather", price:0, hex:"#a72828" },
-    { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, hex:"#c5aa7f" },
-    { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, hex:"#d0b88d" },
-    { code:"NCH4", name:"Silver Novillo/Black/Black Novillo Leather", price:0, hex:"#c5aa7f" },
-    { code:"NCH5", name:"Fox Red Novillo/Black/Black Novillo Leather", price:0, hex:"#c5aa7f" }
+    { code:"NCSW", name:"Black Novillo Leather", basePrice:950, premiumPrice:0, hex:"#111111" },
+    { code:"NDSW", name:"Black Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#090909" },
+    { code:"NCH1", name:"Silver Novillo Leather", basePrice:950, premiumPrice:0, hex:"#c8c3ba" },
+    { code:"NDH1", name:"Silver Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#d0ccc5" },
+    { code:"NCH2", name:"Fox Red Novillo Leather", basePrice:950, premiumPrice:0, hex:"#8f1f1f" },
+    { code:"NDH2", name:"Fox Red Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#a72828" },
+    { code:"NCH3", name:"Bamboo Beige Novillo Leather", basePrice:950, premiumPrice:0, hex:"#c5aa7f" },
+    { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", basePrice:2000, premiumPrice:1100, hex:"#d0b88d" },
+    { code:"NCH4", name:"Silver Novillo/Black/Black Novillo Leather", basePrice:1250, premiumPrice:300, hex:"#c9c1b4" },
+    { code:"NCH5", name:"Fox Red Novillo/Black/Black Novillo Leather", basePrice:1250, premiumPrice:300, hex:"#8f1f1f" }
   ],
 
   transmissions: [
@@ -835,17 +835,30 @@ const state = {
   transmission: "6MT",
   wheel: "STD",
   packages: new Set(),
-  options: new Set()
+  options: new Set(),
+  showAllInteriors: false
 };
 
 const $ = id => document.getElementById(id);
 const money = n => Number(n || 0).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 const findByCode = (list, code) => list.find(item => item.code === code);
 
+function hasPremiumPackage() {
+  return state.packages.has("ZP2") || state.packages.has("ZP3");
+}
+
+function getInteriorPrice(item) {
+  return hasPremiumPackage() ? item.premiumPrice : item.basePrice;
+}
+
+function pricedInterior(item) {
+  return { ...item, price: getInteriorPrice(item) };
+}
+
 function selectedItems() {
   return {
     exterior: findByCode(DATA.exteriorColors, state.exterior),
-    interior: findByCode(DATA.interiors, state.interior),
+    interior: pricedInterior(findByCode(DATA.interiors, state.interior)),
     transmission: findByCode(DATA.transmissions, state.transmission),
     wheel: findByCode(DATA.wheels, state.wheel),
     packages: [...state.packages].map(code => findByCode(DATA.packages, code)).filter(Boolean),
@@ -858,7 +871,7 @@ function calculate() {
   const wheelPrice = s.wheel.code === "2MT" ? s.wheel.price : 0;
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
-  const total = DATA.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal;
+  const total = DATA.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal;
   return { ...s, wheelPrice, packageTotal, optionTotal, total };
 }
 
@@ -909,18 +922,28 @@ function renderExterior() {
 
 function renderInteriors() {
   const wrap = $("interiorGrid");
+  const toggleBtn = $("toggleInteriorsBtn");
   wrap.innerHTML = "";
-  DATA.interiors.slice(0,4).forEach(item => {
+
+  const list = state.showAllInteriors ? DATA.interiors : DATA.interiors.slice(0,4);
+
+  list.forEach(item => {
+    const price = getInteriorPrice(item);
     const btn = document.createElement("button");
     btn.className = "choice-card" + (state.interior === item.code ? " active" : "");
     btn.innerHTML = `
       <div class="material" style="--mat:${item.hex}"></div>
       <span class="choice-code">${item.code}</span>
       <span class="choice-name">${item.name}</span>
+      <span class="choice-price">${money(price)}</span>
     `;
     btn.onclick = () => { state.interior = item.code; renderAll(); };
     wrap.appendChild(btn);
   });
+
+  if (toggleBtn) {
+    toggleBtn.textContent = state.showAllInteriors ? "Hide Interior Options" : "View All Interior Options (10)";
+  }
 }
 
 function renderTransmissions() {
@@ -1056,6 +1079,11 @@ function renderAll() {
   renderSummary();
 }
 
+$("toggleInteriorsBtn").onclick = () => {
+  state.showAllInteriors = !state.showAllInteriors;
+  renderAll();
+};
+
 $("toggleOptionsBtn").onclick = () => {
   $("optionsDrawer").classList.toggle("show");
   $("toggleOptionsBtn").textContent = $("optionsDrawer").classList.contains("show") ? "Hide Options" : "View All Options";
@@ -1086,6 +1114,7 @@ $("resetBtn").onclick = () => {
   state.wheel = "STD";
   state.packages.clear();
   state.options.clear();
+  state.showAllInteriors = false;
   renderAll();
 };
 
