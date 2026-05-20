@@ -169,22 +169,19 @@ button, input {
   font-size: 18px;
 }
 
-.car-stage {
-  height: 360px;
-  width: 100%;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  overflow: hidden;
+ .car-stage{
+    height:360px;
+    width:100%;
+    overflow:hidden;
+    position:relative;
 }
 
-.car-wrap {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transform: none;
+.car-wrap{
+    width:100%;
+    height:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
 .car-svg {
@@ -200,34 +197,19 @@ button, input {
 
 .car-photo{
     display:none;
-    width:135%;
-    max-width:none;
+    position:absolute;
+    width:78%;
     height:auto;
-    max-height:360px;
+    max-width:none;
+    max-height:none;
+    transform:scale(1.55) translateY(-28px);
     object-fit:contain;
     object-position:center center;
-    transform:translateY(10px);
     filter:drop-shadow(0 24px 20px rgba(0,0,0,.25));
 }
 
-.car-photo.show {
-  display: block;
-}
-
-.car-photo-note {
-  display: none;
-  position: absolute;
-  left: 16px;
-  bottom: 12px;
-  color: rgba(16,21,30,.62);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-
-.car-photo-note.show {
-  display: block;
+.car-photo.show{
+    display:block;
 }
 
 .paint-layer {
@@ -690,7 +672,7 @@ textarea {
               </g>
             </svg>
           </div>
-          <div id="carPhotoNote" class="car-photo-note">Photo preview available for this color/wheel combination</div>
+          
         </div>
 
         <div class="caption" id="previewCaption">Shown with 18 inch Style 260M Wheels (Standard)</div>
@@ -888,18 +870,15 @@ function updateCarPreview(c) {
   const photo = getExteriorPhoto(c.exterior.code, c.wheel.code);
   const img = $("carPreview");
   const svg = $("carVectorPreview");
-  const note = $("carPhotoNote");
 
   if (photo) {
     img.src = photo;
     img.classList.add("show");
     svg.classList.add("is-hidden");
-    note.classList.add("show");
   } else {
     img.removeAttribute("src");
     img.classList.remove("show");
     svg.classList.remove("is-hidden");
-    note.classList.remove("show");
   }
 }
 
