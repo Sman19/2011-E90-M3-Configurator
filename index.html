@@ -535,6 +535,21 @@ button, input {
   accent-color: var(--blue);
 }
 
+.check-row.disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.check-row.disabled input {
+  cursor: not-allowed;
+}
+
+.check-row.disabled .check-title::after {
+  content: "  — Included with ZCV";
+  color: #58a4ff;
+  font-weight: 800;
+}
+
 .check-title {
   font-weight: 800;
 }
@@ -828,6 +843,7 @@ const DATA = {
     { code:"465", name:"Split Fold Down Rear Seat", price:475, desc:"Folding rear seat" },
     { code:"494", name:"Heated Front Seats", price:500, desc:"Heated driver and passenger front seats" },
     { code:"302", name:"Alarm System", price:500, desc:"Anti theft alarm system" },
+    { code:"322", name:"Comfort Access Keyless Entry", price:500, desc:"Comfort Access keyless entry" },
     { code:"507", name:"Rear Park Distance Control", price:380, desc:"Rear parking sensors" },
     { code:"5AC", name:"Automatic High Beams", price:250, desc:"Automatic high beam assistant" },
     { code:"609", name:"Navigation System", price:2100, desc:"Factory navigation" },
@@ -852,16 +868,32 @@ const state = {
   showAllInteriors: false
 };
 
+const ZCV_LOCKED_OPTIONS = new Set(["302", "322", "507", "609"]);
+
 const $ = id => document.getElementById(id);
-const money = n => Number(n || 0).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
+const money = n => Number(Number.isFinite(Number(n)) ? n : 0).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 const findByCode = (list, code) => list.find(item => item.code === code);
+
+function isOptionLockedByZCV(code) {
+  return state.packages.has("ZCV") && ZCV_LOCKED_OPTIONS.has(code);
+}
+
+function enforcePackageRules() {
+  if (state.packages.has("ZCV")) {
+    ZCV_LOCKED_OPTIONS.forEach(code => state.options.delete(code));
+  }
+}
 
 function hasPremiumPackage() {
   return state.packages.has("ZP2") || state.packages.has("ZP3");
 }
 
 function getInteriorPrice(item) {
-  return hasPremiumPackage() ? item.premiumPrice : item.basePrice;
+  // Some interiors use simple `price`, while others may use basePrice/premiumPrice.
+  // Fallback prevents undefined from turning the total into NaN/$0.
+  if (!item) return 0;
+  if (hasPremiumPackage()) return Number(item.premiumPrice ?? item.price ?? item.basePrice ?? 0);
+  return Number(item.basePrice ?? item.price ?? 0);
 }
 
 function pricedInterior(item) {
@@ -884,7 +916,15 @@ function calculate() {
   const wheelPrice = s.wheel.code === "2MT" ? s.wheel.price : 0;
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
-  const total = DATA.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal;
+  const total = Number(DATA.baseMSRP || 0)
+    + Number(DATA.destination || 0)
+    + Number(DATA.gasGuzzler || 0)
+    + Number(s.exterior?.price || 0)
+    + Number(s.interior?.price || 0)
+    + Number(s.transmission?.price || 0)
+    + Number(wheelPrice || 0)
+    + Number(packageTotal || 0)
+    + Number(optionTotal || 0);
   return { ...s, wheelPrice, packageTotal, optionTotal, total };
 }
 
@@ -998,10 +1038,11 @@ function renderChecks(containerId, list, setName) {
   container.innerHTML = "";
   list.forEach(item => {
     const checked = state[setName].has(item.code);
+    const disabled = setName === "options" && isOptionLockedByZCV(item.code);
     const row = document.createElement("label");
-    row.className = "check-row";
+    row.className = "check-row" + (disabled ? " disabled" : "");
     row.innerHTML = `
-      <input type="checkbox" ${checked ? "checked" : ""}>
+      <input type="checkbox" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}>
       <div>
         <div class="check-title">${item.code} ${item.name}</div>
         <div class="check-desc">${item.desc || ""}</div>
@@ -1009,10 +1050,12 @@ function renderChecks(containerId, list, setName) {
       <div class="price">${money(item.price)}</div>
     `;
     row.querySelector("input").onchange = e => {
+      if (disabled) return;
       if (e.target.checked) state[setName].add(item.code);
       else state[setName].delete(item.code);
 
       if (item.code === "ZCP") state.wheel = e.target.checked ? "ZCP" : "STD";
+      enforcePackageRules();
       renderAll();
     };
     container.appendChild(row);
@@ -1022,7 +1065,6 @@ function renderChecks(containerId, list, setName) {
 function compatibilityWarnings() {
   const warnings = [];
   if (state.packages.has("ZCP") && state.options.has("223")) warnings.push("ZCP already includes Dynamic Damper Control, so standalone 223 may be duplicate.");
-  if (state.packages.has("ZCV")) ["302","507","609","6FL"].forEach(code => { if (state.options.has(code)) warnings.push(`ZCV may already include ${code}, so check duplicate pricing.`); });
   if (state.packages.has("ZCW")) ["465","494"].forEach(code => { if (state.options.has(code)) warnings.push(`ZCW may already include ${code}, so check duplicate pricing.`); });
   const trims = ["4MX","4MY","4MZ","771","XE2"].filter(code => state.options.has(code));
   if (trims.length > 1) warnings.push(`Multiple trim options selected (${trims.join(", ")}). Usually only one interior trim should be selected.`);
@@ -1083,6 +1125,7 @@ function renderSummary() {
 }
 
 function renderAll() {
+  enforcePackageRules();
   renderExterior();
   renderInteriors();
   renderTransmissions();
