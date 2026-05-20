@@ -72,6 +72,66 @@ button, input {
   justify-content: flex-end;
 }
 
+.actions-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.vin-box {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+#vinSearch {
+  width: 280px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: #101826;
+  color: white;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+#vinSearch::placeholder {
+  color: rgba(255,255,255,.55);
+}
+
+#vinSearch:focus {
+  outline: none;
+  border-color: #2384ff;
+  box-shadow: 0 0 0 2px rgba(22,119,255,.28);
+}
+
+#vinSearchBtn {
+  height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(180deg,#2384ff,#155ed0);
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+#vinSearchBtn:hover {
+  filter: brightness(1.08);
+}
+
+#vinSearchNote {
+  color: #9fb6d5;
+  font-size: 12px;
+  min-height: 16px;
+  text-align: right;
+  max-width: 560px;
+}
+
 .btn {
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
@@ -638,6 +698,12 @@ textarea {
 
 @media(max-width:760px) {
   .topbar { flex-direction: column; }
+  .actions-column { align-items: stretch; width: 100%; }
+  .actions { justify-content: stretch; }
+  .actions .btn { flex: 1; }
+  .vin-box { flex-direction: column; }
+  #vinSearch, #vinSearchBtn { width: 100%; }
+  #vinSearchNote { text-align: left; }
   .view-tabs { display: none; }
   .swatch-row { grid-template-columns: repeat(3, 1fr); }
   .lower-grid { grid-template-columns: 1fr; }
@@ -653,10 +719,19 @@ textarea {
       <h1>2011 BMW E90 M3 Sedan Configurator</h1>
       <p>Build your ultimate driving machine.</p>
     </div>
-    <div class="actions">
-      <button class="btn" id="resetBtn">Reset Build</button>
-      <button class="btn" id="copyBuildBtn">▣ Save Build</button>
-      <button class="btn primary" id="copySummaryBtn">View Summary</button>
+    <div class="actions-column">
+      <div class="actions">
+        <button class="btn" id="resetBtn">Reset Build</button>
+        <button class="btn" id="copyBuildBtn">▣ Save Build</button>
+        <button class="btn primary" id="copySummaryBtn">View Summary</button>
+      </div>
+
+      <div class="vin-box">
+        <input id="vinSearch" placeholder="Enter VIN or Last 7..." autocomplete="off">
+        <button id="vinSearchBtn">Load VIN</button>
+      </div>
+
+      <div id="vinSearchNote"></div>
     </div>
   </header>
 
@@ -805,6 +880,9 @@ const EXTERIOR_PHOTOS = {
   }
 };
 
+const CSV_URL = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/733ec9f20c1313e42f032516621a29dea9fc0d20/2011%20E90%20M3.csv";
+let vinRows = [];
+
 const DATA = {
   baseMSRPOptions: [
     { label:"2010 Build", value:55400 },
@@ -905,7 +983,9 @@ const state = {
   baseMSRP: 55400,
   packages: new Set(),
   options: new Set(),
-  showAllInteriors: false
+  showAllInteriors: false,
+  vin: "",
+  sellingDealer: ""
 };
 
 const $ = id => document.getElementById(id);
@@ -1133,6 +1213,8 @@ function buildOutput() {
   const c = calculate();
   return {
     model: "2011 BMW M3 Sedan (E90)",
+    vin: state.vin,
+    sellingDealer: state.sellingDealer,
     baseMSRP: state.baseMSRP,
     destinationCharge: DATA.destination,
     gasGuzzlerTax: DATA.gasGuzzler,
@@ -1149,7 +1231,9 @@ function buildOutput() {
 
 function plainSummary() {
   const c = buildOutput();
-  return `${c.model}\nExterior: ${c.exterior.code} ${c.exterior.name}\nInterior: ${c.interior.code} ${c.interior.name}\nTransmission: ${c.transmission.code} ${c.transmission.name}\nWheel: ${c.wheel.code} ${c.wheel.name}\nTotal MSRP: ${money(c.totalMSRP)}`;
+  const vinLine = c.vin ? `\nVIN: ${c.vin}` : "";
+  const dealerLine = c.sellingDealer ? `\nSelling Dealer: ${c.sellingDealer}` : "";
+  return `${c.model}${vinLine}${dealerLine}\nExterior: ${c.exterior.code} ${c.exterior.name}\nInterior: ${c.interior.code} ${c.interior.name}\nTransmission: ${c.transmission.code} ${c.transmission.name}\nWheel: ${c.wheel.code} ${c.wheel.name}\nTotal MSRP: ${money(c.totalMSRP)}`;
 }
 
 function renderSummary() {
@@ -1163,7 +1247,8 @@ function renderSummary() {
 
   const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice;
   $("summaryLines").innerHTML = `
-    <div class="summary-line"><span>Base Vehicle<small>2011 BMW E90 M3 Sedan</small></span><strong>${money(state.baseMSRP)}</strong></div>
+    <div class="summary-line"><span>Base Vehicle<small>2011 BMW E90 M3 Sedan${state.vin ? " | VIN: " + state.vin : ""}</small></span><strong>${money(state.baseMSRP)}</strong></div>
+    ${state.sellingDealer ? `<div class="summary-line"><span>Selling Dealer<small>${state.sellingDealer}</small></span><strong></strong></div>` : ""}
     <div class="summary-line"><span>Exterior Color<small>● ${c.exterior.code} ${c.exterior.name}</small></span><strong>${money(c.exterior.price)}</strong></div>
     <div class="summary-line"><span>Interior<small>● ${c.interior.code} ${c.interior.name}</small></span><strong>${money(c.interior.price)}</strong></div>
     <div class="summary-line"><span>Transmission<small>${c.transmission.code} ${c.transmission.name}</small></span><strong>${money(c.transmission.price)}</strong></div>
@@ -1197,6 +1282,206 @@ function renderAll() {
   renderChecks("packageList", DATA.packages, "packages");
   renderChecks("optionList", DATA.standaloneOptions, "options");
   renderSummary();
+}
+
+
+function normalizeText(value) {
+  return String(value || "").trim();
+}
+
+function normalizeVIN(value) {
+  return normalizeText(value).replace(/\s/g, "").toUpperCase();
+}
+
+function findCSVValue(row, possibleNames) {
+  const wanted = possibleNames.map(name => name.toLowerCase());
+  for (const key of Object.keys(row)) {
+    if (wanted.includes(key.trim().toLowerCase()) && normalizeText(row[key])) {
+      return normalizeText(row[key]);
+    }
+  }
+  return "";
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let value = "";
+  let insideQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && insideQuotes && next === '"') {
+      value += '"';
+      i++;
+    } else if (char === '"') {
+      insideQuotes = !insideQuotes;
+    } else if (char === "," && !insideQuotes) {
+      row.push(value.trim());
+      value = "";
+    } else if ((char === "\n" || char === "\r") && !insideQuotes) {
+      if (char === "\r" && next === "\n") i++;
+      if (value || row.length) {
+        row.push(value.trim());
+        rows.push(row);
+        row = [];
+        value = "";
+      }
+    } else {
+      value += char;
+    }
+  }
+
+  if (value || row.length) {
+    row.push(value.trim());
+    rows.push(row);
+  }
+
+  if (!rows.length) return [];
+  const headers = rows.shift().map(h => h.trim());
+
+  return rows.map(values => {
+    const obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = values[index] || "";
+    });
+    return obj;
+  });
+}
+
+async function loadCSV() {
+  if (vinRows.length) return vinRows;
+
+  const response = await fetch(CSV_URL, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`CSV could not be loaded (${response.status})`);
+  }
+
+  const text = await response.text();
+  vinRows = parseCSV(text);
+  return vinRows;
+}
+
+function findMatchingExterior(value) {
+  const text = normalizeText(value).toUpperCase();
+  if (!text) return null;
+
+  return DATA.exteriorColors.find(item =>
+    text.includes(item.code.toUpperCase()) ||
+    text.includes(item.name.toUpperCase())
+  );
+}
+
+function findMatchingInterior(value) {
+  const text = normalizeText(value).toUpperCase();
+  if (!text) return null;
+
+  return DATA.interiors.find(item =>
+    text.includes(item.code.toUpperCase()) ||
+    text.includes(item.name.toUpperCase())
+  );
+}
+
+function applyPackageCodes(packageText) {
+  const text = normalizeText(packageText).toUpperCase();
+
+  state.packages.clear();
+  state.options.clear();
+
+  [...DATA.packages, ...DATA.standaloneOptions].forEach(item => {
+    const code = item.code.toUpperCase();
+    const codeRegex = new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`);
+
+    if (codeRegex.test(text)) {
+      if (DATA.packages.some(pkg => pkg.code === item.code)) {
+        state.packages.add(item.code);
+      } else {
+        state.options.add(item.code);
+      }
+    }
+  });
+
+  if (text.includes("2MK")) {
+    state.transmission = "2MK";
+  } else {
+    state.transmission = "6MT";
+  }
+
+  if (state.packages.has("ZCP")) {
+    state.wheel = "ZCP";
+  } else if (text.includes("2MT")) {
+    state.wheel = "2MT";
+  } else {
+    state.wheel = "STD";
+  }
+}
+
+async function lookupVIN() {
+  const input = normalizeVIN($("vinSearch").value);
+  const note = $("vinSearchNote");
+
+  if (!input) {
+    note.textContent = "Enter a full VIN or last 7.";
+    return;
+  }
+
+  note.textContent = "Searching CSV...";
+
+  try {
+    const rows = await loadCSV();
+
+    const match = rows.find(row => {
+      const vin = normalizeVIN(findCSVValue(row, ["VIN", "Vin", "vin"]));
+      return vin === input || vin.slice(-7) === input;
+    });
+
+    if (!match) {
+      note.textContent = "No matching VIN found.";
+      return;
+    }
+
+    const vin = findCSVValue(match, ["VIN", "Vin", "vin"]);
+    const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT"]);
+    const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
+    const dealer = findCSVValue(match, ["DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER"]);
+    const msrpValue = findCSVValue(match, ["MSRP", "BASE MSRP", "Base MSRP", "BaseMSRP", "BASE_MSRP"]);
+    const packageText = findCSVValue(match, ["PACKAGES", "Packages", "Package", "OPTIONS", "Options", "Codes", "CODES", "L", "Column L"]) || Object.values(match).join(",");
+
+    state.vin = vin;
+    state.sellingDealer = dealer;
+
+    const matchedExterior = findMatchingExterior(exterior);
+    if (matchedExterior) state.exterior = matchedExterior.code;
+
+    const matchedInterior = findMatchingInterior(interior);
+    if (matchedInterior) state.interior = matchedInterior.code;
+
+    const cleanMSRP = Number(String(msrpValue).replace(/[$,]/g, ""));
+    if (cleanMSRP === 55400 || cleanMSRP === 55900) {
+      state.baseMSRP = cleanMSRP;
+    }
+
+    applyPackageCodes(packageText);
+    enforceLockouts();
+    renderAll();
+
+    note.textContent = `Loaded ${state.vin || input}${state.sellingDealer ? " | " + state.sellingDealer : ""}`;
+  } catch (error) {
+    console.error(error);
+    note.textContent = "CSV lookup failed. Check the console or CSV URL.";
+  }
+}
+
+if ($("vinSearchBtn")) {
+  $("vinSearchBtn").onclick = lookupVIN;
+}
+
+if ($("vinSearch")) {
+  $("vinSearch").addEventListener("keydown", event => {
+    if (event.key === "Enter") lookupVIN();
+  });
 }
 
 $("msrpSelect").onchange = e => {
@@ -1241,6 +1526,8 @@ function downloadBMWBuildSheetPDF() {
     "BMW Individual Build Sheet",
     "2011 BMW M3 Sedan (E90)",
     `Generated: ${date}`,
+    `VIN: ${state.vin || "Not loaded"}`,
+    `Selling Dealer: ${state.sellingDealer || "Not listed"}`,
     "VEHICLE CONFIGURATION",
     `Exterior: ${c.exterior.code} ${c.exterior.name} - ${money(c.exterior.price)}`,
     `Interior: ${c.interior.code} ${c.interior.name} - ${money(c.interior.price)}`,
@@ -1338,6 +1625,10 @@ $("resetBtn").onclick = () => {
   state.packages.clear();
   state.options.clear();
   state.showAllInteriors = false;
+  state.vin = "";
+  state.sellingDealer = "";
+  if ($("vinSearch")) $("vinSearch").value = "";
+  if ($("vinSearchNote")) $("vinSearchNote").textContent = "";
   renderAll();
 };
 
