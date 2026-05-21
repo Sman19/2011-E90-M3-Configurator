@@ -2362,7 +2362,13 @@ Q
     installedIndex++;
   }
   if (installedIndex < installed.length) {
-    out += pdfText("Installed packages and accessories continue on page 2.", 44, Math.max(y, page1Bottom + 18), 7.5, "F2");
+    out += pdfText(
+      "Installed packages and accessories continue on page 2.",
+      44,
+      page1Bottom - 10,
+      7.5,
+      "F2"
+    );
   }
   out += drawPageFooter(1);
 
