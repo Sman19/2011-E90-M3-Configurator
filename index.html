@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>2011 BMW E90 M3 Sedan Configurator - BMW Spec Sheet PDF v2</title>
+<title>2011 BMW E90 M3 Sedan Configurator - BMW Spec Sheet PDF v7</title>
 
 <style>
 :root {
@@ -822,7 +822,7 @@ const EXTERIOR_PHOTOS = {
   "668": {
     STD: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/90fdc6c8bbf1b32a2a79ec63a378b2076416bd44/Jet%20Black.png",
     "2MT": "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/90fdc6c8bbf1b32a2a79ec63a378b2076416bd44/Jet%20Black%2019%22%202MT.png",
-    ZCP: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/90fdc6c8bbf1b32a2a79ec63a378b2076416bd44/Jet%20Black%20ZCP.png"
+    ZCP: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/ae334032e6f4bd250cf231db63db191026287ca0/Jet%20Black%20ZCP.png"
   }
 };
 
@@ -1724,8 +1724,18 @@ function pdfSwatch(x, y, size, colorValue, fallback = "#141414") {
 }
 
 function drawPdfSideProfileCar(c) {
-  const paintHex = c.exterior.paintHex || c.exterior.hex || "#f2f1ea";
-  const paint = pdfHexToRgb(paintHex, { r: 143, g: 168, b: 255 });
+  // Uses the real side-profile PNG when the PDF generator successfully loads it.
+  // Falls back to a smaller vector silhouette only if the image cannot be loaded.
+  if (window.__pdfCarImageReady) {
+    return `q
+145 0 0 52 330 585 cm
+/CarImage Do
+Q
+`;
+  }
+
+  const swatch = c.exterior.paintHex || c.exterior.hex || "#111111";
+  const paint = pdfHexToRgb(swatch, { r: 17, g: 17, b: 17 });
   const dark = {
     r: Math.max(0, Math.round(paint.r * 0.62)),
     g: Math.max(0, Math.round(paint.g * 0.62)),
@@ -1733,18 +1743,71 @@ function drawPdfSideProfileCar(c) {
   };
 
   let out = "";
-  out += `q 0.88 0.88 0.88 rg 250 507 185 7 re f Q\n`;
-  out += `q ${pdfRgbFill(paint)} rg 255 525 m 270 552 302 562 335 562 c 366 562 398 548 418 526 c 429 526 437 521 438 514 c 438 509 433 506 425 506 c 400 509 286 509 258 506 c 250 507 247 514 250 520 c 251 523 253 524 255 525 c f Q\n`;
-  out += `q ${pdfRgbFill(dark)} rg 286 550 m 305 562 354 563 383 550 c 357 553 315 553 286 550 c f Q\n`;
-  out += `q 0.08 0.10 0.13 rg 300 548 m 316 558 336 558 354 548 c f Q\n`;
-  out += `q 0.08 0.10 0.13 rg 358 548 m 373 554 392 543 404 527 c 388 536 372 544 358 548 c f Q\n`;
-  out += `q 0.02 0.02 0.02 rg 278 507 20 20 re f Q\n`;
-  out += `q 0.02 0.02 0.02 rg 389 507 20 20 re f Q\n`;
-  out += `q 0.75 0.75 0.75 rg 283 512 10 10 re f Q\n`;
-  out += `q 0.75 0.75 0.75 rg 394 512 10 10 re f Q\n`;
+  out += `q 0.88 0.88 0.88 rg 330 582 145 5 re f Q
+`;
+  out += `q ${pdfRgbFill(paint)} rg 334 596 m 346 617 371 625 397 624 c 422 624 448 613 464 596 c 473 596 479 592 480 587 c 480 583 476 581 470 581 c 450 583 359 583 337 581 c 331 582 329 587 331 591 c 332 594 333 595 334 596 c f Q
+`;
+  out += `q ${pdfRgbFill(dark)} rg 358 615 m 373 624 411 625 434 615 c 413 617 381 617 358 615 c f Q
+`;
+  out += `q 0.02 0.02 0.02 rg 352 581 15 15 re f Q
+`;
+  out += `q 0.02 0.02 0.02 rg 441 581 15 15 re f Q
+`;
+  out += `q 0.75 0.75 0.75 rg 356 585 7 7 re f Q
+`;
+  out += `q 0.75 0.75 0.75 rg 445 585 7 7 re f Q
+`;
   return out;
 }
 
+function getPdfCarImageUrl(c) {
+  return getExteriorPhoto(c.exterior.code, c.wheel.code) || null;
+}
+
+async function loadPdfImageData(url, maxWidth = 360) {
+  if (!url) return null;
+
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxWidth / img.naturalWidth);
+        const width = Math.max(1, Math.round(img.naturalWidth * scale));
+        const height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        const data = ctx.getImageData(0, 0, width, height).data;
+        let hex = "";
+        for (let i = 0; i < data.length; i += 4) {
+          hex += data[i].toString(16).padStart(2, "0");
+          hex += data[i + 1].toString(16).padStart(2, "0");
+          hex += data[i + 2].toString(16).padStart(2, "0");
+        }
+        resolve({ width, height, hex });
+      } catch (error) {
+        console.warn("PDF image could not be embedded", error);
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+function buildPdfImageObject(imageData) {
+  if (!imageData) return "";
+  const stream = `${imageData.hex}>`;
+  return `<< /Type /XObject /Subtype /Image /Width ${imageData.width} /Height ${imageData.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode /Length ${stream.length} >>
+stream
+${stream}
+endstream`;
+}
 
 function getInstalledItems(c) {
   const installed = [
@@ -1880,14 +1943,14 @@ function buildToyotaStylePages(c) {
 
   const exteriorSwatch = c.exterior.paintHex || c.exterior.hex || "#8fa8ff";
   const interiorSwatch = c.interior.gradient || c.interior.hex || "#141414";
-  out += pdfSwatch(314, 540, 18, exteriorSwatch, "#8fa8ff");
-  out += pdfText("EXTERIOR", 340, 552, 6.8, "F2");
-  out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 340, 540, 6.8, "F1");
-  out += pdfText(`RGB: ${pdfRgbTextFromColor(exteriorSwatch, "#8fa8ff")}`, 340, 529, 6.2, "F1");
-  out += pdfSwatch(436, 540, 18, interiorSwatch, "#141414");
-  out += pdfText("INTERIOR", 462, 552, 6.8, "F2");
-  out += pdfText(`${c.interior.code} ${c.interior.name}`, 462, 540, 6.8, "F1");
-  out += pdfText(`RGB: ${pdfRgbTextFromColor(interiorSwatch, "#141414")}`, 462, 529, 6.2, "F1");
+  out += pdfSwatch(318, 565, 20, exteriorSwatch, "#111111");
+  out += pdfText("EXTERIOR", 345, 578, 8.5, "F2");
+  out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 345, 565, 8.5, "F1");
+  out += pdfText(`RGB: ${pdfRgbTextFromColor(exteriorSwatch, "#111111")}`, 345, 552, 7, "F1");
+  out += pdfSwatch(455, 565, 20, interiorSwatch, "#111111");
+  out += pdfText("INTERIOR", 482, 578, 8.5, "F2");
+  out += pdfText(`${c.interior.code} ${c.interior.name}`, 482, 565, 8.5, "F1");
+  out += pdfText(`RGB: ${pdfRgbTextFromColor(interiorSwatch, "#111111")}`, 482, 552, 7, "F1");
 
   out += drawToyotaRedHeader("PRICE", 44, 493, 246);
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 44, 471, 246);
@@ -1963,10 +2026,12 @@ function buildToyotaStylePages(c) {
   return [out, page2];
 }
 
-function downloadBMWBuildSheetPDF() {
+async function downloadBMWBuildSheetPDF() {
   renderAll();
 
   const c = calculate();
+  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
+  window.__pdfCarImageReady = Boolean(pdfCarImageData);
   const pages = buildToyotaStylePages(c);
 
   const objects = [];
@@ -1983,13 +2048,19 @@ function downloadBMWBuildSheetPDF() {
 
   const font1Obj = 3 + pages.length * 2;
   const font2Obj = font1Obj + 1;
+  const imageObj = pdfCarImageData ? font2Obj + 1 : null;
+  const imageResource = imageObj ? ` /XObject << /CarImage ${imageObj} 0 R >>` : "";
   pages.forEach((content, i) => {
-    addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${font1Obj} 0 R /F2 ${font2Obj} 0 R >> >> /Contents ${contentObjectNumbers[i]} 0 R >>`);
-    addObj(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+    addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${font1Obj} 0 R /F2 ${font2Obj} 0 R >>${imageResource} >> /Contents ${contentObjectNumbers[i]} 0 R >>`);
+    addObj(`<< /Length ${content.length} >>
+stream
+${content}
+endstream`);
   });
 
   addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+  if (pdfCarImageData) addObj(buildPdfImageObject(pdfCarImageData));
 
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
@@ -2011,11 +2082,11 @@ function downloadBMWBuildSheetPDF() {
   downloadBlob(blob, `2011-BMW-M3-toyota-style-vspec-${makeSafeFileName(vinPart)}.pdf`);
 }
 
-$("copyBuildBtn").onclick = () => {
+$("copyBuildBtn").onclick = async () => {
   const btn = $("copyBuildBtn");
   btn.textContent = "Downloading...";
   try {
-    downloadBMWBuildSheetPDF();
+    await downloadBMWBuildSheetPDF();
     btn.textContent = "Downloaded";
   } catch (err) {
     console.error(err);
