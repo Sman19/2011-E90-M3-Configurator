@@ -889,7 +889,64 @@ const DATA = {
     { code:"ZP3", name:"Premium Package 3", price:2500, desc:"- Power folding auto mirrors\n- Universal garage door opener\n- Power front seats\n- Interior mirror with compass\n- BMW Assist with enhanced Bluetooth & USB\n\nChoose one trim:\n- 4MX Blue Gray Aluminum Trim\n- 4MY Carbon Leather Interior Trim\n- 4MZ Sycamore Anthracite Wood Trim" }
   ],
 
-  mPerformanceParts: [],
+  mPerformanceParts: [
+    {
+        "code": "Z04",
+        "name": "Aluminum Pedals",
+        "price": 210,
+        "desc": "Aluminum Pedals",
+        "type": "MP"
+    },
+    {
+        "code": "Z06",
+        "name": "Black Kidney Grilles",
+        "price": 162,
+        "desc": "Black Kidney Grilles",
+        "type": "MP"
+    },
+    {
+        "code": "Z10",
+        "name": "M Performance Exhaust",
+        "price": 4067,
+        "desc": "M Performance Exhaust",
+        "type": "MP"
+    },
+    {
+        "code": "Z12",
+        "name": "Alcanata Performance Steering Wheel",
+        "price": 885,
+        "desc": "Alcanata Performance Steering Wheel",
+        "type": "MP"
+    },
+    {
+        "code": "Z17",
+        "name": "Carbon Fiber Front Splitters",
+        "price": 911,
+        "desc": "Carbon Fiber Front Splitters",
+        "type": "MP"
+    },
+    {
+        "code": "Z21",
+        "name": "Carbon Fiber Mirror Caps",
+        "price": 712,
+        "desc": "Carbon Fiber Mirror Caps",
+        "type": "MP"
+    },
+    {
+        "code": "Z22",
+        "name": "Carbon Fiber Spoiler",
+        "price": 622,
+        "desc": "Carbon Fiber Spoiler",
+        "type": "MP"
+    },
+    {
+        "code": "Z62",
+        "name": "Wheel Locks",
+        "price": 0,
+        "desc": "Wheel Locks",
+        "type": "MP"
+    }
+], 
 
   standaloneOptions: [
     { code:"223", name:"Dynamic Damper Control", price:1000, desc:"Adaptive damping control" },
@@ -1430,16 +1487,21 @@ function parseMPerformanceCSV(text) {
 }
 
 function setMPerformanceParts(parts, sourceLabel = "CSV") {
-  DATA.mPerformanceParts = parts;
+  if (parts.length) {
+    DATA.mPerformanceParts = parts;
+  }
+
   [...state.mPerformanceParts].forEach(code => {
     if (!DATA.mPerformanceParts.some(part => part.code === code)) state.mPerformanceParts.delete(code);
   });
+
   const note = $("mPerformanceCsvNote");
   if (note) {
-    note.textContent = parts.length
-      ? `Loaded ${parts.length} M Performance Parts from ${sourceLabel}. Description = column C, price = column F.`
-      : `No M Performance Parts found in ${sourceLabel}. Check column C for description and column F for price.`;
+    note.textContent = DATA.mPerformanceParts.length
+      ? `Loaded ${DATA.mPerformanceParts.length} M Performance Parts${parts.length ? " from " + sourceLabel : " from built-in CSV fallback"}. Description = column C, price = column F.`
+      : `No M Performance Parts found. Check column C for description and column F for price.`;
   }
+
   renderAll();
 }
 
@@ -1450,10 +1512,10 @@ async function loadMPerformanceCSVFromUrl() {
     const response = await fetch(CSV_URL, { cache:"no-store" });
     if (!response.ok) throw new Error(String(response.status));
     const text = await response.text();
-    setMPerformanceParts(parseMPerformanceCSV(text), "main 2011 E90 M3 CSV");
+    const parsedParts = parseMPerformanceCSV(text);
+    setMPerformanceParts(parsedParts, parsedParts.length ? "main 2011 E90 M3 CSV" : "built-in CSV fallback");
   } catch (error) {
-    const note = $("mPerformanceCsvNote");
-    if (note) note.textContent = "M Performance Parts could not auto-load from the main CSV. Use the upload button below. Column C = description, column F = price.";
+    setMPerformanceParts([], "built-in CSV fallback");
   }
 }
 
