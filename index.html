@@ -796,6 +796,13 @@ textarea {
         <div class="drawer" id="optionsDrawer">
           <div class="check-list" id="optionList"></div>
         </div>
+
+        <button class="full-btn" id="toggleMPerformanceBtn">View M Performance Parts</button>
+        <div class="drawer" id="mPerformanceDrawer">
+          <p class="note" id="mPerformanceCsvNote">M Performance Parts CSV loads from m-performance-parts.csv. Description uses column C and price uses column F.</p>
+          <input type="file" id="mPerformanceCsvInput" accept=".csv,text/csv" style="width:100%;margin:10px 0;color:#d9e7ff;">
+          <div class="check-list" id="mPerformanceList"></div>
+        </div>
       </div>
 
       <div class="panel summary">
@@ -827,6 +834,7 @@ const EXTERIOR_PHOTOS = {
 };
 
 const CSV_URL = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/733ec9f20c1313e42f032516621a29dea9fc0d20/2011%20E90%20M3.csv";
+const M_PERFORMANCE_CSV_URL = "m-performance-parts.csv";
 let vinRows = [];
 
 const DATA = {
@@ -881,6 +889,8 @@ const DATA = {
     { code:"ZP3", name:"Premium Package 3", price:2500, desc:"- Power folding auto mirrors\n- Universal garage door opener\n- Power front seats\n- Interior mirror with compass\n- BMW Assist with enhanced Bluetooth & USB\n\nChoose one trim:\n- 4MX Blue Gray Aluminum Trim\n- 4MY Carbon Leather Interior Trim\n- 4MZ Sycamore Anthracite Wood Trim" }
   ],
 
+  mPerformanceParts: [],
+
   standaloneOptions: [
     { code:"223", name:"Dynamic Damper Control", price:1000, desc:"Adaptive damping control" },
     { code:"4MX", name:"Blue Gray Aluminum Trim", price:500, desc:"Interior trim" },
@@ -928,6 +938,7 @@ const state = {
   baseMSRP: 55400,
   packages: new Set(),
   options: new Set(),
+  mPerformanceParts: new Set(),
   premiumTrim: "",
   showAllInteriors: false,
   vin: "",
@@ -1012,7 +1023,8 @@ function selectedItems() {
     transmission: findByCode(DATA.transmissions, state.transmission),
     wheel: findByCode(DATA.wheels, state.wheel),
     packages: [...state.packages].map(code => findByCode(DATA.packages, code)).filter(Boolean),
-    options: [...state.options].map(code => findByCode(DATA.standaloneOptions, code)).filter(Boolean)
+    options: [...state.options].map(code => findByCode(DATA.standaloneOptions, code)).filter(Boolean),
+    mPerformanceParts: [...state.mPerformanceParts].map(code => findByCode(DATA.mPerformanceParts, code)).filter(Boolean)
   };
 }
 
@@ -1021,8 +1033,9 @@ function calculate() {
   const wheelPrice = s.wheel.code === "2MT" ? s.wheel.price : 0;
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
-  const total = state.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal;
-  return { ...s, wheelPrice, packageTotal, optionTotal, total };
+  const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + item.price, 0);
+  const total = state.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
+  return { ...s, wheelPrice, packageTotal, optionTotal, mPerformanceTotal, total };
 }
 
 function getExteriorPhoto(exteriorCode, wheelCode) {
@@ -1232,6 +1245,7 @@ function buildOutput() {
     previewImage: getExteriorPhoto(c.exterior.code, c.wheel.code),
     packages: c.packages,
     standaloneOptions: c.options,
+    mPerformanceParts: c.mPerformanceParts,
     totalMSRP: c.total
   };
 }
@@ -1252,7 +1266,7 @@ function renderSummary() {
   $("previewCaption").textContent = `Shown with ${c.wheel.name} (${c.wheel.desc})`;
   $("indLabel").textContent = c.exterior.code === "IND" ? "BMW Individual Paint    " + money(5000) : "";
 
-  const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice;
+  const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice + c.mPerformanceTotal;
   $("summaryLines").innerHTML = `
     <div class="summary-line"><span>Base Vehicle<small>2011 BMW E90 M3 Sedan${state.vin ? " | VIN: " + state.vin : ""}</small></span><strong>${money(state.baseMSRP)}</strong></div>
     ${state.sellingDealer ? `<div class="summary-line"><span>Selling Dealer<small>${state.sellingDealer}</small></span><strong></strong></div>` : ""}
@@ -1260,7 +1274,7 @@ function renderSummary() {
     <div class="summary-line"><span>Interior<small>● ${c.interior.code} ${c.interior.name}</small></span><strong>${money(c.interior.price)}</strong></div>
     ${selectedPremiumTrim() ? `<div class="summary-line"><span>Premium Package Trim<small>${selectedPremiumTrim().code} ${selectedPremiumTrim().name}</small></span><strong>Included</strong></div>` : ""}
     <div class="summary-line"><span>Transmission<small>${c.transmission.code} ${c.transmission.name}</small></span><strong>${money(c.transmission.price)}</strong></div>
-    <div class="summary-line"><span>Options & Packages<small>${c.packages.length + c.options.length} selected</small></span><strong>${money(optionsAndPackages)}</strong></div>
+    <div class="summary-line"><span>Options & Packages<small>${c.packages.length + c.options.length + c.mPerformanceParts.length} selected</small></span><strong>${money(optionsAndPackages)}</strong></div>
     <div class="summary-line"><span>Destination & Handling</span><strong>${money(DATA.destination)}</strong></div>
     <div class="summary-line"><span>Gas Guzzler Tax</span><strong>${money(DATA.gasGuzzler)}</strong></div>
   `;
@@ -1290,6 +1304,7 @@ function renderAll() {
   renderChecks("packageList", DATA.packages, "packages");
   renderPremiumTrim();
   renderChecks("optionList", DATA.standaloneOptions, "options");
+  renderChecks("mPerformanceList", DATA.mPerformanceParts, "mPerformanceParts");
   renderSummary();
 }
 
@@ -1373,6 +1388,61 @@ function parseCSV(text) {
   });
 }
 
+
+function parseMoneyValue(value) {
+  const cleaned = String(value || "").replace(/[^0-9.-]/g, "");
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function parseMPerformanceCSV(text) {
+  const rows = parseCSV(text);
+  const parts = [];
+  rows.forEach((row, index) => {
+    const desc = normalizeText(row.__COL_3 || row.Description || row.DESCRIPTION || row.description);
+    const price = parseMoneyValue(row.__COL_6 || row.Price || row.PRICE || row.price);
+    if (!desc) return;
+    const codeSource = normalizeText(row.__COL_1 || row.__COL_2);
+    const code = codeSource && codeSource.length <= 12
+      ? codeSource.toUpperCase().replace(/[^A-Z0-9.-]/g, "")
+      : `MPP${String(index + 1).padStart(3, "0")}`;
+    parts.push({
+      code,
+      name: desc,
+      price,
+      desc,
+      type:"MP"
+    });
+  });
+  return parts;
+}
+
+function setMPerformanceParts(parts, sourceLabel = "CSV") {
+  DATA.mPerformanceParts = parts;
+  [...state.mPerformanceParts].forEach(code => {
+    if (!DATA.mPerformanceParts.some(part => part.code === code)) state.mPerformanceParts.delete(code);
+  });
+  const note = $("mPerformanceCsvNote");
+  if (note) {
+    note.textContent = parts.length
+      ? `Loaded ${parts.length} M Performance Parts from ${sourceLabel}. Description = column C, price = column F.`
+      : `No M Performance Parts found in ${sourceLabel}. Check column C for description and column F for price.`;
+  }
+  renderAll();
+}
+
+async function loadMPerformanceCSVFromUrl() {
+  try {
+    const response = await fetch(M_PERFORMANCE_CSV_URL, { cache:"no-store" });
+    if (!response.ok) throw new Error(String(response.status));
+    const text = await response.text();
+    setMPerformanceParts(parseMPerformanceCSV(text), M_PERFORMANCE_CSV_URL);
+  } catch (error) {
+    const note = $("mPerformanceCsvNote");
+    if (note) note.textContent = `M Performance Parts CSV not auto-loaded. Upload the CSV here, or host it as ${M_PERFORMANCE_CSV_URL}. Description = column C, price = column F.`;
+  }
+}
+
 async function loadCSV() {
   if (vinRows.length) return vinRows;
 
@@ -1410,13 +1480,15 @@ function applyPackageCodes(packageText) {
   state.packages.clear();
   state.options.clear();
 
-  [...DATA.packages, ...DATA.standaloneOptions].forEach(item => {
+  [...DATA.packages, ...DATA.standaloneOptions, ...DATA.mPerformanceParts].forEach(item => {
     const code = item.code.toUpperCase();
     const codeRegex = new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`);
 
     if (codeRegex.test(text)) {
       if (DATA.packages.some(pkg => pkg.code === item.code)) {
         state.packages.add(item.code);
+      } else if (DATA.mPerformanceParts.some(part => part.code === item.code)) {
+        state.mPerformanceParts.add(item.code);
       } else {
         state.options.add(item.code);
       }
@@ -1532,6 +1604,19 @@ $("toggleOptionsBtn").onclick = () => {
   $("optionsDrawer").classList.toggle("show");
   $("toggleOptionsBtn").textContent = $("optionsDrawer").classList.contains("show") ? "Hide Options" : "View All Options";
 };
+
+$("toggleMPerformanceBtn").onclick = () => {
+  $("mPerformanceDrawer").classList.toggle("show");
+  $("toggleMPerformanceBtn").textContent = $("mPerformanceDrawer").classList.contains("show") ? "Hide M Performance Parts" : "View M Performance Parts";
+};
+
+$("mPerformanceCsvInput").addEventListener("change", event => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => setMPerformanceParts(parseMPerformanceCSV(String(reader.result || "")), file.name);
+  reader.readAsText(file);
+});
 
 function pdfClean(value) {
   return String(value ?? "")
@@ -1856,6 +1941,7 @@ function getInstalledItems(c) {
 
   installed.push(...c.packages.map(item => ({...item, type:"FIO"})));
   installed.push(...c.options.map(item => ({...item, type:"PIO"})));
+  installed.push(...c.mPerformanceParts.map(item => ({...item, type:"MP"})));
 
   return installed;
 }
@@ -1959,7 +2045,7 @@ function drawFeatures(out, c, startY, bottomY) {
 
 function buildToyotaStylePages(c) {
   const buildDate = new Date().toLocaleDateString("en-US");
-  const factoryTotal = c.packageTotal + c.optionTotal + c.wheelPrice + c.transmission.price + c.interior.price + c.exterior.price;
+  const factoryTotal = c.packageTotal + c.optionTotal + c.mPerformanceTotal + c.wheelPrice + c.transmission.price + c.interior.price + c.exterior.price;
   const dealerName = state.sellingDealer || "BMW Dealer";
   const installed = getInstalledItems(c);
   const page1Bottom = 86;
@@ -2193,6 +2279,7 @@ $("resetBtn").onclick = () => {
 };
 
 renderAll();
+loadMPerformanceCSVFromUrl();
 </script>
 </body>
 </html>
