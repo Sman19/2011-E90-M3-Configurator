@@ -799,7 +799,7 @@ textarea {
 
         <button class="full-btn" id="toggleMPerformanceBtn">View M Performance Parts</button>
         <div class="drawer" id="mPerformanceDrawer">
-          <p class="note" id="mPerformanceCsvNote">M Performance Parts CSV loads from m-performance-parts.csv. Description uses column C and price uses column F.</p>
+          <p class="note" id="mPerformanceCsvNote">M Performance Parts auto-load from the main CSV. Description = column C, price = column F.</p>
           <input type="file" id="mPerformanceCsvInput" accept=".csv,text/csv" style="width:100%;margin:10px 0;color:#d9e7ff;">
           <div class="check-list" id="mPerformanceList"></div>
         </div>
@@ -1398,22 +1398,34 @@ function parseMoneyValue(value) {
 function parseMPerformanceCSV(text) {
   const rows = parseCSV(text);
   const parts = [];
+
   rows.forEach((row, index) => {
-    const desc = normalizeText(row.__COL_3 || row.Description || row.DESCRIPTION || row.description);
-    const price = parseMoneyValue(row.__COL_6 || row.Price || row.PRICE || row.price);
-    if (!desc) return;
-    const codeSource = normalizeText(row.__COL_1 || row.__COL_2);
-    const code = codeSource && codeSource.length <= 12
-      ? codeSource.toUpperCase().replace(/[^A-Z0-9.-]/g, "")
-      : `MPP${String(index + 1).padStart(3, "0")}`;
+    // M Performance Parts are stored in the main CSV near the bottom.
+    // Column C = description/code text like "Z10 - M Performance Exhaust"
+    // Column F = price like "$4,067.00"
+    const rawDesc = normalizeText(row.__COL_3 || row.Description || row.DESCRIPTION || row.description);
+    const rawPrice = row.__COL_6 || row.Price || row.PRICE || row.price;
+
+    if (!rawDesc) return;
+
+    // Only pull the M Performance accessory rows, not normal interior/code rows.
+    // This keeps regular option-code rows like ZCP, ZCV, MSRP, etc. out of this section.
+    const mPerfMatch = rawDesc.match(/^\s*(Z\d{2})\s*-\s*(.+?)\s*$/i);
+    if (!mPerfMatch) return;
+
+    const code = mPerfMatch[1].toUpperCase();
+    const name = mPerfMatch[2].trim();
+    const price = parseMoneyValue(rawPrice);
+
     parts.push({
       code,
-      name: desc,
+      name,
       price,
-      desc,
-      type:"MP"
+      desc: name,
+      type: "MP"
     });
   });
+
   return parts;
 }
 
@@ -1433,13 +1445,15 @@ function setMPerformanceParts(parts, sourceLabel = "CSV") {
 
 async function loadMPerformanceCSVFromUrl() {
   try {
-    const response = await fetch(M_PERFORMANCE_CSV_URL, { cache:"no-store" });
+    // Pull M Performance Parts from the same main CSV used by the VIN loader.
+    // Column C = description/code text, Column F = price.
+    const response = await fetch(CSV_URL, { cache:"no-store" });
     if (!response.ok) throw new Error(String(response.status));
     const text = await response.text();
-    setMPerformanceParts(parseMPerformanceCSV(text), M_PERFORMANCE_CSV_URL);
+    setMPerformanceParts(parseMPerformanceCSV(text), "main 2011 E90 M3 CSV");
   } catch (error) {
     const note = $("mPerformanceCsvNote");
-    if (note) note.textContent = `M Performance Parts CSV not auto-loaded. Upload the CSV here, or host it as ${M_PERFORMANCE_CSV_URL}. Description = column C, price = column F.`;
+    if (note) note.textContent = "M Performance Parts could not auto-load from the main CSV. Use the upload button below. Column C = description, column F = price.";
   }
 }
 
