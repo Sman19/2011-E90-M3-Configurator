@@ -2138,14 +2138,17 @@ function drawFeatures(out, c, startY, bottomY) {
   if (techY > bottomY + 20) {
     out += pdfText("Audio, Technology & Convenience", 318, techY, 10.4, "F2");
     const techLines = [
-      "Navigation System where equipped",
-      "BMW Assist with Bluetooth where equipped",
-      "iPod and USB adapter where equipped",
-      "Enhanced Premium Sound where equipped",
-      "Satellite Radio where equipped",
-      "BMW Apps where equipped",
-      "Comfort Access keyless entry where equipped",
-      "Park Distance Control where equipped"
+        "AM/FM stereo with CD/MP3 capability",
+        "Auxiliary audio input",
+        "Automatic climate control",
+        "Cruise Control",
+        "Rain sensing windshield wipers",
+        "Auto dimming rearview mirror",
+        "M specific instrument cluster",
+        "On Board Computer with Check Control",
+        "Power windows with one touch operation",
+        "Remote keyless entry",
+        "BMW TeleService capability"
     ];
     let techBlock = pdfTextBlock(techLines.map(x => `• ${x}`), 328, techY - 17, 7.1, 10.2, 64, "F1", bottomY);
     out += techBlock.out;
