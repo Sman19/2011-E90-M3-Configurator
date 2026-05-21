@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>2011 BMW E90 M3 Sedan Configurator - Toyota Style PDF v2</title>
+<title>2011 BMW E90 M3 Sedan Configurator - BMW Spec Sheet PDF v2</title>
 
 <style>
 :root {
@@ -1683,6 +1683,69 @@ function drawToyotaRedHeader(title, x, y, w) {
     pdfLine(x, y - 7, x + w, y - 7, 0.72, 0.6);
 }
 
+function pdfHexToRgb(hex, fallback = { r: 20, g: 20, b: 20 }) {
+  const clean = String(hex || "").trim();
+  const match = clean.match(/#([0-9a-fA-F]{6})/);
+  if (!match) return fallback;
+  const value = match[1];
+  return {
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16)
+  };
+}
+
+function pdfRgbFill(rgb) {
+  return `${(rgb.r / 255).toFixed(4)} ${(rgb.g / 255).toFixed(4)} ${(rgb.b / 255).toFixed(4)}`;
+}
+
+function pdfRgbTextFromColor(value, fallback = "#141414") {
+  const colors = String(value || fallback).match(/#[0-9a-fA-F]{6}/g) || [fallback];
+  const unique = [...new Set(colors)].slice(0, 2);
+  return unique.map(hex => {
+    const rgb = pdfHexToRgb(hex);
+    return `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+  }).join(" / ");
+}
+
+function pdfSwatch(x, y, size, colorValue, fallback = "#141414") {
+  const colors = String(colorValue || fallback).match(/#[0-9a-fA-F]{6}/g) || [fallback];
+  const first = pdfHexToRgb(colors[0], pdfHexToRgb(fallback));
+  const second = colors[1] ? pdfHexToRgb(colors[1], first) : first;
+
+  if (colors.length > 1) {
+    return `q ${pdfRgbFill(first)} rg ${x} ${y} ${size / 2} ${size} re f Q\n` +
+      `q ${pdfRgbFill(second)} rg ${x + size / 2} ${y} ${size / 2} ${size} re f Q\n` +
+      pdfStrokeRect(x, y, size, size, 0.82, 0.45);
+  }
+
+  return `q ${pdfRgbFill(first)} rg ${x} ${y} ${size} ${size} re f Q\n` +
+    pdfStrokeRect(x, y, size, size, 0.82, 0.45);
+}
+
+function drawPdfSideProfileCar(c) {
+  const paintHex = c.exterior.paintHex || c.exterior.hex || "#f2f1ea";
+  const paint = pdfHexToRgb(paintHex, { r: 143, g: 168, b: 255 });
+  const dark = {
+    r: Math.max(0, Math.round(paint.r * 0.62)),
+    g: Math.max(0, Math.round(paint.g * 0.62)),
+    b: Math.max(0, Math.round(paint.b * 0.62))
+  };
+
+  let out = "";
+  out += `q 0.88 0.88 0.88 rg 250 507 185 7 re f Q\n`;
+  out += `q ${pdfRgbFill(paint)} rg 255 525 m 270 552 302 562 335 562 c 366 562 398 548 418 526 c 429 526 437 521 438 514 c 438 509 433 506 425 506 c 400 509 286 509 258 506 c 250 507 247 514 250 520 c 251 523 253 524 255 525 c f Q\n`;
+  out += `q ${pdfRgbFill(dark)} rg 286 550 m 305 562 354 563 383 550 c 357 553 315 553 286 550 c f Q\n`;
+  out += `q 0.08 0.10 0.13 rg 300 548 m 316 558 336 558 354 548 c f Q\n`;
+  out += `q 0.08 0.10 0.13 rg 358 548 m 373 554 392 543 404 527 c 388 536 372 544 358 548 c f Q\n`;
+  out += `q 0.02 0.02 0.02 rg 278 507 20 20 re f Q\n`;
+  out += `q 0.02 0.02 0.02 rg 389 507 20 20 re f Q\n`;
+  out += `q 0.75 0.75 0.75 rg 283 512 10 10 re f Q\n`;
+  out += `q 0.75 0.75 0.75 rg 394 512 10 10 re f Q\n`;
+  return out;
+}
+
+
 function getInstalledItems(c) {
   const installed = [
     ...c.packages.map(item => ({...item, type:"FIO"})),
@@ -1813,13 +1876,18 @@ function buildToyotaStylePages(c) {
   out += pdfText("Engine: S65 4.0L naturally aspirated V8", 44, 539, 8.5, "F1");
   out += pdfText(`Transmission: ${c.transmission.code} ${c.transmission.name}`, 44, 525, 8.5, "F1");
 
-  const extHex = (c.exterior.hex && c.exterior.hex.startsWith("#")) ? c.exterior.hex : "#8fa8ff";
-  out += `q ${parseInt(extHex.slice(1,3),16)/255} ${parseInt(extHex.slice(3,5),16)/255} ${parseInt(extHex.slice(5,7),16)/255} rg 314 540 18 18 re f Q\n`;
+  out += drawPdfSideProfileCar(c);
+
+  const exteriorSwatch = c.exterior.paintHex || c.exterior.hex || "#8fa8ff";
+  const interiorSwatch = c.interior.gradient || c.interior.hex || "#141414";
+  out += pdfSwatch(314, 540, 18, exteriorSwatch, "#8fa8ff");
   out += pdfText("EXTERIOR", 340, 552, 6.8, "F2");
   out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 340, 540, 6.8, "F1");
-  out += `q 0.08 0.08 0.08 rg 436 540 18 18 re f Q\n`;
+  out += pdfText(`RGB: ${pdfRgbTextFromColor(exteriorSwatch, "#8fa8ff")}`, 340, 529, 6.2, "F1");
+  out += pdfSwatch(436, 540, 18, interiorSwatch, "#141414");
   out += pdfText("INTERIOR", 462, 552, 6.8, "F2");
   out += pdfText(`${c.interior.code} ${c.interior.name}`, 462, 540, 6.8, "F1");
+  out += pdfText(`RGB: ${pdfRgbTextFromColor(interiorSwatch, "#141414")}`, 462, 529, 6.2, "F1");
 
   out += drawToyotaRedHeader("PRICE", 44, 493, 246);
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 44, 471, 246);
