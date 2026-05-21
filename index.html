@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>2011 BMW E90 M3 Sedan Configurator - BMW Spec Sheet PDF v7</title>
+<title>2011 BMW E90 M3 Sedan Configurator - BMW Spec Sheet PDF v11</title>
 
 <style>
 :root {
@@ -842,7 +842,7 @@ const DATA = {
     { code:"668", name:"Jet Black", price:0, hex:"#050505", type:"Non-metallic" },
     { code:"A73", name:"Jerez Black Metallic", price:550, hex:"#10131d", type:"Metallic" },
     { code:"A29", name:"Silverstone Metallic II", price:550, hex:"#bfc8cf", type:"Metallic" },
-    { code:"381", name:"Le Mans Blue Metallic", price:550, hex:"#143f8f", type:"Metallic" },
+    { code:"B05", name:"Le Mans Blue Metallic", price:550, hex:"#143f8f", type:"Metallic" },
     { code:"A30", name:"Interlagos Blue Metallic", price:550, hex:"#263d87", type:"Metallic" },
     { code:"A52", name:"Space Gray Metallic", price:550, hex:"#63686c", type:"Metallic" },
     { code:"A75", name:"Melbourne Red Metallic", price:550, hex:"#a20d16", type:"Metallic" },
@@ -1728,7 +1728,7 @@ function drawPdfSideProfileCar(c) {
   // Falls back to a smaller vector silhouette only if the image cannot be loaded.
   if (window.__pdfCarImageReady) {
     return `q
-155 0 0 38 352 610 cm
+155 0 0 68 352 610 cm
 /CarImage Do
 Q
 `;
@@ -1886,10 +1886,11 @@ function drawInstalledItem(out, item, y, maxY) {
 function drawFeatures(out, c, startY, bottomY) {
   let y = startY;
   out += drawToyotaRedHeader("FEATURES", 44, y, 524);
-  y -= 35;
 
-  out += pdfText("Mechanical & Performance", 52, y, 10.4, "F2");
-  y -= 17;
+  const topY = y - 35;
+
+  // LEFT COLUMN - Mechanical first
+  out += pdfText("Mechanical & Performance", 52, topY, 10.4, "F2");
   const mech = [
     "S65 4.0-liter naturally aspirated V8",
     "414 hp at 8,300 rpm / 295 lb-ft at 3,900 rpm",
@@ -1900,10 +1901,29 @@ function drawFeatures(out, c, startY, bottomY) {
     "M compound brake system",
     "Quad outlet M exhaust system"
   ];
-  let block = pdfTextBlock(mech.map(x => `• ${x}`), 62, y, 7.1, 10.2, 64, "F1", bottomY);
-  out += block.out;
+  let mechBlock = pdfTextBlock(mech.map(x => `• ${x}`), 62, topY - 17, 7.1, 10.2, 64, "F1", bottomY);
+  out += mechBlock.out;
 
-  out += pdfText("Exterior", 318, y + 17, 10.4, "F2");
+  // LEFT COLUMN - Interior below Mechanical with a real gap so the title never overlaps.
+  const interiorY = Math.max(mechBlock.y - 20, bottomY + 96);
+  if (interiorY > bottomY + 20) {
+    out += pdfText("Interior", 52, interiorY, 10.4, "F2");
+    const interiorLines = [
+      `${c.interior.code} ${c.interior.name}`,
+      "M sport seats with driver-focused cockpit layout",
+      "M leather steering wheel with tri-color stitching",
+      "Anthracite headliner",
+      "Automatic climate control",
+      selectedPremiumTrim() ? `${selectedPremiumTrim().code} ${selectedPremiumTrim().name}` : "Interior trim selected by package or standalone option",
+      "Power front seats where equipped",
+      "Heated front seats where equipped"
+    ];
+    let interiorBlock = pdfTextBlock(interiorLines.map(x => `• ${x}`), 62, interiorY - 17, 7.1, 10.2, 64, "F1", bottomY);
+    out += interiorBlock.out;
+  }
+
+  // RIGHT COLUMN - Exterior first
+  out += pdfText("Exterior", 318, topY, 10.4, "F2");
   const exteriorLines = [
     `${c.exterior.code} ${c.exterior.name}`,
     `${c.wheel.code} ${c.wheel.name}`,
@@ -1913,37 +1933,27 @@ function drawFeatures(out, c, startY, bottomY) {
     "Adaptive Xenon headlights",
     "M side gills and badging"
   ];
-  block = pdfTextBlock(exteriorLines.map(x => `• ${x}`), 328, y, 7.1, 10.2, 64, "F1", bottomY);
-  out += block.out;
+  let exteriorBlock = pdfTextBlock(exteriorLines.map(x => `• ${x}`), 328, topY - 17, 7.1, 10.2, 64, "F1", bottomY);
+  out += exteriorBlock.out;
 
-  y = Math.min(block.y, 430);
-  out += pdfText("Interior", 52, y, 10.4, "F2");
-  const interiorLines = [
-    `${c.interior.code} ${c.interior.name}`,
-    "M sport seats with driver-focused cockpit layout",
-    "M leather steering wheel with tri-color stitching",
-    "Anthracite headliner",
-    "Automatic climate control",
-    selectedPremiumTrim() ? `${selectedPremiumTrim().code} ${selectedPremiumTrim().name}` : "Interior trim selected by package or standalone option",
-    "Power front seats where equipped",
-    "Heated front seats where equipped"
-  ];
-  block = pdfTextBlock(interiorLines.map(x => `• ${x}`), 62, y - 17, 7.1, 10.2, 64, "F1", bottomY);
-  out += block.out;
+  // RIGHT COLUMN - Audio below Exterior with a real gap so the title never overlaps.
+  const techY = Math.max(exteriorBlock.y - 20, bottomY + 96);
+  if (techY > bottomY + 20) {
+    out += pdfText("Audio, Technology & Convenience", 318, techY, 10.4, "F2");
+    const techLines = [
+      "Navigation System where equipped",
+      "BMW Assist with Bluetooth where equipped",
+      "iPod and USB adapter where equipped",
+      "Enhanced Premium Sound where equipped",
+      "Satellite Radio where equipped",
+      "BMW Apps where equipped",
+      "Comfort Access keyless entry where equipped",
+      "Park Distance Control where equipped"
+    ];
+    let techBlock = pdfTextBlock(techLines.map(x => `• ${x}`), 328, techY - 17, 7.1, 10.2, 64, "F1", bottomY);
+    out += techBlock.out;
+  }
 
-  out += pdfText("Audio, Technology & Convenience", 318, y, 10.4, "F2");
-  const techLines = [
-    "Navigation System where equipped",
-    "BMW Assist with Bluetooth where equipped",
-    "iPod and USB adapter where equipped",
-    "Enhanced Premium Sound where equipped",
-    "Satellite Radio where equipped",
-    "BMW Apps where equipped",
-    "Comfort Access keyless entry where equipped",
-    "Park Distance Control where equipped"
-  ];
-  block = pdfTextBlock(techLines.map(x => `• ${x}`), 328, y - 17, 7.1, 10.2, 64, "F1", bottomY);
-  out += block.out;
   return out;
 }
 
@@ -1986,9 +1996,9 @@ function buildToyotaStylePages(c) {
   out += pdfSwatch(318, 565, 20, exteriorSwatch, "#111111");
   out += pdfText("EXTERIOR", 345, 578, 8.5, "F2");
   out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 345, 565, 8.5, "F1");
-  out += pdfSwatch(418, 565, 20, interiorSwatch, "#111111");
-  out += pdfText("INTERIOR", 445, 578, 8.5, "F2");
-  out += pdfText(`${c.interior.code} ${c.interior.name}`, 445, 565, 8.5, "F1");
+  out += pdfSwatch(455, 565, 20, interiorSwatch, "#111111");
+  out += pdfText("INTERIOR", 482, 578, 8.5, "F2");
+  out += pdfText(`${c.interior.code} ${c.interior.name}`, 482, 565, 8.5, "F1");
 
   out += drawToyotaRedHeader("PRICE", 44, 493, 246);
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 44, 471, 246);
@@ -2051,7 +2061,11 @@ function buildToyotaStylePages(c) {
   page2 += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 44, y2, 524);
   y2 -= 20;
   page2 += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 44, y2, 524);
-  y2 -= 34;
+  y2 -= 26;
+  page2 += pdfText("Total Suggested Retail Price", 44, y2, 11.8, "F2");
+  page2 += pdfText(moneyPdf(c.total), 568, y2, 11.8, "F2", "right");
+  page2 += pdfLine(44, y2 - 6, 568, y2 - 6, 0.80, 0.65);
+  y2 -= 38;
 
   // If there is room, keep the feature section on page 2. If the list was long, it still stays to 2 pages and omits the long generic feature matrix.
   if (y2 > 210) {
