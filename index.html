@@ -2051,7 +2051,7 @@ function getInstalledItems(c) {
   }
 
   installed.push(...c.packages.map(item => ({...item, type:"FIO"})));
-  installed.push(...c.options.map(item => ({...item, type:"PIO"})));
+  installed.push(...c.options.map(item => ({...item, type:"FIO"})));
   installed.push(...c.mPerformanceParts.map(item => ({...item, type:"MP"})));
 
   return installed;
