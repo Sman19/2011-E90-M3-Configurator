@@ -1,6 +1,4 @@
-from pathlib import Path
-
-html = r'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -787,6 +785,13 @@ textarea {
       <div class="panel summary">
         <h2>Packages</h2>
         <div class="check-list" id="packageList"></div>
+
+        <div class="drawer" id="premiumTrimBox">
+          <h2 style="margin-top:18px;">Premium Package Interior Trim</h2>
+          <p class="note" style="margin-bottom:10px;">Required when ZP2 or ZP3 is selected. Choose one included trim.</p>
+          <div class="choice-grid" id="premiumTrimGrid"></div>
+        </div>
+
         <button class="full-btn" id="toggleOptionsBtn">View All Options</button>
         <div class="drawer" id="optionsDrawer">
           <div class="check-list" id="optionList"></div>
@@ -900,6 +905,21 @@ const DATA = {
   ]
 };
 
+const PREMIUM_TRIMS = [
+  { code:"4MX", name:"Blue Gray Aluminum Trim" },
+  { code:"4MY", name:"Carbon Leather Interior Trim" },
+  { code:"4MZ", name:"Sycamore Anthracite Wood Trim" }
+];
+
+const PREMIUM_PACKAGE_TRIM_CODE_MAP = {
+  "ZP2.1": "4MX",
+  "ZP2.2": "4MZ",
+  "ZP2.3": "4MY",
+  "ZP3.1": "4MX",
+  "ZP3.2": "4MZ",
+  "ZP3.3": "4MY"
+};
+
 const state = {
   exterior: "300",
   interior: "NCSW",
@@ -908,6 +928,7 @@ const state = {
   baseMSRP: 55400,
   packages: new Set(),
   options: new Set(),
+  premiumTrim: "",
   showAllInteriors: false,
   vin: "",
   sellingDealer: ""
@@ -929,7 +950,7 @@ function disabledOptionReason(code) {
   }
 
   if (hasPremiumPackage()) {
-    if (["4MX", "4MY", "4MZ"].includes(code)) return "Included/selected within Premium Package";
+    if (["4MX", "4MY", "4MZ"].includes(code)) return "Choose from Premium Package trim selection";
     if (code === "639") return "Included with Premium Package";
   }
 
@@ -940,6 +961,12 @@ function enforceLockouts() {
   [...state.options].forEach(code => {
     if (disabledOptionReason(code)) state.options.delete(code);
   });
+
+  if (!hasPremiumPackage()) state.premiumTrim = "";
+}
+
+function selectedPremiumTrim() {
+  return state.premiumTrim ? PREMIUM_TRIMS.find(item => item.code === state.premiumTrim) || null : null;
 }
 
 function getInteriorPrice(item) {
@@ -1136,11 +1163,45 @@ function renderChecks(containerId, list, setName) {
       else state[setName].delete(item.code);
 
       if (item.code === "ZCP") state.wheel = e.target.checked ? "ZCP" : "STD";
+      if ((item.code === "ZP2" || item.code === "ZP3") && !e.target.checked && !hasPremiumPackage()) state.premiumTrim = "";
       enforceLockouts();
       renderAll();
     };
 
     container.appendChild(row);
+  });
+}
+
+function renderPremiumTrim() {
+  const box = $("premiumTrimBox");
+  const grid = $("premiumTrimGrid");
+  if (!box || !grid) return;
+
+  if (!hasPremiumPackage()) {
+    box.classList.remove("show");
+    grid.innerHTML = "";
+    state.premiumTrim = "";
+    return;
+  }
+
+  box.classList.add("show");
+  grid.innerHTML = "";
+
+  PREMIUM_TRIMS.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = "choice-card" + (state.premiumTrim === item.code ? " active" : "");
+    btn.innerHTML = `
+      <div class="material" style="--mat:${item.code === "4MY" ? "linear-gradient(135deg,#111,#32363c,#111)" : item.code === "4MZ" ? "linear-gradient(135deg,#2f2118,#6b4a32,#1d130e)" : "linear-gradient(135deg,#7d8794,#d6dbe0,#6f7782)"}"></div>
+      <span class="choice-code">${item.code}</span>
+      <span class="choice-name">${item.name}</span>
+      <span class="choice-price">Included</span>
+    `;
+    btn.onclick = () => {
+      state.premiumTrim = item.code;
+      ["4MX", "4MY", "4MZ"].forEach(code => state.options.delete(code));
+      renderAll();
+    };
+    grid.appendChild(btn);
   });
 }
 
@@ -1150,6 +1211,7 @@ function compatibilityWarnings() {
   if (state.packages.has("ZCW")) ["465","494"].forEach(code => { if (state.options.has(code)) warnings.push(`ZCW may already include ${code}, so check duplicate pricing.`); });
   const trims = ["4MX","4MY","4MZ","771","XE2"].filter(code => state.options.has(code));
   if (trims.length > 1) warnings.push(`Multiple trim options selected (${trims.join(", ")}). Usually only one interior trim should be selected.`);
+  if (hasPremiumPackage() && !state.premiumTrim) warnings.push("Select one Premium Package interior trim: 4MX, 4MY, or 4MZ.");
   return warnings;
 }
 
@@ -1166,6 +1228,7 @@ function buildOutput() {
     interior: c.interior,
     transmission: c.transmission,
     wheel: c.wheel,
+    premiumTrim: selectedPremiumTrim(),
     previewImage: getExteriorPhoto(c.exterior.code, c.wheel.code),
     packages: c.packages,
     standaloneOptions: c.options,
@@ -1195,6 +1258,7 @@ function renderSummary() {
     ${state.sellingDealer ? `<div class="summary-line"><span>Selling Dealer<small>${state.sellingDealer}</small></span><strong></strong></div>` : ""}
     <div class="summary-line"><span>Exterior Color<small>● ${c.exterior.code} ${c.exterior.name}</small></span><strong>${money(c.exterior.price)}</strong></div>
     <div class="summary-line"><span>Interior<small>● ${c.interior.code} ${c.interior.name}</small></span><strong>${money(c.interior.price)}</strong></div>
+    ${selectedPremiumTrim() ? `<div class="summary-line"><span>Premium Package Trim<small>${selectedPremiumTrim().code} ${selectedPremiumTrim().name}</small></span><strong>Included</strong></div>` : ""}
     <div class="summary-line"><span>Transmission<small>${c.transmission.code} ${c.transmission.name}</small></span><strong>${money(c.transmission.price)}</strong></div>
     <div class="summary-line"><span>Options & Packages<small>${c.packages.length + c.options.length} selected</small></span><strong>${money(optionsAndPackages)}</strong></div>
     <div class="summary-line"><span>Destination & Handling</span><strong>${money(DATA.destination)}</strong></div>
@@ -1224,6 +1288,7 @@ function renderAll() {
   renderWheels();
   renderMSRPSelector();
   renderChecks("packageList", DATA.packages, "packages");
+  renderPremiumTrim();
   renderChecks("optionList", DATA.standaloneOptions, "options");
   renderSummary();
 }
@@ -1364,7 +1429,22 @@ function applyPackageCodes(packageText) {
   if (state.packages.has("ZCP")) state.wheel = "ZCP";
   else if (text.includes("2MT")) state.wheel = "2MT";
   else state.wheel = "STD";
+
+  let mappedPremiumTrim = "";
+  Object.entries(PREMIUM_PACKAGE_TRIM_CODE_MAP).forEach(([packageTrimCode, trimCode]) => {
+    const escaped = packageTrimCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const packageTrimRegex = new RegExp(`(^|[^A-Z0-9])${escaped}([^A-Z0-9]|$)`);
+    if (packageTrimRegex.test(text)) mappedPremiumTrim = trimCode;
+  });
+
+  const matchedPremiumTrim = PREMIUM_TRIMS.find(item => text.includes(item.code) || text.includes(item.name.toUpperCase()));
+  state.premiumTrim = hasPremiumPackage() ? (mappedPremiumTrim || (matchedPremiumTrim ? matchedPremiumTrim.code : "")) : "";
+
+  if (state.premiumTrim) {
+    ["4MX", "4MY", "4MZ"].forEach(code => state.options.delete(code));
+  }
 }
+
 
 async function lookupVIN() {
   const input = normalizeVIN($("vinSearch").value);
@@ -1567,11 +1647,26 @@ function pdfPriceRow(label, value, x, y, w, bold = false) {
   return out;
 }
 
-function parseDescLines(desc) {
-  return String(desc || "")
+function parseDescLines(desc, itemCode = "") {
+  const trimNames = PREMIUM_TRIMS.map(item => `${item.code} ${item.name}`.toLowerCase());
+  let lines = String(desc || "")
     .split(/\n+/)
-    .map(s => s.replace(/^[-•]\s*/, "").trim())
-    .filter(Boolean);
+    .map(s => s.replace(/^[-•.]\s*/, "").trim())
+    .filter(Boolean)
+    .filter(line => !line.toLowerCase().includes("choose one trim"))
+    .filter(line => !trimNames.includes(line.toLowerCase()));
+
+  if ((itemCode === "ZP2" || itemCode === "ZP3") && state.premiumTrim) {
+    const trim = selectedPremiumTrim();
+    if (trim) {
+      const trimLine = `${trim.code} ${trim.name}`;
+      const powerSeatIndex = lines.findIndex(line => line.toLowerCase().includes("power front seats"));
+      if (powerSeatIndex >= 0) lines.splice(powerSeatIndex + 1, 0, trimLine);
+      else lines.push(trimLine);
+    }
+  }
+
+  return lines;
 }
 
 function drawPageFooter(pageNo) {
@@ -1643,7 +1738,7 @@ function buildToyotaStylePageOne(c) {
     out += pdfText(item.type || "FIO", 486, y, 7.8, "F1", "right");
     out += pdfText(moneyPdf(item.price || 0), 580, y, 8.2, "F2", "right");
     y -= 13;
-    const descLines = parseDescLines(item.desc).slice(0, 3);
+    const descLines = parseDescLines(item.desc, item.code).slice(0, 6);
     if (descLines.length) {
       const block = pdfTextBlock(descLines.map(line => `. ${line}`), 46, y, 7.2, 9.0, 88, "F1", 176);
       out += block.out;
@@ -1708,9 +1803,9 @@ function buildToyotaStylePageTwo(c) {
     "On-board computer",
     "M instrument cluster with variable warning zone",
     "Power front seats where equipped",
+    selectedPremiumTrim() ? `${selectedPremiumTrim().code} ${selectedPremiumTrim().name}` : "Interior trim selected by package or standalone option",
     "Heated front seats where equipped",
-    "Split fold-down rear seat where equipped",
-    "Interior trim selected by package or standalone option"
+    "Split fold-down rear seat where equipped"
   ];
   block = pdfTextBlock(interiorLines, 318, 735, 7.8, 11, 62, "F1", 408);
   out += block.out;
@@ -1748,6 +1843,7 @@ function buildToyotaStylePageThree(c) {
     [`Transmission - ${c.transmission.code} ${c.transmission.name}`, moneyPdf(c.transmission.price)],
     [`Wheels - ${c.wheel.code} ${c.wheel.name}`, moneyPdf(c.wheelPrice)]
   ];
+  if (selectedPremiumTrim()) rows.push([`Premium Package Trim - ${selectedPremiumTrim().code} ${selectedPremiumTrim().name}`, "Included"]);
   c.packages.forEach(item => rows.push([`${item.code} ${item.name}`, moneyPdf(item.price)]));
   c.options.forEach(item => rows.push([`${item.code} ${item.name}`, moneyPdf(item.price)]));
   rows.push(["Destination & Handling", moneyPdf(DATA.destination)]);
@@ -1856,6 +1952,7 @@ $("resetBtn").onclick = () => {
   state.baseMSRP = 55400;
   state.packages.clear();
   state.options.clear();
+  state.premiumTrim = "";
   state.showAllInteriors = false;
   state.vin = "";
   state.sellingDealer = "";
@@ -1868,8 +1965,3 @@ renderAll();
 </script>
 </body>
 </html>
-'''
-
-path = Path("/mnt/data/2011-e90-m3-configurator-updated.html")
-path.write_text(html, encoding="utf-8")
-print(f"Created: {path}")
