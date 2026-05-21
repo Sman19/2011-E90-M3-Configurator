@@ -1728,7 +1728,7 @@ function drawPdfSideProfileCar(c) {
   // Falls back to a smaller vector silhouette only if the image cannot be loaded.
   if (window.__pdfCarImageReady) {
     return `q
-145 0 0 52 330 585 cm
+155 0 0 38 352 610 cm
 /CarImage Do
 Q
 `;
@@ -1810,14 +1810,53 @@ endstream`;
 }
 
 function getInstalledItems(c) {
-  const installed = [
-    ...c.packages.map(item => ({...item, type:"FIO"})),
-    ...c.options.map(item => ({...item, type:"PIO"}))
-  ];
-  if (c.transmission.price > 0) installed.unshift({...c.transmission, desc:"M Double Clutch Transmission with Drivelogic", type:"FIO"});
-  if (c.wheelPrice > 0) installed.unshift({...c.wheel, desc:"19 inch forged M light alloy wheels", type:"FIO", price:c.wheelPrice});
-  if (c.interior.price > 0) installed.unshift({...c.interior, desc:"Novillo leather upholstery selection", type:"FIO"});
-  if (c.exterior.price > 0) installed.unshift({...c.exterior, desc:c.exterior.code === "IND" ? "BMW Individual exterior paint selection" : "Metallic exterior paint", type:"FIO"});
+  const installed = [];
+
+  // Always show base model first in the Installed Packages & Accessories section.
+  installed.push({
+    code:"",
+    name:"Vehicle Base Model",
+    type:"BASE",
+    price:state.baseMSRP,
+    desc:"2011 BMW M3 Sedan"
+  });
+
+  if (c.exterior.price > 0) {
+    installed.push({
+      ...c.exterior,
+      desc:c.exterior.code === "IND" ? "BMW Individual exterior paint selection" : "Metallic exterior paint",
+      type:"FIO"
+    });
+  }
+
+  if (c.interior.price > 0) {
+    installed.push({
+      ...c.interior,
+      desc:"Novillo leather upholstery selection",
+      type:"FIO"
+    });
+  }
+
+  if (c.transmission.price > 0) {
+    installed.push({
+      ...c.transmission,
+      desc:"M Double Clutch Transmission with Drivelogic",
+      type:"FIO"
+    });
+  }
+
+  if (c.wheelPrice > 0) {
+    installed.push({
+      ...c.wheel,
+      desc:"19 inch forged M light alloy wheels",
+      type:"FIO",
+      price:c.wheelPrice
+    });
+  }
+
+  installed.push(...c.packages.map(item => ({...item, type:"FIO"})));
+  installed.push(...c.options.map(item => ({...item, type:"PIO"})));
+
   return installed;
 }
 
@@ -1827,9 +1866,10 @@ function drawInstalledItem(out, item, y, maxY) {
   const needed = 19 + Math.min(descLines.length, 6) * 9.1;
   if (y - needed < maxY) return { out, y, drawn:false };
 
-  out += pdfText(`${item.code || ""} ${item.name}`, 44, y, 8.7, "F1");
+  const title = item.type === "BASE" ? item.name : `${item.code || ""} ${item.name}`.trim();
+  out += pdfText(title, 44, y, item.type === "BASE" ? 9.2 : 8.7, item.type === "BASE" ? "F2" : "F1");
   out += pdfText(item.type || "FIO", 486, y, 7.5, "F1", "right");
-  out += pdfText(moneyPdf(item.price || 0), 568, y, 8.0, "F1", "right");
+  out += pdfText(moneyPdf(item.price || 0), 568, y, item.type === "BASE" ? 8.4 : 8.0, item.type === "BASE" ? "F2" : "F1", "right");
   y -= 13;
 
   if (descLines.length) {
@@ -1946,11 +1986,9 @@ function buildToyotaStylePages(c) {
   out += pdfSwatch(318, 565, 20, exteriorSwatch, "#111111");
   out += pdfText("EXTERIOR", 345, 578, 8.5, "F2");
   out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 345, 565, 8.5, "F1");
-  out += pdfText(`RGB: ${pdfRgbTextFromColor(exteriorSwatch, "#111111")}`, 345, 552, 7, "F1");
   out += pdfSwatch(455, 565, 20, interiorSwatch, "#111111");
   out += pdfText("INTERIOR", 482, 578, 8.5, "F2");
   out += pdfText(`${c.interior.code} ${c.interior.name}`, 482, 565, 8.5, "F1");
-  out += pdfText(`RGB: ${pdfRgbTextFromColor(interiorSwatch, "#111111")}`, 482, 552, 7, "F1");
 
   out += drawToyotaRedHeader("PRICE", 44, 493, 246);
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 44, 471, 246);
