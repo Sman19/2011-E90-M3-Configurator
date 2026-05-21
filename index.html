@@ -1849,7 +1849,7 @@ function drawPageFooter(pageNo) {
     pdfText("Custom BMW V-Spec sheet for enthusiast reference only. Not an official BMW Monroney label.", 44, 10, 5.8, "F1");
 }
 
-function drawToyotaRedHeader(title, x, y, w) {
+function drawBMWRedHeader(title, x, y, w) {
   return pdfText(title, x, y, 11.2, "F2") +
     `q 0.80 0 0 rg ${x} ${(y - 7).toFixed(2)} 52 3 re f Q\n` +
     pdfLine(x, y - 7, x + w, y - 7, 0.72, 0.6);
@@ -2058,7 +2058,7 @@ function drawInstalledItem(out, item, y, maxY) {
 
 function drawFeatures(out, c, startY, bottomY) {
   let y = startY;
-  out += drawToyotaRedHeader("FEATURES", 44, y, 524);
+  out += drawBMWRedHeader("FEATURES", 44, y, 524);
 
   const topY = y - 35;
 
@@ -2130,7 +2130,7 @@ function drawFeatures(out, c, startY, bottomY) {
   return out;
 }
 
-function buildToyotaStylePages(c) {
+function buildBMWStylePages(c) {
   const buildDate = new Date().toLocaleDateString("en-US");
   const factoryTotal = c.packageTotal + c.optionTotal + c.mPerformanceTotal + c.wheelPrice + c.transmission.price + c.interior.price + c.exterior.price;
   const dealerName = state.sellingDealer || "BMW Dealer";
@@ -2140,23 +2140,27 @@ function buildToyotaStylePages(c) {
   let out = "";
   out += pdfRect(0, 0, 612, 792, 1);
 
-  // Upper-left logo area. Uses the real PNG in the original box location, with the black box removed.
+  // Header: BMW CENTER title with Carboi logo on the right side of the left header area.
+  out += pdfText("BMW CENTER", 44, 752, 26, "F2");
+  out += pdfText("BMW V-Spec recreation", 44, 735, 8, "F1");
+
   if (window.__pdfLogoImageReady) {
     out += `q
-52 0 0 52 44 728 cm
+52 0 0 52 238 728 cm
 /LogoImage Do
 Q
 `;
   } else {
-    out += pdfText("CARBOI", 44, 756, 9.2, "F2");
-    out += pdfText("CREATIONS", 44, 742, 7.4, "F2");
+    out += pdfText("CARBOI", 242, 756, 8.5, "F2");
+    out += pdfText("CREATIONS", 242, 742, 6.8, "F2");
   }
-  out += pdfText("CREATIONS", 112, 750, 24, "F2");
+
   out += pdfLine(302, 720, 302, 782, 0.86, 0.7);
   out += pdfText(dealerName, 318, 762, 12.5, "F2");
   out += pdfText("Dealer address can populate from CSV", 318, 746, 8, "F1");
-  out += pdfText("Toyota-style BMW V-Spec recreation", 318, 733, 8, "F1");
-  out += `q 0.80 0 0 rg 44 707 524 2.2 re f Q\n`;
+  out += pdfText("BMW V-Spec recreation", 318, 733, 8, "F1");
+  out += `q 0.80 0 0 rg 44 707 524 2.2 re f Q
+`;
 
   out += pdfText("2011 BMW M3 Sedan", 44, 666, 22, "F2");
   out += pdfText("E90 M3", 44, 645, 17, "F2");
@@ -2180,7 +2184,7 @@ Q
   out += pdfText("INTERIOR", 482, 578, 8.5, "F2");
   out += pdfText(`${c.interior.code} ${c.interior.name}`, 482, 565, 8.5, "F1");
 
-  out += drawToyotaRedHeader("PRICE", 44, 493, 246);
+  out += drawBMWRedHeader("PRICE", 44, 493, 246);
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 44, 471, 246);
   out += pdfPriceRow("Factory Installed Packages & Accessories", moneyPdf(factoryTotal), 44, 451, 246);
   out += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 44, 431, 246);
@@ -2188,7 +2192,7 @@ Q
   out += pdfText("Total Suggested Retail Price", 44, 386, 11.5, "F2");
   out += pdfText(moneyPdf(c.total), 290, 386, 11.5, "F2", "right");
 
-  out += drawToyotaRedHeader("PERFORMANCE", 318, 493, 250);
+  out += drawBMWRedHeader("PERFORMANCE", 318, 493, 250);
   out += pdfText("414", 340, 448, 32, "F2");
   out += pdfText("HP", 407, 452, 9, "F2");
   out += pdfLine(435, 421, 435, 470, 0.86, 0.7);
@@ -2199,7 +2203,7 @@ Q
   out += pdfText("EPA: 14 City / 20 Highway / 16 Combined", 318, 397, 8.2, "F1");
   out += pdfText(c.transmission.code === "2MK" ? "0-60 MPH: approx. 4.5 sec with M DCT" : "0-60 MPH: approx. 4.7 sec with 6-speed manual", 318, 381, 8.2, "F1");
 
-  out += drawToyotaRedHeader("INSTALLED PACKAGES & ACCESSORIES", 44, 340, 524);
+  out += drawBMWRedHeader("INSTALLED PACKAGES & ACCESSORIES", 44, 340, 524);
   let y = 318;
   if (!installed.length) {
     out += pdfText("No additional packages or standalone options selected.", 44, y, 8.6, "F1");
@@ -2222,7 +2226,7 @@ Q
   page2 += pdfText(`2011 BMW M3 Sedan - ${state.vin || "Build Detail"}`, 44, 764, 7.4, "F2");
   let y2 = 730;
   if (installedIndex < installed.length) {
-    page2 += drawToyotaRedHeader("INSTALLED PACKAGES & ACCESSORIES CONTINUED", 44, y2, 524);
+    page2 += drawBMWRedHeader("INSTALLED PACKAGES & ACCESSORIES CONTINUED", 44, y2, 524);
     y2 -= 22;
     while (installedIndex < installed.length) {
       const result = drawInstalledItem(page2, installed[installedIndex], y2, 315);
@@ -2267,7 +2271,7 @@ async function downloadBMWBuildSheetPDF() {
   const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
-  const pages = buildToyotaStylePages(c);
+  const pages = buildBMWStylePages(c);
 
   const objects = [];
   const addObj = body => {
@@ -2319,7 +2323,7 @@ endstream`);
 
   const blob = new Blob([pdf], { type: "application/pdf" });
   const vinPart = state.vin ? state.vin.slice(-7) : `${c.exterior.code}-${c.wheel.code}`;
-  downloadBlob(blob, `2011-BMW-M3-toyota-style-vspec-${makeSafeFileName(vinPart)}.pdf`);
+  downloadBlob(blob, `2011-BMW-M3-bmw-vspec-${makeSafeFileName(vinPart)}.pdf`);
 }
 
 $("copyBuildBtn").onclick = async () => {
@@ -2333,7 +2337,7 @@ $("copyBuildBtn").onclick = async () => {
     alert("Build sheet PDF could not be generated. Check the browser console for details.");
     btn.textContent = "PDF Error";
   }
-  setTimeout(() => btn.textContent = "▣ Save Toyota-Style PDF", 1200);
+  setTimeout(() => btn.textContent = "▣ Save BMW-Style PDF", 1200);
 };
 
 $("copySummaryBtn").onclick = async () => {
