@@ -1584,7 +1584,10 @@ function csvColumn(row, index) {
 }
 
 function codeExistsInText(text, code) {
-  const escaped = String(code).toUpperCase().replace(/[.*+?^${}()|[\]\]/g, "\$&");
+  const escaped = String(code || "")
+    .toUpperCase()
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   return new RegExp(`(^|[^A-Z0-9])${escaped}([^A-Z0-9]|$)`).test(text);
 }
 
