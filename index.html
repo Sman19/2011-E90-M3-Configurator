@@ -1579,17 +1579,26 @@ function findMatchingInterior(value) {
   );
 }
 
+function csvColumn(row, index) {
+  return normalizeText(row[`__COL_${index}`]);
+}
+
+function codeExistsInText(text, code) {
+  const escaped = String(code).toUpperCase().replace(/[.*+?^${}()|[\]\]/g, "\$&");
+  return new RegExp(`(^|[^A-Z0-9])${escaped}([^A-Z0-9]|$)`).test(text);
+}
+
 function applyPackageCodes(packageText) {
   const text = normalizeText(packageText).toUpperCase();
 
   state.packages.clear();
   state.options.clear();
+  state.mPerformanceParts.clear();
 
   [...DATA.packages, ...DATA.standaloneOptions, ...DATA.mPerformanceParts].forEach(item => {
-    const code = item.code.toUpperCase();
-    const codeRegex = new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`);
+    const code = String(item.code || "").toUpperCase();
 
-    if (codeRegex.test(text)) {
+    if (codeExistsInText(text, code)) {
       if (DATA.packages.some(pkg => pkg.code === item.code)) {
         state.packages.add(item.code);
       } else if (DATA.mPerformanceParts.some(part => part.code === item.code)) {
@@ -1600,27 +1609,26 @@ function applyPackageCodes(packageText) {
     }
   });
 
-  if (text.includes("2MK")) state.transmission = "2MK";
+  if (codeExistsInText(text, "2MK")) state.transmission = "2MK";
   else state.transmission = "6MT";
 
   if (state.packages.has("ZCP")) state.wheel = "ZCP";
-  else if (text.includes("2MT")) state.wheel = "2MT";
+  else if (codeExistsInText(text, "2MT")) state.wheel = "2MT";
   else state.wheel = "STD";
 
   let mappedPremiumTrim = "";
   Object.entries(PREMIUM_PACKAGE_TRIM_CODE_MAP).forEach(([packageTrimCode, trimCode]) => {
-    const escaped = packageTrimCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const packageTrimRegex = new RegExp(`(^|[^A-Z0-9])${escaped}([^A-Z0-9]|$)`);
-    if (packageTrimRegex.test(text)) mappedPremiumTrim = trimCode;
+    if (codeExistsInText(text, packageTrimCode)) mappedPremiumTrim = trimCode;
   });
 
-  const matchedPremiumTrim = PREMIUM_TRIMS.find(item => text.includes(item.code) || text.includes(item.name.toUpperCase()));
+  const matchedPremiumTrim = PREMIUM_TRIMS.find(item => codeExistsInText(text, item.code) || text.includes(item.name.toUpperCase()));
   state.premiumTrim = hasPremiumPackage() ? (mappedPremiumTrim || (matchedPremiumTrim ? matchedPremiumTrim.code : "")) : "";
 
   if (state.premiumTrim) {
     ["4MX", "4MY", "4MZ"].forEach(code => state.options.delete(code));
   }
 }
+
 
 
 async function lookupVIN() {
@@ -1655,11 +1663,14 @@ async function lookupVIN() {
     const msrp55900Value = findCSVValue(match, ["MSRP", "BASE MSRP", "Base MSRP", "BaseMSRP", "BASE_MSRP"]);
     const msrp55400Value = findCSVValue(match, ["MSRP.1", "BASE MSRP.1", "Base MSRP.1", "BaseMSRP.1", "BASE_MSRP.1"]);
 
+    // Column H is the package-code column in the CSV.
+    // Example: MSRP,ZCP,ZCV,ZCW,ZP2.3,2MK
+    // Column L is still pulled as a fallback/additional-code column.
     const packageTextParts = [
-      findCSVValue(match, ["PACKAGE CODES", "Package Codes", "OPTION CODES", "Option Codes", "PACKAGES", "Packages", "Package", "OPTIONS", "Options", "Codes", "CODES", "H", "Column H", "__COL_8"]),
-      findCSVValue(match, ["L", "Column L", "__COL_12"])
+      csvColumn(match, 8),
+      csvColumn(match, 12)
     ].filter(Boolean);
-    const packageText = packageTextParts.length ? packageTextParts.join(",") : Object.values(match).join(",");
+    const packageText = packageTextParts.join(",");
 
     state.vin = vin;
     state.sellingDealer = dealer;
