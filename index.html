@@ -2223,40 +2223,84 @@ Q
   page2 += pdfRect(0, 0, 612, 792, 1);
   page2 += pdfText(`2011 BMW M3 Sedan - ${state.vin || "Build Detail"}`, 44, 764, 7.4, "F2");
   let y2 = 730;
+
   if (installedIndex < installed.length) {
     page2 += drawBMWRedHeader("INSTALLED PACKAGES & ACCESSORIES CONTINUED", 44, y2, 524);
     y2 -= 22;
+
+    // Let page 2 use almost the full page for installed equipment.
+    // Fully loaded builds can continue onto page 3 instead of cutting off the features section.
     while (installedIndex < installed.length) {
-      const result = drawInstalledItem(page2, installed[installedIndex], y2, 315);
+      const result = drawInstalledItem(page2, installed[installedIndex], y2, 86);
       if (!result.drawn) break;
       page2 = result.out;
       y2 = result.y;
       installedIndex++;
     }
-    y2 -= 8;
+
+    if (installedIndex < installed.length) {
+      page2 += pdfText("Installed packages and accessories continue on page 3.", 44, Math.max(y2, 104), 7.5, "F2");
+    }
   }
 
-  page2 += pdfPriceRow("Total Optional Equipment", moneyPdf(factoryTotal), 44, y2, 524, true);
-  y2 -= 20;
-  page2 += pdfPriceRow("Vehicle Base Model", moneyPdf(state.baseMSRP), 44, y2, 524);
-  y2 -= 20;
-  page2 += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 44, y2, 524);
-  y2 -= 20;
-  page2 += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 44, y2, 524);
-  y2 -= 26;
-  page2 += pdfText("Total Suggested Retail Price", 44, y2, 11.8, "F2");
-  page2 += pdfText(moneyPdf(c.total), 568, y2, 11.8, "F2", "right");
-  page2 += pdfLine(44, y2 - 6, 568, y2 - 6, 0.80, 0.65);
-  y2 -= 38;
-
-  // If there is room, keep the feature section on page 2. If the list was long, it still stays to 2 pages and omits the long generic feature matrix.
-  if (y2 > 210) {
-    page2 = drawFeatures(page2, c, y2, 50);
-  } else {
-    page2 += pdfText("Features section omitted because selected equipment filled the second page.", 44, y2, 7.2, "F1");
-  }
   page2 += drawPageFooter(2);
 
+  let page3 = "";
+  let y3 = 730;
+
+  if (installedIndex < installed.length) {
+    page3 += pdfRect(0, 0, 612, 792, 1);
+    page3 += pdfText(`2011 BMW M3 Sedan - ${state.vin || "Build Detail"}`, 44, 764, 7.4, "F2");
+    page3 += drawBMWRedHeader("INSTALLED PACKAGES & ACCESSORIES CONTINUED", 44, y3, 524);
+    y3 -= 22;
+
+    while (installedIndex < installed.length) {
+      const result = drawInstalledItem(page3, installed[installedIndex], y3, 285);
+      if (!result.drawn) break;
+      page3 = result.out;
+      y3 = result.y;
+      installedIndex++;
+    }
+
+    y3 -= 8;
+  } else if (y2 < 245) {
+    // If page 2 is filled with equipment, move totals and features to page 3.
+    page3 += pdfRect(0, 0, 612, 792, 1);
+    page3 += pdfText(`2011 BMW M3 Sedan - ${state.vin || "Build Detail"}`, 44, 764, 7.4, "F2");
+  }
+
+  const totalsNeedPage3 = Boolean(page3);
+  let totalsPage = totalsNeedPage3 ? page3 : page2;
+  let yTotals = totalsNeedPage3 ? Math.min(y3, 700) : y2;
+
+  if (yTotals < 185) {
+    yTotals = 700;
+  }
+
+  totalsPage += pdfPriceRow("Total Optional Equipment", moneyPdf(factoryTotal), 44, yTotals, 524, true);
+  yTotals -= 20;
+  totalsPage += pdfPriceRow("Vehicle Base Model", moneyPdf(state.baseMSRP), 44, yTotals, 524);
+  yTotals -= 20;
+  totalsPage += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 44, yTotals, 524);
+  yTotals -= 20;
+  totalsPage += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 44, yTotals, 524);
+  yTotals -= 26;
+  totalsPage += pdfText("Total Suggested Retail Price", 44, yTotals, 11.8, "F2");
+  totalsPage += pdfText(moneyPdf(c.total), 568, yTotals, 11.8, "F2", "right");
+  totalsPage += pdfLine(44, yTotals - 6, 568, yTotals - 6, 0.80, 0.65);
+  yTotals -= 38;
+
+  if (yTotals > 210) {
+    totalsPage = drawFeatures(totalsPage, c, yTotals, 50);
+  }
+
+  if (totalsNeedPage3) {
+    page3 = totalsPage;
+    page3 += drawPageFooter(3);
+    return [out, page2, page3];
+  }
+
+  page2 = totalsPage;
   return [out, page2];
 }
 
