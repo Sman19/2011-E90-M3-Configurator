@@ -1967,10 +1967,17 @@ function buildToyotaStylePages(c) {
   let out = "";
   out += pdfRect(0, 0, 612, 792, 1);
 
-  // Upper-left logo area. PDF uses vector/text so it works offline; web page can still use the PNG URL elsewhere.
-  out += `q 0.02 0.03 0.04 rg 44 728 52 52 re f Q\n`;
-  out += pdfText("CAR", 53, 756, 10.5, "F2");
-  out += pdfText("BOI", 53, 742, 10.5, "F2");
+  // Upper-left logo area. Uses the real PNG in the original box location, with the black box removed.
+  if (window.__pdfLogoImageReady) {
+    out += `q
+52 0 0 52 44 728 cm
+/LogoImage Do
+Q
+`;
+  } else {
+    out += pdfText("CARBOI", 44, 756, 9.2, "F2");
+    out += pdfText("CREATIONS", 44, 742, 7.4, "F2");
+  }
   out += pdfText("CREATIONS", 112, 750, 24, "F2");
   out += pdfLine(302, 720, 302, 782, 0.86, 0.7);
   out += pdfText(dealerName, 318, 762, 12.5, "F2");
@@ -2082,7 +2089,10 @@ async function downloadBMWBuildSheetPDF() {
   renderAll();
 
   const c = calculate();
+  const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
+  const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
   const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
+  window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
   const pages = buildToyotaStylePages(c);
 
@@ -2100,8 +2110,12 @@ async function downloadBMWBuildSheetPDF() {
 
   const font1Obj = 3 + pages.length * 2;
   const font2Obj = font1Obj + 1;
-  const imageObj = pdfCarImageData ? font2Obj + 1 : null;
-  const imageResource = imageObj ? ` /XObject << /CarImage ${imageObj} 0 R >>` : "";
+  const logoObj = pdfLogoImageData ? font2Obj + 1 : null;
+  const imageObj = pdfCarImageData ? font2Obj + (pdfLogoImageData ? 2 : 1) : null;
+  const xObjectEntries = [];
+  if (logoObj) xObjectEntries.push(`/LogoImage ${logoObj} 0 R`);
+  if (imageObj) xObjectEntries.push(`/CarImage ${imageObj} 0 R`);
+  const imageResource = xObjectEntries.length ? ` /XObject << ${xObjectEntries.join(" ")} >>` : "";
   pages.forEach((content, i) => {
     addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${font1Obj} 0 R /F2 ${font2Obj} 0 R >>${imageResource} >> /Contents ${contentObjectNumbers[i]} 0 R >>`);
     addObj(`<< /Length ${content.length} >>
@@ -2112,6 +2126,7 @@ endstream`);
 
   addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+  if (pdfLogoImageData) addObj(buildPdfImageObject(pdfLogoImageData));
   if (pdfCarImageData) addObj(buildPdfImageObject(pdfCarImageData));
 
   let pdf = "%PDF-1.4\n";
