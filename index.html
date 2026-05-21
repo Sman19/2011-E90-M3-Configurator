@@ -799,8 +799,6 @@ textarea {
 
         <button class="full-btn" id="toggleMPerformanceBtn">View M Performance Parts</button>
         <div class="drawer" id="mPerformanceDrawer">
-          <p class="note" id="mPerformanceCsvNote">M Performance Parts auto-load from the main CSV. Description = column C, price = column F.</p>
-          <input type="file" id="mPerformanceCsvInput" accept=".csv,text/csv" style="width:100%;margin:10px 0;color:#d9e7ff;">
           <div class="check-list" id="mPerformanceList"></div>
         </div>
       </div>
@@ -1685,14 +1683,6 @@ $("toggleMPerformanceBtn").onclick = () => {
   $("mPerformanceDrawer").classList.toggle("show");
   $("toggleMPerformanceBtn").textContent = $("mPerformanceDrawer").classList.contains("show") ? "Hide M Performance Parts" : "View M Performance Parts";
 };
-
-$("mPerformanceCsvInput").addEventListener("change", event => {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => setMPerformanceParts(parseMPerformanceCSV(String(reader.result || "")), file.name);
-  reader.readAsText(file);
-});
 
 function pdfClean(value) {
   return String(value ?? "")
