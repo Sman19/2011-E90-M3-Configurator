@@ -141,6 +141,14 @@ button, input { font: inherit; }
   background: linear-gradient(180deg, #2384ff, #155ed0);
 }
 
+.sticker-btn {
+  border-color: rgba(22,119,255,.8);
+  background: linear-gradient(180deg, #2384ff, #155ed0);
+  color: #fff;
+  min-width: 220px;
+  font-weight: 950;
+}
+
 .btn:hover { filter: brightness(1.1); }
 
 .layout {
@@ -674,7 +682,8 @@ textarea {
     <div class="actions-column">
       <div class="actions">
         <button class="btn" id="resetBtn">Reset Build</button>
-        <button class="btn" id="copyBuildBtn">▣ Save BMW-Style PDF</button>
+        <button class="btn" id="copyBuildBtn">▣ BMW-Spec Sheet PDF</button>
+        <button class="btn sticker-btn" id="windowStickerBtn">🏷 Window Sticker</button>
         <button class="btn primary" id="copySummaryBtn">View Summary</button>
       </div>
 
@@ -2524,6 +2533,455 @@ endstream`);
   const blob = new Blob([pdf], { type: "application/pdf" });
   const vinPart = state.vin ? state.vin.slice(-7) : `${c.exterior.code}-${c.wheel.code}`;
   downloadBlob(blob, `2011-BMW-M3-bmw-vspec-${makeSafeFileName(vinPart)}.pdf`);
+}
+
+
+function stickerEscape(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function stickerPrice(value) {
+  const num = Number(value || 0);
+  if (!num) return "Included";
+  return num.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function renderStickerOptionItem(item, forcedPrice = null) {
+  if (!item) return "";
+  const price = forcedPrice === null ? item.price : forcedPrice;
+  const lines = String(item.desc || "")
+    .split("\n")
+    .map(v => v.trim())
+    .filter(Boolean)
+    .filter(v => !/^choose one trim/i.test(v));
+
+  return `
+    <div class="sticker-row sticker-package">
+      <div>${stickerEscape(item.name || item.code)}</div>
+      <div>${stickerPrice(price)}</div>
+    </div>
+    ${lines.map(line => `<div class="sticker-child">${stickerEscape(line.replace(/^[-•]\s*/, ""))}</div>`).join("")}
+  `;
+}
+
+function buildWindowStickerHTML() {
+  const build = buildOutput();
+  const c = calculate();
+  const premiumTrim = selectedPremiumTrim();
+  const selectedPackageCodes = new Set((build.packages || []).map(item => item.code));
+  const selectedOptionCodes = new Set((build.standaloneOptions || []).map(item => item.code));
+  const rows = [];
+
+  rows.push(`
+    <div class="sticker-row">
+      <div>${stickerEscape(build.exterior.name)}</div>
+      <div>${stickerPrice(build.exterior.price)}</div>
+    </div>
+  `);
+
+  rows.push(`
+    <div class="sticker-row">
+      <div>${stickerEscape(build.interior.name)}</div>
+      <div>${stickerPrice(build.interior.price)}</div>
+    </div>
+  `);
+
+  (build.packages || []).forEach(pkg => rows.push(renderStickerOptionItem(pkg)));
+
+  if (premiumTrim) {
+    rows.push(`
+      <div class="sticker-child">${stickerEscape(premiumTrim.name)}</div>
+    `);
+  }
+
+  if (build.transmission && build.transmission.code !== "6MT") {
+    rows.push(renderStickerOptionItem(build.transmission));
+  }
+
+  if (build.wheel && build.wheel.code === "2MT") {
+    rows.push(renderStickerOptionItem(build.wheel, c.wheelPrice));
+  }
+
+  (build.standaloneOptions || []).forEach(opt => rows.push(renderStickerOptionItem(opt)));
+  (build.mPerformanceParts || []).forEach(part => rows.push(renderStickerOptionItem(part)));
+
+  rows.push(`
+    <div class="sticker-row">
+      <div>Destination Charge</div>
+      <div>${stickerPrice(build.destinationCharge)}</div>
+    </div>
+    <div class="sticker-row">
+      <div>Gas Guzzler Tax</div>
+      <div>${stickerPrice(build.gasGuzzlerTax)}</div>
+    </div>
+    <div class="sticker-row sticker-total-line">
+      <div>Total Suggested Retail Price</div>
+      <div>${stickerPrice(build.totalMSRP)}</div>
+    </div>
+  `);
+
+  const dealerName = build.sellingDealer || "BMW Center";
+  const dealerAddress = build.dealerAddress || "";
+  const dealerPhone = build.dealerPhone || "";
+  const vin = build.vin || "WBSPM9C50BE698672";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BMW Window Sticker Test</title>
+<style>
+  @page { size: 17in 11in landscape; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #222;
+    color: #050505;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .toolbar {
+    width: 17in;
+    margin: 14px auto;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .toolbar button {
+    border: 0;
+    border-radius: 6px;
+    background: #111;
+    color: white;
+    padding: 10px 14px;
+    font: 900 13px Arial, Helvetica, sans-serif;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .sticker-page {
+    width: 17in;
+    height: 11in;
+    margin: 0 auto 24px;
+    padding: .42in .45in .34in;
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.72)),
+      radial-gradient(circle at 20% 30%, rgba(210,225,210,.8), transparent 28%),
+      radial-gradient(circle at 75% 40%, rgba(235,240,235,.75), transparent 30%),
+      linear-gradient(135deg, #d7ddd4, #f8f8f5 45%, #cdd5ca);
+  }
+  .sticker-grid {
+    height: 9.55in;
+    display: grid;
+    grid-template-columns: 4.35in 6.6in 4.35in;
+    grid-template-rows: 2.95in 1.45in 3.25in 1.65in;
+    gap: .12in;
+  }
+  .box {
+    border: 3px solid #050505;
+    background: rgba(245,245,241,.72);
+    overflow: hidden;
+    padding: .085in;
+  }
+  .box-thin {
+    border: 2px solid #050505;
+    background: rgba(245,245,241,.72);
+    overflow: hidden;
+    padding: .085in;
+  }
+  .left-main {
+    grid-row: 1 / span 4;
+    display: flex;
+    flex-direction: column;
+  }
+  .brand-title {
+    font-size: 21pt;
+    line-height: .95;
+    font-weight: 900;
+    margin-bottom: .04in;
+  }
+  .model-title {
+    font-size: 13pt;
+    font-weight: 900;
+    margin-bottom: .07in;
+  }
+  .msrp-row {
+    display: grid;
+    grid-template-columns: 1fr .9in;
+    gap: .06in;
+    font: 700 9pt Arial, Helvetica, sans-serif;
+    margin-bottom: .045in;
+  }
+  .options-title {
+    font: 900 9pt Arial, Helvetica, sans-serif;
+    margin: .055in 0 .025in;
+  }
+  .sticker-options {
+    flex: 1;
+    overflow: hidden;
+    font: 9pt/1.12 Arial, Helvetica, sans-serif;
+  }
+  .sticker-row {
+    display: grid;
+    grid-template-columns: 1fr .92in;
+    gap: .06in;
+    margin-bottom: .018in;
+  }
+  .sticker-row > div:last-child { text-align: right; white-space: nowrap; }
+  .sticker-package { font-weight: 900; margin-top: .035in; }
+  .sticker-child { padding-left: .12in; margin-bottom: .008in; }
+  .sticker-child:before { content: "- "; }
+  .sticker-total-line {
+    border-top: 2px solid #050505;
+    margin-top: .04in;
+    padding-top: .035in;
+    font-weight: 900;
+  }
+  .vin-row {
+    font: 900 10pt Arial, Helvetica, sans-serif;
+    margin-top: .05in;
+  }
+  .dealer-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .1in;
+    border-top: 2px solid #050505;
+    margin-top: .05in;
+    padding-top: .045in;
+    font: 6.4pt/1.12 Arial, Helvetica, sans-serif;
+  }
+  .standard-features { grid-column: 2; grid-row: 1; }
+  .features-cols {
+    columns: 2;
+    column-gap: .18in;
+    font: 6.6pt/1.2 Arial, Helvetica, sans-serif;
+  }
+  .features-cols div { break-inside: avoid; margin-bottom: .035in; }
+  .section-title { font: 900 8.5pt Arial, Helvetica, sans-serif; margin-bottom: .035in; }
+  .quality {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .12in;
+    font: 7pt/1.18 Arial, Helvetica, sans-serif;
+  }
+  .epa {
+    grid-column: 2;
+    grid-row: 3;
+    padding: 0;
+  }
+  .black-title {
+    background: #050505;
+    color: white;
+    text-align: center;
+    font: 900 18pt Arial, Helvetica, sans-serif;
+    padding: .045in;
+  }
+  .epa-body {
+    display: grid;
+    grid-template-columns: 1fr 1.18fr 1fr;
+    gap: .12in;
+    height: calc(100% - .35in);
+    padding: .12in .16in;
+    align-items: center;
+    text-align: center;
+  }
+  .mpg-big { font-size: 54pt; font-weight: 900; line-height: .9; }
+  .fuel-cost { border: 2px solid #050505; background: rgba(255,255,255,.62); padding: .12in; }
+  .fuel-cost .cost { font-size: 23pt; font-weight: 900; }
+  .parts { grid-column: 3; grid-row: 1; font: 7.2pt/1.2 Arial, Helvetica, sans-serif; }
+  .safety { grid-column: 3; grid-row: 2; padding: 0; }
+  .safety-body { padding: .09in; font: 7.2pt/1.12 Arial, Helvetica, sans-serif; }
+  .rating-row { display: grid; grid-template-columns: 1fr 1fr; margin: .035in 0; }
+  .env { grid-column: 3; grid-row: 3; padding: 0; }
+  .green-title {
+    background: #23b64f;
+    color: white;
+    text-align: center;
+    font: 900 16pt Arial, Helvetica, sans-serif;
+    padding: .055in;
+  }
+  .score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .15in;
+    padding: .14in;
+    text-align: center;
+    font: 7pt/1.15 Arial, Helvetica, sans-serif;
+  }
+  .score-num { font-size: 22pt; font-weight: 900; }
+  .score-bar {
+    height: .12in;
+    border: 1px solid #050505;
+    background: linear-gradient(90deg,#050505 0%,#050505 30%,#ddd 30%,#ddd 100%);
+    margin: .04in 0;
+  }
+  .footer-note {
+    grid-column: 2;
+    grid-row: 4;
+    font: 5.7pt/1.18 Arial, Helvetica, sans-serif;
+    padding-top: .05in;
+  }
+  .bmw-footer {
+    position: absolute;
+    right: .45in;
+    bottom: .28in;
+    font: 6pt Arial, Helvetica, sans-serif;
+    text-align: right;
+  }
+  .bottom-strip {
+    position: absolute;
+    left: .45in;
+    right: .45in;
+    bottom: .23in;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: .15in;
+    font: 6.2pt/1.15 Arial, Helvetica, sans-serif;
+  }
+  @media print {
+    body { background: white; }
+    .toolbar { display: none; }
+    .sticker-page { margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button onclick="window.print()">Print / Save PDF</button>
+  <button onclick="window.close()">Close</button>
+</div>
+<div class="sticker-page">
+  <div class="sticker-grid">
+    <section class="box left-main">
+      <div class="brand-title">The Ultimate Driving Machine®</div>
+      <div class="model-title">2011 BMW M3 Sedan</div>
+      <div class="msrp-row">
+        <div>Manufacturer's Suggested Retail Price</div>
+        <div>${stickerPrice(build.baseMSRP)}</div>
+      </div>
+      <div style="font:7.5pt/1.15 Arial, Helvetica, sans-serif;margin-bottom:.05in;">
+        Options and Additional Charges: Optional equipment may supersede standard equipment; check with your authorized BMW center.
+      </div>
+      <div class="options-title">Options and Additional Charges</div>
+      <div class="sticker-options">${rows.join("")}</div>
+      <div class="vin-row">VIN: ${stickerEscape(vin)}</div>
+      <div class="dealer-row">
+        <div><strong>Sold To:</strong><br>${stickerEscape(dealerName)}<br>${stickerEscape(dealerAddress)}<br>${stickerEscape(dealerPhone)}</div>
+        <div><strong>Ship To:</strong><br>${stickerEscape(dealerName)}<br>${stickerEscape(dealerAddress)}<br>${stickerEscape(dealerPhone)}</div>
+      </div>
+    </section>
+
+    <section class="box standard-features">
+      <div class="section-title">Standard Features</div>
+      <div class="features-cols">
+        <div>● 4.0-liter 32-valve V-8 engine with M Double-VANOS variable valve timing</div>
+        <div>● Dynamic Stability Control (DSC)</div>
+        <div>● Variable M Differential Lock</div>
+        <div>● Vehicle-speed-sensitive variable-assist power steering</div>
+        <div>● M Suspension</div>
+        <div>● BMW M vacuum-assisted ventilated, cross-drilled compound disc brakes</div>
+        <div>● Xenon Adaptive headlights with Auto-leveling and Cornering Lights</div>
+        <div>● AM/FM stereo/CD/MP3 audio system</div>
+        <div>● HD Radio</div>
+        <div>● M instrument cluster with red needles</div>
+        <div>● Service Interval indicator with miles-to-service display</div>
+        <div>● On-board computer with check control vehicle monitoring system</div>
+        <div>● Tire Pressure Monitor</div>
+        <div>● Rain-sensing windshield wipers with Automatic headlight control</div>
+        <div>● Cruise Control</div>
+        <div>● Advanced Safety System</div>
+        <div>● Adaptive Brake Lights</div>
+        <div>● Coded Driveaway Protection</div>
+      </div>
+    </section>
+
+    <section class="box-thin quality">
+      <div><strong>BMW Delivery Quality Assurance</strong><br>This BMW vehicle has been designed, engineered and manufactured under strict quality control guidelines.</div>
+      <div><strong>BMW Ultimate Service</strong><br>● 4 year/50,000 mile Full Maintenance Program<br>● 4 year/50,000 mile limited warranty<br>● 12 year rust perforation limited warranty<br>● BMW Roadside Assistance Program</div>
+    </section>
+
+    <section class="box epa">
+      <div class="black-title">EPA FUEL Economy Estimates</div>
+      <div class="epa-body">
+        <div><div>CITY MPG</div><div class="mpg-big">14</div><div>Expected range<br>11 to 17 MPG</div></div>
+        <div class="fuel-cost"><strong>Estimated<br>Annual Fuel Cost</strong><div class="cost">$3,000</div><div>based on 15,000 miles at<br>$3.20 per gallon</div><br><strong>Combined Fuel Economy</strong><br>This Vehicle<br><strong>16</strong></div>
+        <div><div>HIGHWAY MPG</div><div class="mpg-big">20</div><div>Expected range<br>16 to 24 MPG</div></div>
+      </div>
+    </section>
+
+    <section class="box parts">
+      <div class="section-title">PARTS CONTENT INFORMATION</div>
+      <strong>For Vehicles in this Car Line:</strong><br>
+      US/Canadian Parts Content: <strong>5%</strong><br>
+      Major Source of Foreign Parts Content:<br><strong>GERMANY: 75%</strong><br><br>
+      <strong>For this Vehicle:</strong><br>
+      Final Assembly Point: <strong>REGENSBURG, GERMANY</strong><br>
+      Country of Origin:<br>
+      Engine: <strong>GERMANY</strong><br>
+      Transmission: <strong>GERMANY</strong>
+    </section>
+
+    <section class="box safety">
+      <div class="black-title" style="font-size:11pt;">GOVERNMENT SAFETY RATINGS</div>
+      <div class="safety-body">
+        <div class="rating-row"><strong>Frontal<br>Crash</strong><div>Driver&nbsp;&nbsp;&nbsp; NOT Rated<br>Passenger&nbsp; NOT Rated</div></div>
+        <div>Star ratings based on the risk of injury in a frontal impact.</div><br>
+        <div class="rating-row"><strong>Side<br>Crash</strong><div>Front seat&nbsp; NOT Rated<br>Rear seat&nbsp;&nbsp; NOT Rated</div></div>
+        <div class="rating-row"><strong>Rollover</strong><div>★ ★ ★ ★</div></div>
+        <div style="background:#050505;color:#fff;text-align:center;padding:.05in;margin-top:.05in;">www.safecar.gov or 1-888-327-4236</div>
+      </div>
+    </section>
+
+    <section class="box env">
+      <div class="green-title">Environmental Performance</div>
+      <div style="padding:.12in;font:7pt/1.2 Arial, Helvetica, sans-serif;text-align:center;">Protect the environment, choose vehicles with higher scores:</div>
+      <div class="score-grid">
+        <div><strong>Global Warming Score</strong><div class="score-num">3</div><div class="score-bar"></div><div>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10<br>Average&nbsp;&nbsp;&nbsp;&nbsp;Cleanest</div></div>
+        <div><strong>Smog Score</strong><div class="score-num">4</div><div class="score-bar"></div><div>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10<br>Average&nbsp;&nbsp;&nbsp;&nbsp;Cleanest</div></div>
+      </div>
+    </section>
+
+    <section class="footer-note">
+      This vehicle is equipped with bumpers that can withstand an impact of 2.5 miles per hour with no damage to the vehicle's body and safety systems, although the bumper and related components may sustain damage. The bumper system on this vehicle conforms to the current federal bumper standard of 2.5 miles per hour.
+    </section>
+  </div>
+
+  <div class="bottom-strip">
+    <div>Port of Entry: BRUNSWICK, GEORGIA</div>
+    <div>Carrier: HANSEN &amp; ADKINS AUTO TRANSPORT</div>
+    <div>VPC Location: BRUNSWICK, GA</div>
+  </div>
+  <div class="bmw-footer">BMW of North America, LLC<br>Woodcliff Lake, NJ 07677</div>
+</div>
+</body>
+</html>`;
+}
+
+function generateWindowSticker() {
+  const popup = window.open("", "_blank");
+  if (!popup) {
+    alert("Popup blocked. Please allow popups for this site to preview the window sticker.");
+    return;
+  }
+
+  popup.document.open();
+  popup.document.write(buildWindowStickerHTML());
+  popup.document.close();
+}
+
+if ($("windowStickerBtn")) {
+  $("windowStickerBtn").onclick = generateWindowSticker;
 }
 
 $("copyBuildBtn").onclick = async () => {
