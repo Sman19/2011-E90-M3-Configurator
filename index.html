@@ -149,6 +149,15 @@ button, input { font: inherit; }
   font-weight: 950;
 }
 
+
+.slides-btn {
+  border-color: rgba(255,255,255,.20);
+  background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.045));
+  color: #fff;
+  min-width: 230px;
+  font-weight: 950;
+}
+
 .btn:hover { filter: brightness(1.1); }
 
 .layout {
@@ -684,6 +693,7 @@ textarea {
         <button class="btn" id="resetBtn">Reset Build</button>
         <button class="btn" id="copyBuildBtn">▣ BMW-Spec Sheet PDF</button>
         <button class="btn sticker-btn" id="windowStickerBtn">🏷 Window Sticker</button>
+        <button class="btn slides-btn" id="googleSlidesTemplateBtn">✎ Edit Slides Template</button>
         <button class="btn primary" id="copySummaryBtn">View Summary</button>
       </div>
 
@@ -892,6 +902,7 @@ const EXTERIOR_PHOTOS = {
 
 const CSV_URL = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/f1f8d249fa3ee8a879c723ae85b8f10901c38857/2011%20E90%20M3.csv";
 const DEALER_CSV_URL = "https://raw.githubusercontent.com/Sman19/DEALER-MAP/419b7c248513d9e7490713b2f7f760de186b76c6/bmw_dealers.csv";
+const GOOGLE_SLIDES_TEMPLATE_URL = "https://docs.google.com/presentation/d/1aSGjhXnDEAIzoW65KMqB39dqQGBjidkSRyz6uHfk4yk/edit?usp=sharing";
 const M_PERFORMANCE_CSV_URL = "m-performance-parts.csv";
 let vinRows = [];
 let dealerRows = [];
@@ -2624,6 +2635,7 @@ function buildWindowStickerHTML() {
 
   const stickerData = {
     templatePdfUrl,
+    googleSlidesTemplateUrl: GOOGLE_SLIDES_TEMPLATE_URL,
     baseMSRP: stickerPrice(build.baseMSRP),
     totalMSRP: stickerPrice(build.totalMSRP),
     vin: build.vin || "WBSPM9C50BE698672",
@@ -2851,6 +2863,7 @@ function buildWindowStickerHTML() {
 <body>
 <div class="toolbar">
   <small>Uses your marked PDF only. Dynamic text replaces the marked placeholders.</small>
+  <button id="openSlidesBtn" type="button">Open Editable Slides Template</button>
   <button onclick="window.print()">Print / Save PDF</button>
   <button onclick="window.close()">Close</button>
 </div>
@@ -2883,6 +2896,13 @@ function buildWindowStickerHTML() {
 
 <script>
   const stickerData = ${JSON.stringify(stickerData)};
+
+  const openSlidesBtn = document.getElementById("openSlidesBtn");
+  if (openSlidesBtn) {
+    openSlidesBtn.onclick = () => {
+      window.open(stickerData.googleSlidesTemplateUrl, "_blank");
+    };
+  }
 
   function esc(value) {
     return String(value ?? "")
@@ -2981,6 +3001,10 @@ function generateWindowSticker() {
 
 if ($("windowStickerBtn")) {
   $("windowStickerBtn").onclick = generateWindowSticker;
+}
+
+if ($("googleSlidesTemplateBtn")) {
+  $("googleSlidesTemplateBtn").onclick = () => window.open(GOOGLE_SLIDES_TEMPLATE_URL, "_blank");
 }
 
 $("copyBuildBtn").onclick = async () => {
