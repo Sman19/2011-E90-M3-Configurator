@@ -2579,7 +2579,7 @@ function buildWindowStickerHTML() {
   const c = calculate();
   const premiumTrim = selectedPremiumTrim();
 
-  const templatePdfUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/a5fb5a3e49a64fd8d6509103193e077292f411bc/E9x%20Background%20Github%2011x17%20Print.pdf";
+  const templatePdfUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/d00cb829773380dbd5b29dace81aeff788e1a6cc/E9x%20Background%20Github%2011x17%20Print%20(3).pdf";
 
   const optionRows = [];
 
@@ -2703,15 +2703,18 @@ function buildWindowStickerHTML() {
 
   .dynamic-left {
     position: absolute;
-    left: .53in;
-    top: .54in;
-    width: 4.36in;
-    height: 9.92in;
+    left: .42in;
+    top: .34in;
+    width: 4.38in;
+    height: 10.25in;
     z-index: 5;
     color: #000;
     font-family: Arial, Helvetica, sans-serif;
     overflow: hidden;
     pointer-events: none;
+    border: 4px solid #050505;
+    background: rgba(245,245,241,.70);
+    padding: .16in .15in .13in;
   }
 
   .brand-title {
@@ -2800,6 +2803,186 @@ function buildWindowStickerHTML() {
     font: 6.5pt/1.08 Arial, Helvetica, sans-serif;
   }
 
+
+
+  .static-box {
+    position: absolute;
+    z-index: 4;
+    border: 4px solid #050505;
+    background: rgba(245,245,241,.70);
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
+  }
+
+  .standard-features-box {
+    left: 4.92in;
+    top: .34in;
+    width: 6.68in;
+    height: 2.95in;
+    padding: .10in .13in;
+    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
+  }
+
+  .standard-features-box .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .18in;
+  }
+
+  .standard-features-box .feature-grid div div {
+    margin-bottom: .026in;
+  }
+
+  .sticker-section-title {
+    font: 900 9.5pt/1 Arial, Helvetica, sans-serif;
+    margin-bottom: .045in;
+  }
+
+  .quality-box {
+    left: 4.92in;
+    top: 3.43in;
+    width: 6.68in;
+    height: 1.43in;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
+  }
+
+  .quality-box > div {
+    padding: .095in .12in;
+    border-right: 2px solid #050505;
+  }
+
+  .quality-box > div:last-child { border-right: none; }
+
+  .quality-box h3 {
+    margin: 0 0 .055in;
+    font: 900 9.5pt/1 Arial, Helvetica, sans-serif;
+  }
+
+  .epa-box {
+    left: 4.92in;
+    top: 4.98in;
+    width: 6.68in;
+    height: 3.25in;
+    padding: 0;
+  }
+
+  .black-title {
+    background: #050505;
+    color: #fff;
+    text-align: center;
+    font: 900 18pt Arial, Helvetica, sans-serif;
+    padding: .045in;
+  }
+
+  .epa-body {
+    display: grid;
+    grid-template-columns: 1fr 1.18fr 1fr;
+    gap: .12in;
+    height: calc(100% - .35in);
+    padding: .12in .16in;
+    align-items: center;
+    text-align: center;
+    font: 8pt/1.15 Arial, Helvetica, sans-serif;
+  }
+
+  .mpg-big { font-size: 54pt; font-weight: 900; line-height: .9; }
+  .fuel-cost { border: 2px solid #050505; background: rgba(255,255,255,.62); padding: .12in; }
+  .fuel-cost .cost { font-size: 23pt; font-weight: 900; }
+
+  .parts-box {
+    left: 11.72in;
+    top: .34in;
+    width: 4.38in;
+    height: 2.95in;
+    padding: .09in;
+    font: 7.2pt/1.2 Arial, Helvetica, sans-serif;
+  }
+
+  .safety-box {
+    left: 11.72in;
+    top: 3.43in;
+    width: 4.38in;
+    height: 1.43in;
+    padding: 0;
+    font: 7.2pt/1.12 Arial, Helvetica, sans-serif;
+  }
+
+  .safety-title {
+    background: #050505;
+    color: #fff;
+    text-align: center;
+    font: 900 11pt Arial, Helvetica, sans-serif;
+    padding: .045in;
+  }
+
+  .safety-body { padding: .09in; }
+  .rating-row { display: grid; grid-template-columns: 1fr 1fr; margin: .035in 0; }
+
+  .env-box {
+    left: 11.72in;
+    top: 4.98in;
+    width: 4.38in;
+    height: 3.25in;
+    padding: 0;
+  }
+
+  .green-title {
+    background: #23b64f;
+    color: white;
+    text-align: center;
+    font: 900 16pt Arial, Helvetica, sans-serif;
+    padding: .055in;
+  }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .15in;
+    padding: .14in;
+    text-align: center;
+    font: 7pt/1.15 Arial, Helvetica, sans-serif;
+  }
+
+  .score-num { font-size: 22pt; font-weight: 900; }
+  .score-bar { height: .12in; border: 1px solid #050505; background: linear-gradient(90deg,#050505 0%,#050505 30%,#ddd 30%,#ddd 100%); margin: .04in 0; }
+
+  .middle-footer-note {
+    position: absolute;
+    left: 4.92in;
+    top: 8.37in;
+    width: 6.68in;
+    height: 1.35in;
+    z-index: 4;
+    font: 5.7pt/1.18 Arial, Helvetica, sans-serif;
+    color: #000;
+  }
+
+  .bottom-strip {
+    position: absolute;
+    left: .45in;
+    right: .45in;
+    bottom: .23in;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: .15in;
+    font: 6.2pt/1.15 Arial, Helvetica, sans-serif;
+    color: #000;
+  }
+
+  .bmw-footer {
+    position: absolute;
+    right: .45in;
+    bottom: .28in;
+    z-index: 4;
+    font: 6pt Arial, Helvetica, sans-serif;
+    text-align: right;
+    color: #000;
+  }
+
   .loading {
     position: absolute;
     inset: 0;
@@ -2857,6 +3040,103 @@ function buildWindowStickerHTML() {
       <div><strong>Ship To:</strong><br><span id="shipDealer"></span></div>
     </div>
   </div>
+
+  <section class="static-box standard-features-box">
+    <div class="sticker-section-title">Standard Features</div>
+    <div class="feature-grid">
+      <div>
+        <div>● 4.0-liter 32-valve V-8 engine with M Double-VANOS variable valve timing</div>
+        <div>● Dynamic Stability Control (DSC)</div>
+        <div>● Variable M Differential Lock</div>
+        <div>● Vehicle-speed-sensitive variable-assist power steering</div>
+        <div>● M Suspension</div>
+        <div>● BMW M vacuum-assisted ventilated, cross-drilled compound disc brakes</div>
+        <div>● High-performance tuned anti-lock braking system (ABS) with Dynamic Brake Control</div>
+        <div>● Xenon Adaptive headlights with Auto-leveling and Cornering Lights</div>
+        <div>● AM/FM stereo/CD/MP3 audio system</div>
+        <div>● HD Radio</div>
+        <div>● M instrument cluster with red needles</div>
+      </div>
+      <div>
+        <div>● Service Interval indicator with miles-to-service display</div>
+        <div>● On-board computer with check control vehicle monitoring system</div>
+        <div>● Tire Pressure Monitor</div>
+        <div>● Rain-sensing windshield wipers with Automatic headlight control</div>
+        <div>● Cruise Control</div>
+        <div>● Driver’s and passenger’s front airbag supplemental restraint system (SRS)</div>
+        <div>● Front-seat-mounted side-impact airbags</div>
+        <div>● Head Protection System (HPS), front and rear</div>
+        <div>● BMW’s Advanced Safety System</div>
+        <div>● Adaptive Brake Lights</div>
+        <div>● Coded Driveaway Protection</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="static-box quality-box">
+    <div>
+      <h3>BMW Delivery Quality Assurance</h3>
+      This BMW vehicle has been designed, engineered and manufactured under strict quality control guidelines, it has been prepared and inspected to ensure that it is free of defects in workmanship and materials in accordance with the New Vehicle Limited Warranty issued by BMW of North America, LLC.
+    </div>
+    <div>
+      <h3>BMW Ultimate Service</h3>
+      ● 4 year/50,000 mile Full Maintenance Program<br>
+      ● 4 year 50,000 mile limited warranty<br>
+      ● 12 year rust perforation limited warranty<br>
+      ● 4 year/unlimited mile BMW Roadside Assistance Program
+    </div>
+  </section>
+
+  <section class="static-box epa-box">
+    <div class="black-title">EPA FUEL Economy Estimates</div>
+    <div class="epa-body">
+      <div><div>CITY MPG</div><div class="mpg-big">14</div><div>Expected range<br>11 to 17 MPG</div></div>
+      <div class="fuel-cost"><strong>Estimated<br>Annual Fuel Cost</strong><div class="cost">$3,000</div><div>based on 15,000 miles at<br>$3.20 per gallon</div><br><strong>Combined Fuel Economy</strong><br>This Vehicle<br><strong>16</strong></div>
+      <div><div>HIGHWAY MPG</div><div class="mpg-big">20</div><div>Expected range<br>16 to 24 MPG</div></div>
+    </div>
+  </section>
+
+  <section class="static-box parts-box">
+    <div class="sticker-section-title">PARTS CONTENT INFORMATION</div>
+    <strong>For Vehicles in this Car Line:</strong><br>
+    US/Canadian Parts Content: <strong>5%</strong><br>
+    Major Source of Foreign Parts Content:<br><strong>GERMANY: 75%</strong><br><br>
+    <strong>For this Vehicle:</strong><br>
+    Final Assembly Point: <strong>REGENSBURG, GERMANY</strong><br>
+    Country of Origin:<br>
+    Engine: <strong>GERMANY</strong><br>
+    Transmission: <strong>GERMANY</strong>
+  </section>
+
+  <section class="static-box safety-box">
+    <div class="safety-title">GOVERNMENT SAFETY RATINGS</div>
+    <div class="safety-body">
+      <div class="rating-row"><strong>Frontal<br>Crash</strong><div>Driver&nbsp;&nbsp;&nbsp; NOT Rated<br>Passenger&nbsp; NOT Rated</div></div>
+      <div class="rating-row"><strong>Side<br>Crash</strong><div>Front seat&nbsp; NOT Rated<br>Rear seat&nbsp;&nbsp; NOT Rated</div></div>
+      <div class="rating-row"><strong>Rollover</strong><div>★ ★ ★ ★</div></div>
+      <div style="background:#050505;color:#fff;text-align:center;padding:.05in;margin-top:.05in;">www.safecar.gov or 1-888-327-4236</div>
+    </div>
+  </section>
+
+  <section class="static-box env-box">
+    <div class="green-title">Environmental Performance</div>
+    <div style="padding:.12in;font:7pt/1.2 Arial, Helvetica, sans-serif;text-align:center;">Protect the environment, choose vehicles with higher scores:</div>
+    <div class="score-grid">
+      <div><strong>Global Warming Score</strong><div class="score-num">3</div><div class="score-bar"></div><div>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10<br>Average&nbsp;&nbsp;&nbsp;&nbsp;Cleanest</div></div>
+      <div><strong>Smog Score</strong><div class="score-num">4</div><div class="score-bar"></div><div>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10<br>Average&nbsp;&nbsp;&nbsp;&nbsp;Cleanest</div></div>
+    </div>
+  </section>
+
+  <section class="middle-footer-note">
+    This vehicle is equipped with bumpers that can withstand an impact of 2.5 miles per hour with no damage to the vehicle's body and safety systems, although the bumper and related components may sustain damage. The bumper system on this vehicle conforms to the current federal bumper standard of 2.5 miles per hour.
+  </section>
+
+  <div class="bottom-strip">
+    <div>Port of Entry: BRUNSWICK, GEORGIA</div>
+    <div>Carrier: HANSEN &amp; ADKINS AUTO TRANSPORT</div>
+    <div>VPC Location: BRUNSWICK, GA</div>
+  </div>
+  <div class="bmw-footer">BMW of North America, LLC<br>Woodcliff Lake, NJ 07677</div>
 </div>
 
 <script>
