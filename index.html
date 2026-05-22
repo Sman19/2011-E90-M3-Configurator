@@ -2682,7 +2682,7 @@ function buildWindowStickerHTML() {
   .sticker-grid {
     height: 9.55in;
     display: grid;
-    grid-template-columns: 4.35in 6.6in 4.35in;
+    grid-template-columns: 4.18in 6.77in 4.35in;
     grid-template-rows: 2.95in 1.45in 3.25in 1.65in;
     gap: .12in;
   }
@@ -2704,22 +2704,25 @@ function buildWindowStickerHTML() {
     flex-direction: column;
   }
   .brand-title {
-    font-size: 21pt;
-    line-height: .95;
-    font-weight: 900;
-    margin-bottom: .04in;
+    font: 900 19.5pt/.92 Arial, Helvetica, sans-serif;
+    margin-bottom: .035in;
+    letter-spacing: -.015em;
   }
   .model-title {
-    font-size: 13pt;
-    font-weight: 900;
-    margin-bottom: .07in;
+    font: 900 15pt/1 Arial, Helvetica, sans-serif;
+    margin-bottom: .055in;
   }
   .msrp-row {
     display: grid;
-    grid-template-columns: 1fr .9in;
+    grid-template-columns: 1fr .92in;
     gap: .06in;
     font: 700 9pt Arial, Helvetica, sans-serif;
     margin-bottom: .045in;
+    align-items: start;
+  }
+  .msrp-row > div:last-child {
+    text-align: right;
+    white-space: nowrap;
   }
   .options-title {
     font: 900 9pt Arial, Helvetica, sans-serif;
@@ -2763,22 +2766,20 @@ function buildWindowStickerHTML() {
     grid-column: 2;
     grid-row: 1;
     border: 4px solid #050505;
-    padding: .105in .13in .075in;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 8.5pt;
-    line-height: 1.08;
+    padding: .095in .12in .07in;
+    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
     background: rgba(245,245,241,.72);
     overflow: hidden;
   }
   .features-cols {
-    columns: 2;
-    column-gap: .28in;
-    column-fill: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .18in;
     font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
   }
-  .features-cols div {
+  .feature-col div {
     break-inside: avoid;
-    margin-bottom: .028in;
+    margin-bottom: .026in;
   }
   .section-title {
     font: 900 9.5pt/1 Arial, Helvetica, sans-serif;
@@ -2797,7 +2798,7 @@ function buildWindowStickerHTML() {
     overflow: hidden;
   }
   .quality > div {
-    padding: .10in .13in;
+    padding: .095in .12in;
     border-right: 2px solid #050505;
   }
   .quality > div:last-child { border-right: none; }
@@ -2895,7 +2896,7 @@ function buildWindowStickerHTML() {
   <div class="sticker-grid">
     <section class="box left-main">
       <div class="brand-title">The Ultimate Driving Machine®</div>
-      <div class="model-title">2011 BMW M3 Sedan</div>
+      <div class="model-title">2011 E90 M3 Sedan</div>
       <div class="msrp-row">
         <div>Manufacturer's Suggested Retail Price</div>
         <div>${stickerPrice(build.baseMSRP)}</div>
@@ -2915,24 +2916,32 @@ function buildWindowStickerHTML() {
     <section class="box standard-features">
       <div class="section-title">Standard Features</div>
       <div class="features-cols">
-        <div>● 4.0-liter 32-valve V-8 engine with M Double-VANOS variable valve timing</div>
-        <div>● Dynamic Stability Control (DSC)</div>
-        <div>● Variable M Differential Lock</div>
-        <div>● Vehicle-speed-sensitive variable-assist power steering</div>
-        <div>● M Suspension</div>
-        <div>● BMW M vacuum-assisted ventilated, cross-drilled compound disc brakes</div>
-        <div>● Xenon Adaptive headlights with Auto-leveling and Cornering Lights</div>
-        <div>● AM/FM stereo/CD/MP3 audio system</div>
-        <div>● HD Radio</div>
-        <div>● M instrument cluster with red needles</div>
-        <div>● Service Interval indicator with miles-to-service display</div>
-        <div>● On-board computer with check control vehicle monitoring system</div>
-        <div>● Tire Pressure Monitor</div>
-        <div>● Rain-sensing windshield wipers with Automatic headlight control</div>
-        <div>● Cruise Control</div>
-        <div>● Advanced Safety System</div>
-        <div>● Adaptive Brake Lights</div>
-        <div>● Coded Driveaway Protection</div>
+        <div class="feature-col">
+          <div>● 4.0-liter 32-valve V-8 engine with M Double-VANOS variable valve timing</div>
+          <div>● Dynamic Stability Control (DSC)</div>
+          <div>● Variable M Differential Lock</div>
+          <div>● Vehicle-speed-sensitive variable-assist power steering</div>
+          <div>● M Suspension</div>
+          <div>● BMW M vacuum-assisted ventilated, cross-drilled compound disc brakes</div>
+          <div>● High-performance tuned anti-lock braking system (ABS) with Dynamic Brake Control</div>
+          <div>● Xenon Adaptive headlights with Auto-leveling and Cornering Lights</div>
+          <div>● AM/FM stereo/CD/MP3 audio system</div>
+          <div>● HD Radio</div>
+          <div>● M instrument cluster with red needles</div>
+        </div>
+        <div class="feature-col">
+          <div>● Service Interval indicator with miles-to-service display</div>
+          <div>● On-board computer with check control vehicle monitoring system</div>
+          <div>● Tire Pressure Monitor</div>
+          <div>● Rain-sensing windshield wipers with Automatic headlight control</div>
+          <div>● Cruise Control</div>
+          <div>● Driver’s and passenger’s front airbag supplemental restraint system (SRS)</div>
+          <div>● Front-seat-mounted side-impact airbags</div>
+          <div>● Head Protection System (HPS), front and rear</div>
+          <div>● BMW’s Advanced Safety System</div>
+          <div>● Adaptive Brake Lights</div>
+          <div>● Coded Driveaway Protection</div>
+        </div>
       </div>
     </section>
 
