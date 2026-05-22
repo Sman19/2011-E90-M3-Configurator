@@ -2578,310 +2578,246 @@ function buildWindowStickerHTML() {
   const build = buildOutput();
   const c = calculate();
   const premiumTrim = selectedPremiumTrim();
-  const selectedPackageCodes = new Set((build.packages || []).map(item => item.code));
-  const selectedOptionCodes = new Set((build.standaloneOptions || []).map(item => item.code));
-  const rows = [];
 
-  rows.push(`
-    <div class="sticker-row">
-      <div>${stickerEscape(build.exterior.name)}</div>
-      <div>${stickerPrice(build.exterior.price)}</div>
-    </div>
-  `);
+  const templatePdfUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/a5fb5a3e49a64fd8d6509103193e077292f411bc/E9x%20Background%20Github%2011x17%20Print.pdf";
 
-  rows.push(`
-    <div class="sticker-row">
-      <div>${stickerEscape(build.interior.name)}</div>
-      <div>${stickerPrice(build.interior.price)}</div>
-    </div>
-  `);
+  const optionRows = [];
 
-  (build.packages || []).forEach(pkg => rows.push(renderStickerOptionItem(pkg)));
+  function addRow(name, price, className = "") {
+    optionRows.push({ type: "row", name: String(name || ""), price: stickerPrice(price), className });
+  }
+
+  function addChild(text) {
+    const clean = String(text || "").replace(/^[-•]\s*/, "").trim();
+    if (clean && !/^choose one trim/i.test(clean)) {
+      optionRows.push({ type: "child", name: clean });
+    }
+  }
+
+  function addPackageLike(item, forcedPrice = null) {
+    if (!item) return;
+    const price = forcedPrice === null ? item.price : forcedPrice;
+    addRow(item.name || item.code, price, "package-row");
+    String(item.desc || "")
+      .split("\n")
+      .map(v => v.trim())
+      .filter(Boolean)
+      .forEach(addChild);
+  }
+
+  addRow(build.exterior.name, build.exterior.price);
+  addRow(build.interior.name, build.interior.price);
+
+  (build.packages || []).forEach(pkg => addPackageLike(pkg));
 
   if (premiumTrim) {
-    rows.push(`
-      <div class="sticker-child">${stickerEscape(premiumTrim.name)}</div>
-    `);
+    addChild(premiumTrim.name);
   }
 
   if (build.transmission && build.transmission.code !== "6MT") {
-    rows.push(renderStickerOptionItem(build.transmission));
+    addPackageLike(build.transmission);
   }
 
   if (build.wheel && build.wheel.code === "2MT") {
-    rows.push(renderStickerOptionItem(build.wheel, c.wheelPrice));
+    addPackageLike(build.wheel, c.wheelPrice);
   }
 
-  (build.standaloneOptions || []).forEach(opt => rows.push(renderStickerOptionItem(opt)));
-  (build.mPerformanceParts || []).forEach(part => rows.push(renderStickerOptionItem(part)));
+  (build.standaloneOptions || []).forEach(opt => addPackageLike(opt));
+  (build.mPerformanceParts || []).forEach(part => addPackageLike(part));
 
-  rows.push(`
-    <div class="sticker-row">
-      <div>Destination Charge</div>
-      <div>${stickerPrice(build.destinationCharge)}</div>
-    </div>
-    <div class="sticker-row">
-      <div>Gas Guzzler Tax</div>
-      <div>${stickerPrice(build.gasGuzzlerTax)}</div>
-    </div>
-    <div class="sticker-row sticker-total-line">
-      <div>Total Suggested Retail Price</div>
-      <div>${stickerPrice(build.totalMSRP)}</div>
-    </div>
-  `);
+  addRow("Destination Charge", build.destinationCharge);
+  addRow("Gas Guzzler Tax", build.gasGuzzlerTax);
+  addRow("Total Suggested Retail Price", build.totalMSRP, "total-row");
 
-  const dealerName = build.sellingDealer || "BMW Center";
-  const dealerAddress = build.dealerAddress || "";
-  const dealerPhone = build.dealerPhone || "";
-  const vin = build.vin || "WBSPM9C50BE698672";
+  const stickerData = {
+    templatePdfUrl,
+    baseMSRP: stickerPrice(build.baseMSRP),
+    totalMSRP: stickerPrice(build.totalMSRP),
+    vin: build.vin || "WBSPM9C50BE698672",
+    dealerName: build.sellingDealer || "BMW Center",
+    dealerAddress: build.dealerAddress || "",
+    dealerPhone: build.dealerPhone || "",
+    optionRows
+  };
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>BMW Window Sticker Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMW Window Sticker Overlay</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"><\/script>
 <style>
   @page { size: 17in 11in landscape; margin: 0; }
+
   * { box-sizing: border-box; }
+
   body {
     margin: 0;
-    background: #222;
+    background: #202020;
     color: #050505;
     font-family: Arial, Helvetica, sans-serif;
   }
+
   .toolbar {
     width: 17in;
-    margin: 14px auto;
+    margin: 12px auto;
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+    align-items: center;
   }
+
   .toolbar button {
     border: 0;
-    border-radius: 6px;
+    border-radius: 7px;
     background: #111;
-    color: white;
+    color: #fff;
     padding: 10px 14px;
-    font: 900 13px Arial, Helvetica, sans-serif;
-    text-transform: uppercase;
+    font: 800 13px Arial, Helvetica, sans-serif;
     cursor: pointer;
   }
+
+  .toolbar small {
+    color: #ddd;
+    margin-right: auto;
+    font: 12px Arial, Helvetica, sans-serif;
+  }
+
   .sticker-page {
+    position: relative;
     width: 17in;
     height: 11in;
-    margin: 0 auto 24px;
-    padding: .42in .45in .34in;
-    position: relative;
+    margin: 0 auto 18px;
+    background: #fff;
     overflow: hidden;
-    background:
-      linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.72)),
-      radial-gradient(circle at 20% 30%, rgba(210,225,210,.8), transparent 28%),
-      radial-gradient(circle at 75% 40%, rgba(235,240,235,.75), transparent 30%),
-      linear-gradient(135deg, #d7ddd4, #f8f8f5 45%, #cdd5ca);
   }
-  .sticker-grid {
-    height: 9.55in;
-    display: grid;
-    grid-template-columns: 4.18in 6.77in 4.35in;
-    grid-template-rows: 2.95in 1.45in 3.25in 1.65in;
-    gap: .12in;
+
+  #pdfCanvas {
+    position: absolute;
+    inset: 0;
+    width: 17in;
+    height: 11in;
+    z-index: 1;
   }
-  .box {
-    border: 3px solid #050505;
-    background: rgba(245,245,241,.72);
+
+  .dynamic-left {
+    position: absolute;
+    left: .53in;
+    top: .54in;
+    width: 4.36in;
+    height: 9.92in;
+    z-index: 5;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
     overflow: hidden;
-    padding: .085in;
+    pointer-events: none;
   }
-  .box-thin {
-    border: 2px solid #050505;
-    background: rgba(245,245,241,.72);
-    overflow: hidden;
-    padding: .085in;
-  }
-  .left-main {
-    grid-row: 1 / span 4;
-    display: flex;
-    flex-direction: column;
-  }
+
   .brand-title {
-    font: 900 19.5pt/.92 Arial, Helvetica, sans-serif;
-    margin-bottom: .035in;
-    letter-spacing: -.015em;
+    font: 900 19.5pt/.88 Arial, Helvetica, sans-serif;
+    letter-spacing: -.3px;
+    margin: 0 0 .055in 0;
   }
+
   .model-title {
     font: 900 15pt/1 Arial, Helvetica, sans-serif;
-    margin-bottom: .055in;
+    margin: 0 0 .13in 0;
   }
+
   .msrp-row {
     display: grid;
-    grid-template-columns: 1fr .92in;
-    gap: .06in;
-    font: 700 9pt Arial, Helvetica, sans-serif;
-    margin-bottom: .045in;
-    align-items: start;
+    grid-template-columns: 1fr .05in 1.02in;
+    align-items: baseline;
+    gap: .02in;
+    font: 900 9pt/1.1 Arial, Helvetica, sans-serif;
+    margin-bottom: .055in;
   }
-  .msrp-row > div:last-child {
+
+  .price-col {
     text-align: right;
     white-space: nowrap;
   }
+
+  .option-note {
+    font: 9pt/1.05 Arial, Helvetica, sans-serif;
+    margin-bottom: .12in;
+  }
+
   .options-title {
-    font: 900 9pt Arial, Helvetica, sans-serif;
-    margin: .055in 0 .025in;
+    font: 900 9pt/1.05 Arial, Helvetica, sans-serif;
+    margin-bottom: .055in;
   }
-  .sticker-options {
-    flex: 1;
-    overflow: hidden;
-    font: 9pt/1.12 Arial, Helvetica, sans-serif;
+
+  .option-list {
+    font: 9pt/1.07 Arial, Helvetica, sans-serif;
   }
+
   .sticker-row {
     display: grid;
-    grid-template-columns: 1fr .92in;
-    gap: .06in;
+    grid-template-columns: 1fr .05in 1.02in;
+    gap: .02in;
+    align-items: baseline;
     margin-bottom: .018in;
   }
-  .sticker-row > div:last-child { text-align: right; white-space: nowrap; }
-  .sticker-package { font-weight: 900; margin-top: .035in; }
-  .sticker-child { padding-left: .12in; margin-bottom: .008in; }
-  .sticker-child:before { content: "- "; }
-  .sticker-total-line {
-    border-top: 2px solid #050505;
-    margin-top: .04in;
-    padding-top: .035in;
+
+  .package-row {
     font-weight: 900;
+    margin-top: .035in;
   }
+
+  .sticker-child {
+    padding-left: .13in;
+    margin-bottom: .012in;
+  }
+
+  .sticker-child::before {
+    content: "- ";
+  }
+
+  .total-row {
+    font-weight: 900;
+    border-top: 2px solid #000;
+    padding-top: .035in;
+    margin-top: .035in;
+  }
+
   .vin-row {
-    font: 900 10pt Arial, Helvetica, sans-serif;
-    margin-top: .05in;
+    position: absolute;
+    left: 0;
+    bottom: .40in;
+    font: 900 8pt/1 Arial, Helvetica, sans-serif;
   }
+
   .dealer-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .1in;
-    border-top: 2px solid #050505;
-    margin-top: .05in;
-    padding-top: .045in;
-    font: 6.4pt/1.12 Arial, Helvetica, sans-serif;
-  }
-  .standard-features {
-    grid-column: 2;
-    grid-row: 1;
-    border: 4px solid #050505;
-    padding: .095in .12in .07in;
-    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
-    background: rgba(245,245,241,.72);
-    overflow: hidden;
-  }
-  .features-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .18in;
-    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
-  }
-  .feature-col div {
-    break-inside: avoid;
-    margin-bottom: .026in;
-  }
-  .section-title {
-    font: 900 9.5pt/1 Arial, Helvetica, sans-serif;
-    margin-bottom: .045in;
-  }
-  .quality {
-    grid-column: 2;
-    grid-row: 2;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-    border: 4px solid #050505;
-    background: rgba(245,245,241,.72);
-    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
-    padding: 0;
-    overflow: hidden;
-  }
-  .quality > div {
-    padding: .095in .12in;
-    border-right: 2px solid #050505;
-  }
-  .quality > div:last-child { border-right: none; }
-  .quality h3 {
-    margin: 0 0 .055in;
-    font: 900 9.5pt/1 Arial, Helvetica, sans-serif;
-  }
-  .epa {
-    grid-column: 2;
-    grid-row: 3;
-    padding: 0;
-  }
-  .black-title {
-    background: #050505;
-    color: white;
-    text-align: center;
-    font: 900 18pt Arial, Helvetica, sans-serif;
-    padding: .045in;
-  }
-  .epa-body {
-    display: grid;
-    grid-template-columns: 1fr 1.18fr 1fr;
-    gap: .12in;
-    height: calc(100% - .35in);
-    padding: .12in .16in;
-    align-items: center;
-    text-align: center;
-  }
-  .mpg-big { font-size: 54pt; font-weight: 900; line-height: .9; }
-  .fuel-cost { border: 2px solid #050505; background: rgba(255,255,255,.62); padding: .12in; }
-  .fuel-cost .cost { font-size: 23pt; font-weight: 900; }
-  .parts { grid-column: 3; grid-row: 1; font: 7.2pt/1.2 Arial, Helvetica, sans-serif; }
-  .safety { grid-column: 3; grid-row: 2; padding: 0; }
-  .safety-body { padding: .09in; font: 7.2pt/1.12 Arial, Helvetica, sans-serif; }
-  .rating-row { display: grid; grid-template-columns: 1fr 1fr; margin: .035in 0; }
-  .env { grid-column: 3; grid-row: 3; padding: 0; }
-  .green-title {
-    background: #23b64f;
-    color: white;
-    text-align: center;
-    font: 900 16pt Arial, Helvetica, sans-serif;
-    padding: .055in;
-  }
-  .score-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .15in;
-    padding: .14in;
-    text-align: center;
-    font: 7pt/1.15 Arial, Helvetica, sans-serif;
-  }
-  .score-num { font-size: 22pt; font-weight: 900; }
-  .score-bar {
-    height: .12in;
-    border: 1px solid #050505;
-    background: linear-gradient(90deg,#050505 0%,#050505 30%,#ddd 30%,#ddd 100%);
-    margin: .04in 0;
-  }
-  .footer-note {
-    grid-column: 2;
-    grid-row: 4;
-    font: 5.7pt/1.18 Arial, Helvetica, sans-serif;
-    padding-top: .05in;
-  }
-  .bmw-footer {
     position: absolute;
-    right: .45in;
-    bottom: .28in;
-    font: 6pt Arial, Helvetica, sans-serif;
-    text-align: right;
-  }
-  .bottom-strip {
-    position: absolute;
-    left: .45in;
-    right: .45in;
-    bottom: .23in;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: .15in;
-    font: 6.2pt/1.15 Arial, Helvetica, sans-serif;
+    grid-template-columns: 1fr 1fr;
+    gap: .08in;
+    font: 6.5pt/1.08 Arial, Helvetica, sans-serif;
   }
+
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 10;
+    background: #fff;
+    font: 900 18px Arial, Helvetica, sans-serif;
+  }
+
+  .error {
+    color: #b00020;
+    padding: 24px;
+    font: 14px Arial, Helvetica, sans-serif;
+  }
+
   @media print {
-    body { background: white; }
+    body { background: #fff; }
     .toolbar { display: none; }
     .sticker-page { margin: 0; }
   }
@@ -2889,129 +2825,119 @@ function buildWindowStickerHTML() {
 </head>
 <body>
 <div class="toolbar">
+  <small>PDF template background + live text overlay. Use Print / Save PDF after it loads.</small>
   <button onclick="window.print()">Print / Save PDF</button>
   <button onclick="window.close()">Close</button>
 </div>
+
 <div class="sticker-page">
-  <div class="sticker-grid">
-    <section class="box left-main">
-      <div class="brand-title">The Ultimate Driving Machine®</div>
-      <div class="model-title">2011 E90 M3 Sedan</div>
-      <div class="msrp-row">
-        <div>Manufacturer's Suggested Retail Price</div>
-        <div>${stickerPrice(build.baseMSRP)}</div>
-      </div>
-      <div style="font:7.5pt/1.15 Arial, Helvetica, sans-serif;margin-bottom:.05in;">
-        Options and Additional Charges: Optional equipment may supersede standard equipment; check with your authorized BMW center.
-      </div>
-      <div class="options-title">Options and Additional Charges</div>
-      <div class="sticker-options">${rows.join("")}</div>
-      <div class="vin-row">VIN: ${stickerEscape(vin)}</div>
-      <div class="dealer-row">
-        <div><strong>Sold To:</strong><br>${stickerEscape(dealerName)}<br>${stickerEscape(dealerAddress)}<br>${stickerEscape(dealerPhone)}</div>
-        <div><strong>Ship To:</strong><br>${stickerEscape(dealerName)}<br>${stickerEscape(dealerAddress)}<br>${stickerEscape(dealerPhone)}</div>
-      </div>
-    </section>
+  <canvas id="pdfCanvas"></canvas>
+  <div class="loading" id="loading">Loading BMW template...</div>
 
-    <section class="box standard-features">
-      <div class="section-title">Standard Features</div>
-      <div class="features-cols">
-        <div class="feature-col">
-          <div>● 4.0-liter 32-valve V-8 engine with M Double-VANOS variable valve timing</div>
-          <div>● Dynamic Stability Control (DSC)</div>
-          <div>● Variable M Differential Lock</div>
-          <div>● Vehicle-speed-sensitive variable-assist power steering</div>
-          <div>● M Suspension</div>
-          <div>● BMW M vacuum-assisted ventilated, cross-drilled compound disc brakes</div>
-          <div>● High-performance tuned anti-lock braking system (ABS) with Dynamic Brake Control</div>
-          <div>● Xenon Adaptive headlights with Auto-leveling and Cornering Lights</div>
-          <div>● AM/FM stereo/CD/MP3 audio system</div>
-          <div>● HD Radio</div>
-          <div>● M instrument cluster with red needles</div>
-        </div>
-        <div class="feature-col">
-          <div>● Service Interval indicator with miles-to-service display</div>
-          <div>● On-board computer with check control vehicle monitoring system</div>
-          <div>● Tire Pressure Monitor</div>
-          <div>● Rain-sensing windshield wipers with Automatic headlight control</div>
-          <div>● Cruise Control</div>
-          <div>● Driver’s and passenger’s front airbag supplemental restraint system (SRS)</div>
-          <div>● Front-seat-mounted side-impact airbags</div>
-          <div>● Head Protection System (HPS), front and rear</div>
-          <div>● BMW’s Advanced Safety System</div>
-          <div>● Adaptive Brake Lights</div>
-          <div>● Coded Driveaway Protection</div>
-        </div>
-      </div>
-    </section>
+  <div class="dynamic-left" id="dynamicLeft">
+    <div class="brand-title">The Ultimate Driving Machine®</div>
+    <div class="model-title">2011 E90 M3 Sedan</div>
 
-    <section class="quality">
-      <div>
-        <h3>BMW Delivery Quality Assurance</h3>
-        This BMW vehicle has been designed, engineered and manufactured under strict quality control guidelines, it has been prepared and inspected to ensure that it is free of defects in workmanship and materials in accordance with the New Vehicle Limited Warranty issued by BMW of North America, LLC.
-      </div>
-      <div>
-        <h3>BMW Ultimate Service</h3>
-        ● 4 year/50,000 mile Full Maintenance Program<br>
-        ● 4 year 50,000 mile limited warranty<br>
-        ● 12 year rust perforation limited warranty<br>
-        ● 4 year/unlimited mile BMW Roadside Assistance Program
-      </div>
-    </section>
+    <div class="msrp-row">
+      <div>Manufacturer's Suggested Retail Price</div>
+      <div>$</div>
+      <div class="price-col" id="baseMsrpText"></div>
+    </div>
 
-    <section class="box epa">
-      <div class="black-title">EPA FUEL Economy Estimates</div>
-      <div class="epa-body">
-        <div><div>CITY MPG</div><div class="mpg-big">14</div><div>Expected range<br>11 to 17 MPG</div></div>
-        <div class="fuel-cost"><strong>Estimated<br>Annual Fuel Cost</strong><div class="cost">$3,000</div><div>based on 15,000 miles at<br>$3.20 per gallon</div><br><strong>Combined Fuel Economy</strong><br>This Vehicle<br><strong>16</strong></div>
-        <div><div>HIGHWAY MPG</div><div class="mpg-big">20</div><div>Expected range<br>16 to 24 MPG</div></div>
-      </div>
-    </section>
+    <div class="option-note">
+      Options and Additional Charges: Optional equipment may supersede standard equipment; check with your authorized BMW center.
+    </div>
 
-    <section class="box parts">
-      <div class="section-title">PARTS CONTENT INFORMATION</div>
-      <strong>For Vehicles in this Car Line:</strong><br>
-      US/Canadian Parts Content: <strong>5%</strong><br>
-      Major Source of Foreign Parts Content:<br><strong>GERMANY: 75%</strong><br><br>
-      <strong>For this Vehicle:</strong><br>
-      Final Assembly Point: <strong>REGENSBURG, GERMANY</strong><br>
-      Country of Origin:<br>
-      Engine: <strong>GERMANY</strong><br>
-      Transmission: <strong>GERMANY</strong>
-    </section>
+    <div class="options-title">Options and Additional Charges</div>
+    <div class="option-list" id="optionList"></div>
 
-    <section class="box safety">
-      <div class="black-title" style="font-size:11pt;">GOVERNMENT SAFETY RATINGS</div>
-      <div class="safety-body">
-        <div class="rating-row"><strong>Frontal<br>Crash</strong><div>Driver&nbsp;&nbsp;&nbsp; NOT Rated<br>Passenger&nbsp; NOT Rated</div></div>
-        <div>Star ratings based on the risk of injury in a frontal impact.</div><br>
-        <div class="rating-row"><strong>Side<br>Crash</strong><div>Front seat&nbsp; NOT Rated<br>Rear seat&nbsp;&nbsp; NOT Rated</div></div>
-        <div class="rating-row"><strong>Rollover</strong><div>★ ★ ★ ★</div></div>
-        <div style="background:#050505;color:#fff;text-align:center;padding:.05in;margin-top:.05in;">www.safecar.gov or 1-888-327-4236</div>
-      </div>
-    </section>
-
-    <section class="box env">
-      <div class="green-title">Environmental Performance</div>
-      <div style="padding:.12in;font:7pt/1.2 Arial, Helvetica, sans-serif;text-align:center;">Protect the environment, choose vehicles with higher scores:</div>
-      <div class="score-grid">
-        <div><strong>Global Warming Score</strong><div class="score-num">3</div><div class="score-bar"></div><div>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10<br>Average&nbsp;&nbsp;&nbsp;&nbsp;Cleanest</div></div>
-        <div><strong>Smog Score</strong><div class="score-num">4</div><div class="score-bar"></div><div>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10<br>Average&nbsp;&nbsp;&nbsp;&nbsp;Cleanest</div></div>
-      </div>
-    </section>
-
-    <section class="footer-note">
-      This vehicle is equipped with bumpers that can withstand an impact of 2.5 miles per hour with no damage to the vehicle's body and safety systems, although the bumper and related components may sustain damage. The bumper system on this vehicle conforms to the current federal bumper standard of 2.5 miles per hour.
-    </section>
+    <div class="vin-row" id="vinText"></div>
+    <div class="dealer-row">
+      <div><strong>Sold To:</strong><br><span id="soldDealer"></span></div>
+      <div><strong>Ship To:</strong><br><span id="shipDealer"></span></div>
+    </div>
   </div>
-
-  <div class="bottom-strip">
-    <div>Port of Entry: BRUNSWICK, GEORGIA</div>
-    <div>Carrier: HANSEN &amp; ADKINS AUTO TRANSPORT</div>
-    <div>VPC Location: BRUNSWICK, GA</div>
-  </div>
-  <div class="bmw-footer">BMW of North America, LLC<br>Woodcliff Lake, NJ 07677</div>
 </div>
+
+<script>
+  const stickerData = ${JSON.stringify(stickerData)};
+
+  function esc(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function priceNoDollar(value) {
+    return String(value || "").replace(/^\$/, "");
+  }
+
+  function renderOverlayText() {
+    document.getElementById("baseMsrpText").textContent = priceNoDollar(stickerData.baseMSRP);
+    document.getElementById("vinText").textContent = "VIN: " + stickerData.vin;
+
+    const dealerHtml = [stickerData.dealerName, stickerData.dealerAddress, stickerData.dealerPhone]
+      .filter(Boolean)
+      .map(esc)
+      .join("<br>");
+
+    document.getElementById("soldDealer").innerHTML = dealerHtml;
+    document.getElementById("shipDealer").innerHTML = dealerHtml;
+
+    const holder = document.getElementById("optionList");
+    holder.innerHTML = stickerData.optionRows.map(row => {
+      if (row.type === "child") {
+        return '<div class="sticker-child">' + esc(row.name) + '</div>';
+      }
+
+      const cleanPrice = row.price === "Included" ? "Included" : priceNoDollar(row.price);
+      const dollar = row.price === "Included" ? "" : "$";
+      return '<div class="sticker-row ' + esc(row.className || "") + '">' +
+        '<div>' + esc(row.name) + '</div>' +
+        '<div>' + dollar + '</div>' +
+        '<div class="price-col">' + esc(cleanPrice) + '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  async function renderPdfBackground() {
+    try {
+      if (!window.pdfjsLib) throw new Error("PDF.js did not load.");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+      const loadingTask = pdfjsLib.getDocument({ url: stickerData.templatePdfUrl, withCredentials: false });
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d");
+      const targetW = 1632;
+      const targetH = 1056;
+      const viewport1 = page.getViewport({ scale: 1 });
+      const scale = Math.min(targetW / viewport1.width, targetH / viewport1.height);
+      const viewport = page.getViewport({ scale });
+
+      canvas.width = targetW;
+      canvas.height = targetH;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      document.getElementById("loading").style.display = "none";
+    } catch (err) {
+      console.error(err);
+      const loading = document.getElementById("loading");
+      loading.className = "loading error";
+      loading.innerHTML = "Could not load the PDF template.<br>Check CORS/raw GitHub access or try refreshing.";
+    }
+  }
+
+  renderOverlayText();
+  renderPdfBackground();
+<\/script>
 </body>
 </html>`;
 }
