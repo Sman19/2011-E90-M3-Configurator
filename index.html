@@ -263,6 +263,17 @@ button, input { font: inherit; }
 
 .car-photo.show { display:block; }
 
+.interior-photo {
+  width: 100%;
+  height: 100%;
+  transform: none;
+  object-fit: cover;
+  object-position: center center;
+  filter: none;
+}
+
+.interior-photo.show { display:block; }
+
 .paint-layer {
   fill: var(--paint);
   transition: fill .22s ease;
@@ -701,9 +712,10 @@ textarea {
       <div class="hero panel">
         <div class="viewbar">
           <div class="view-tabs">
-            <button class="view-tab active">🚙 Side View</button>
-            <button class="view-tab">🚘 Front View</button>
-            <button class="view-tab">🚘 Rear View</button>
+            <button class="view-tab active" data-view="side">🚙 Side View</button>
+            <button class="view-tab" data-view="front">🚘 Front View</button>
+            <button class="view-tab" data-view="rear">🚘 Rear View</button>
+            <button class="view-tab" data-view="interior">🛋️ Interior View</button>
           </div>
           <div class="theme-toggle">
             <button>☼</button>
@@ -714,6 +726,7 @@ textarea {
         <div class="car-stage">
           <div class="car-wrap">
             <img id="carPreview" class="car-photo" src="" alt="2011 BMW E90 M3 side profile preview">
+            <img id="interiorPreview" class="car-photo interior-photo" src="" alt="2011 BMW E90 M3 interior preview">
             <svg id="carVectorPreview" class="car-svg" viewBox="0 0 900 330" role="img" aria-label="2011 BMW E90 M3 side profile">
               <path class="paint-layer" d="M112 205 C135 159 181 132 250 122 L355 82 C392 67 457 63 526 75 L643 116 C720 123 775 150 807 196 L831 201 C852 205 865 220 864 239 L862 250 L803 250 C798 207 766 178 723 178 C679 178 647 207 642 250 L279 250 C274 207 242 178 198 178 C154 178 122 207 117 250 L78 250 C61 250 49 239 50 223 L52 215 C62 211 82 207 112 205 Z"/>
               <path class="paint-dark" d="M132 198 C152 166 191 144 255 136 L364 98 C401 83 457 80 516 89 L625 126 C699 133 748 157 779 196 C633 184 360 178 132 198 Z" opacity=".30"/>
@@ -889,6 +902,127 @@ const EXTERIOR_PHOTOS = {
   ZCP: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/eac1819f48dd020739e21567266f44773ecff549/Melborune%20Red%20Metallic%20ZCP.png"
 }
 };
+
+const INTERIOR_PHOTOS = {
+  /*
+    Upload your generated interior images to your repo using this folder structure:
+    images/interior/
+
+    File naming:
+    black_nav_dct.jpg
+    black_nav_6mt.jpg
+    black_slick_dct.jpg
+    black_slick_6mt.jpg
+
+    silver_nav_dct.jpg
+    silver_nav_6mt.jpg
+    silver_slick_dct.jpg
+    silver_slick_6mt.jpg
+
+    foxred_nav_dct.jpg
+    foxred_nav_6mt.jpg
+    foxred_slick_dct.jpg
+    foxred_slick_6mt.jpg
+
+    bamboo_nav_dct.jpg
+    bamboo_nav_6mt.jpg
+    bamboo_slick_dct.jpg
+    bamboo_slick_6mt.jpg
+
+    palladiumblack_nav_dct.jpg
+    palladiumblack_nav_6mt.jpg
+    palladiumblack_slick_dct.jpg
+    palladiumblack_slick_6mt.jpg
+
+    foxredblack_nav_dct.jpg
+    foxredblack_nav_6mt.jpg
+    foxredblack_slick_dct.jpg
+    foxredblack_slick_6mt.jpg
+  */
+
+  NCSW: {
+    NAV_DCT: "images/interior/black_nav_dct.jpg",
+    NAV_6MT: "images/interior/black_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/black_slick_dct.jpg",
+    SLICK_6MT: "images/interior/black_slick_6mt.jpg"
+  },
+
+  NDSW: {
+    NAV_DCT: "images/interior/black_nav_dct.jpg",
+    NAV_6MT: "images/interior/black_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/black_slick_dct.jpg",
+    SLICK_6MT: "images/interior/black_slick_6mt.jpg"
+  },
+
+  NCH1: {
+    NAV_DCT: "images/interior/silver_nav_dct.jpg",
+    NAV_6MT: "images/interior/silver_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/silver_slick_dct.jpg",
+    SLICK_6MT: "images/interior/silver_slick_6mt.jpg"
+  },
+
+  NDH1: {
+    NAV_DCT: "images/interior/silver_nav_dct.jpg",
+    NAV_6MT: "images/interior/silver_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/silver_slick_dct.jpg",
+    SLICK_6MT: "images/interior/silver_slick_6mt.jpg"
+  },
+
+  NCH2: {
+    NAV_DCT: "images/interior/foxred_nav_dct.jpg",
+    NAV_6MT: "images/interior/foxred_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/foxred_slick_dct.jpg",
+    SLICK_6MT: "images/interior/foxred_slick_6mt.jpg"
+  },
+
+  NDH2: {
+    NAV_DCT: "images/interior/foxred_nav_dct.jpg",
+    NAV_6MT: "images/interior/foxred_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/foxred_slick_dct.jpg",
+    SLICK_6MT: "images/interior/foxred_slick_6mt.jpg"
+  },
+
+  NCH3: {
+    NAV_DCT: "images/interior/bamboo_nav_dct.jpg",
+    NAV_6MT: "images/interior/bamboo_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/bamboo_slick_dct.jpg",
+    SLICK_6MT: "images/interior/bamboo_slick_6mt.jpg"
+  },
+
+  NDH3: {
+    NAV_DCT: "images/interior/bamboo_nav_dct.jpg",
+    NAV_6MT: "images/interior/bamboo_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/bamboo_slick_dct.jpg",
+    SLICK_6MT: "images/interior/bamboo_slick_6mt.jpg"
+  },
+
+  NCH4: {
+    NAV_DCT: "images/interior/palladiumblack_nav_dct.jpg",
+    NAV_6MT: "images/interior/palladiumblack_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/palladiumblack_slick_dct.jpg",
+    SLICK_6MT: "images/interior/palladiumblack_slick_6mt.jpg"
+  },
+
+  NCH5: {
+    NAV_DCT: "images/interior/foxredblack_nav_dct.jpg",
+    NAV_6MT: "images/interior/foxredblack_nav_6mt.jpg",
+    SLICK_DCT: "images/interior/foxredblack_slick_dct.jpg",
+    SLICK_6MT: "images/interior/foxredblack_slick_6mt.jpg"
+  }
+};
+
+let activeView = "side";
+
+function hasNavigationSelected() {
+  return state.packages.has("ZCV") || state.options.has("609");
+}
+
+function getInteriorPhoto(interiorCode, transmissionCode) {
+  const byInterior = INTERIOR_PHOTOS[interiorCode] || INTERIOR_PHOTOS.NCSW;
+  const navKey = hasNavigationSelected() ? "NAV" : "SLICK";
+  const transKey = transmissionCode === "2MK" ? "DCT" : "6MT";
+  return byInterior[`${navKey}_${transKey}`] || null;
+}
 
 const CSV_URL = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/f1f8d249fa3ee8a879c723ae85b8f10901c38857/2011%20E90%20M3.csv";
 const DEALER_CSV_URL = "https://raw.githubusercontent.com/Sman19/DEALER-MAP/419b7c248513d9e7490713b2f7f760de186b76c6/bmw_dealers.csv";
@@ -1166,9 +1300,33 @@ function getExteriorPhoto(exteriorCode, wheelCode) {
 }
 
 function updateCarPreview(c) {
-  const photo = getExteriorPhoto(c.exterior.code, c.wheel.code);
   const img = $("carPreview");
+  const interiorImg = $("interiorPreview");
   const svg = $("carVectorPreview");
+
+  if (activeView === "interior") {
+    const photo = getInteriorPhoto(c.interior.code, c.transmission.code);
+
+    img.removeAttribute("src");
+    img.classList.remove("show");
+
+    svg.classList.add("is-hidden");
+
+    if (photo) {
+      interiorImg.src = photo;
+      interiorImg.classList.add("show");
+    } else {
+      interiorImg.removeAttribute("src");
+      interiorImg.classList.remove("show");
+    }
+
+    return;
+  }
+
+  interiorImg.removeAttribute("src");
+  interiorImg.classList.remove("show");
+
+  const photo = getExteriorPhoto(c.exterior.code, c.wheel.code);
 
   if (photo) {
     img.src = photo;
@@ -1374,7 +1532,9 @@ function buildOutput() {
     transmission: c.transmission,
     wheel: c.wheel,
     premiumTrim: selectedPremiumTrim(),
-    previewImage: getExteriorPhoto(c.exterior.code, c.wheel.code),
+    previewImage: activeView === "interior" ? getInteriorPhoto(c.interior.code, c.transmission.code) : getExteriorPhoto(c.exterior.code, c.wheel.code),
+    exteriorPreviewImage: getExteriorPhoto(c.exterior.code, c.wheel.code),
+    interiorPreviewImage: getInteriorPhoto(c.interior.code, c.transmission.code),
     packages: c.packages,
     standaloneOptions: c.options,
     mPerformanceParts: c.mPerformanceParts,
@@ -1397,7 +1557,7 @@ function renderSummary() {
   document.documentElement.style.setProperty("--paint", paint);
   updateCarPreview(c);
 
-  $("previewCaption").textContent = `Shown with ${c.wheel.name} (${c.wheel.desc})`;
+  $("previewCaption").textContent = activeView === "interior" ? `${c.interior.code} ${c.interior.name} | ${hasNavigationSelected() ? "Navigation" : "Slicktop / No Navigation"} | ${c.transmission.code === "2MK" ? "M DCT" : "6-Speed Manual"}` : `Shown with ${c.wheel.name} (${c.wheel.desc})`;
   $("indLabel").textContent = c.exterior.code === "IND" ? "BMW Individual Paint    " + money(5000) : "";
 
   const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice + c.mPerformanceTotal;
@@ -3011,6 +3171,15 @@ $("copySummaryBtn2").onclick = async () => {
   $("copySummaryBtn2").textContent = "Copied";
   setTimeout(() => $("copySummaryBtn2").textContent = "View Detailed Summary ›", 1000);
 };
+
+document.querySelectorAll(".view-tab").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".view-tab").forEach(tab => tab.classList.remove("active"));
+    btn.classList.add("active");
+    activeView = btn.dataset.view || "side";
+    renderSummary();
+  };
+});
 
 $("resetBtn").onclick = () => {
   state.exterior = "300";
