@@ -2759,21 +2759,51 @@ function buildWindowStickerHTML() {
     padding-top: .045in;
     font: 6.4pt/1.12 Arial, Helvetica, sans-serif;
   }
-  .standard-features { grid-column: 2; grid-row: 1; }
+  .standard-features {
+    grid-column: 2;
+    grid-row: 1;
+    border: 4px solid #050505;
+    padding: .105in .13in .075in;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8.5pt;
+    line-height: 1.08;
+    background: rgba(245,245,241,.72);
+    overflow: hidden;
+  }
   .features-cols {
     columns: 2;
-    column-gap: .18in;
-    font: 6.6pt/1.2 Arial, Helvetica, sans-serif;
+    column-gap: .28in;
+    column-fill: auto;
+    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
   }
-  .features-cols div { break-inside: avoid; margin-bottom: .035in; }
-  .section-title { font: 900 8.5pt Arial, Helvetica, sans-serif; margin-bottom: .035in; }
+  .features-cols div {
+    break-inside: avoid;
+    margin-bottom: .028in;
+  }
+  .section-title {
+    font: 900 9.5pt/1 Arial, Helvetica, sans-serif;
+    margin-bottom: .045in;
+  }
   .quality {
     grid-column: 2;
     grid-row: 2;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: .12in;
-    font: 7pt/1.18 Arial, Helvetica, sans-serif;
+    gap: 0;
+    border: 4px solid #050505;
+    background: rgba(245,245,241,.72);
+    font: 8.5pt/1.08 Arial, Helvetica, sans-serif;
+    padding: 0;
+    overflow: hidden;
+  }
+  .quality > div {
+    padding: .10in .13in;
+    border-right: 2px solid #050505;
+  }
+  .quality > div:last-child { border-right: none; }
+  .quality h3 {
+    margin: 0 0 .055in;
+    font: 900 9.5pt/1 Arial, Helvetica, sans-serif;
   }
   .epa {
     grid-column: 2;
@@ -2906,9 +2936,18 @@ function buildWindowStickerHTML() {
       </div>
     </section>
 
-    <section class="box-thin quality">
-      <div><strong>BMW Delivery Quality Assurance</strong><br>This BMW vehicle has been designed, engineered and manufactured under strict quality control guidelines.</div>
-      <div><strong>BMW Ultimate Service</strong><br>● 4 year/50,000 mile Full Maintenance Program<br>● 4 year/50,000 mile limited warranty<br>● 12 year rust perforation limited warranty<br>● BMW Roadside Assistance Program</div>
+    <section class="quality">
+      <div>
+        <h3>BMW Delivery Quality Assurance</h3>
+        This BMW vehicle has been designed, engineered and manufactured under strict quality control guidelines, it has been prepared and inspected to ensure that it is free of defects in workmanship and materials in accordance with the New Vehicle Limited Warranty issued by BMW of North America, LLC.
+      </div>
+      <div>
+        <h3>BMW Ultimate Service</h3>
+        ● 4 year/50,000 mile Full Maintenance Program<br>
+        ● 4 year 50,000 mile limited warranty<br>
+        ● 12 year rust perforation limited warranty<br>
+        ● 4 year/unlimited mile BMW Roadside Assistance Program
+      </div>
     </section>
 
     <section class="box epa">
