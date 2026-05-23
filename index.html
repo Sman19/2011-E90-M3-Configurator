@@ -229,6 +229,9 @@ button, input { font: inherit; }
   width: 100%;
   overflow: hidden;
   position: relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .car-wrap {
@@ -251,11 +254,11 @@ button, input { font: inherit; }
 .car-photo {
   display:none;
   position:absolute;
-  width:68%;
-  height:auto;
+  width:76%;
+  height:245px;
   max-width:none;
   max-height:none;
-  transform:scale(1.32) translateY(-6px);
+  transform:translateY(8px);
   object-fit:contain;
   object-position:center center;
   filter:drop-shadow(0 24px 20px rgba(0,0,0,.25));
@@ -2206,10 +2209,26 @@ function pdfSwatch(x, y, size, colorValue, fallback = "#141414") {
 
 function drawPdfSideProfileCar(c) {
   // Uses the real side-profile PNG when the PDF generator successfully loads it.
+  // The image is drawn with preserved aspect ratio so it no longer looks stretched.
   // Falls back to a smaller vector silhouette only if the image cannot be loaded.
-  if (window.__pdfCarImageReady) {
+  if (window.__pdfCarImageReady && window.__pdfCarImageData) {
+    const img = window.__pdfCarImageData;
+    const aspect = img.width && img.height ? img.width / img.height : 2.35;
+    const maxW = 205;
+    const maxH = 112;
+    let drawW = maxW;
+    let drawH = drawW / aspect;
+
+    if (drawH > maxH) {
+      drawH = maxH;
+      drawW = drawH * aspect;
+    }
+
+    const drawX = 348 + ((maxW - drawW) / 2);
+    const drawY = 582 + ((maxH - drawH) / 2);
+
     return `q
-155 0 0 68 352 610 cm
+${drawW.toFixed(2)} 0 0 ${drawH.toFixed(2)} ${drawX.toFixed(2)} ${drawY.toFixed(2)} cm
 /CarImage Do
 Q
 `;
@@ -2679,9 +2698,10 @@ async function downloadBMWBuildSheetPDF() {
   const c = calculate();
   const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
   const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
-  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
+  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 520);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
+  window.__pdfCarImageData = pdfCarImageData;
   const pages = buildBMWStylePages(c);
 
   const objects = [];
