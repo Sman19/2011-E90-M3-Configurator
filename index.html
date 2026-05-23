@@ -1765,16 +1765,50 @@ function renderSummary() {
   $("indLabel").textContent = c.exterior.code === "IND" ? "BMW Individual Paint    " + money(5000) : "";
 
   const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice + c.mPerformanceTotal;
+  const dealerDetails = [state.sellingDealer, state.dealerAddress, state.dealerPhone].filter(Boolean).join("<br>");
+  const premiumTrim = selectedPremiumTrim();
+
   $("summaryLines").innerHTML = `
-    <div class="summary-line"><span>Base Vehicle<small>2011 BMW E90 M3 Sedan${state.vin ? " | VIN: " + state.vin : ""}</small></span><strong>${money(state.baseMSRP)}</strong></div>
-    ${state.sellingDealer ? `<div class="summary-line"><span>Selling Dealer<small>${state.sellingDealer}${state.dealerAddress ? "<br>" + state.dealerAddress : ""}${state.dealerPhone ? "<br>" + state.dealerPhone : ""}</small></span><strong></strong></div>` : ""}
-    <div class="summary-line"><span>Exterior Color<small>● ${c.exterior.code} ${c.exterior.name}</small></span><strong>${money(c.exterior.price)}</strong></div>
-    <div class="summary-line"><span>Interior<small>● ${c.interior.code} ${c.interior.name}</small></span><strong>${money(c.interior.price)}</strong></div>
-    ${selectedPremiumTrim() ? `<div class="summary-line"><span>Premium Package Trim<small>${selectedPremiumTrim().code} ${selectedPremiumTrim().name}</small></span><strong>Included</strong></div>` : ""}
-    <div class="summary-line"><span>Transmission<small>${c.transmission.code} ${c.transmission.name}</small></span><strong>${money(c.transmission.price)}</strong></div>
-    <div class="summary-line"><span>Options & Packages<small>${c.packages.length + c.options.length + c.mPerformanceParts.length} selected</small></span><strong>${money(optionsAndPackages)}</strong></div>
-    <div class="summary-line"><span>Destination & Handling</span><strong>${money(DATA.destination)}</strong></div>
-    <div class="summary-line"><span>Gas Guzzler Tax</span><strong>${money(DATA.gasGuzzler)}</strong></div>
+    <div class="summary-line">
+      <span>MSRP<small>2011 BMW E90 M3 Sedan${state.vin ? " | VIN: " + state.vin : ""}</small></span>
+      <strong>${money(state.baseMSRP)}</strong>
+    </div>
+    ${dealerDetails ? `
+      <div class="summary-line">
+        <span>Selling Dealer<small>${dealerDetails}</small></span>
+        <strong></strong>
+      </div>
+    ` : ""}
+    <div class="summary-line">
+      <span>Exterior Color<small>● ${c.exterior.code} ${c.exterior.name}</small></span>
+      <strong>${money(c.exterior.price)}</strong>
+    </div>
+    <div class="summary-line">
+      <span>Interior Color<small>● ${c.interior.code} ${c.interior.name}</small></span>
+      <strong>${money(c.interior.price)}</strong>
+    </div>
+    ${premiumTrim ? `
+      <div class="summary-line">
+        <span>Premium Package Trim<small>${premiumTrim.code} ${premiumTrim.name}</small></span>
+        <strong>Included</strong>
+      </div>
+    ` : ""}
+    <div class="summary-line">
+      <span>Transmission<small>${c.transmission.code} ${c.transmission.name}</small></span>
+      <strong>${money(c.transmission.price)}</strong>
+    </div>
+    <div class="summary-line">
+      <span>Options & Packages<small>${c.packages.length + c.options.length + c.mPerformanceParts.length} selected</small></span>
+      <strong>${money(optionsAndPackages)}</strong>
+    </div>
+    <div class="summary-line">
+      <span>Destination & Handling</span>
+      <strong>${money(DATA.destination)}</strong>
+    </div>
+    <div class="summary-line">
+      <span>Gas Guzzler Tax</span>
+      <strong>${money(DATA.gasGuzzler)}</strong>
+    </div>
   `;
 
   $("totalPrice").textContent = money(c.total);
@@ -2147,7 +2181,18 @@ async function lookupVIN() {
     const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT"]);
     const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
     const dealer = findCSVValue(match, ["DEALER NAME", "Dealer Name", "DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER", "__COL_14"]);
-    const csvTotalMSRP = parseMoneyValue(findCSVValue(match, ["TOTAL MSRP", "Total MSRP", "MSRP", "__COL_10", "__COL_8"]));
+    const csvTotalMSRP = parseMoneyValue(findCSVValue(match, [
+      "TOTAL MSRP",
+      "Total MSRP",
+      "TOTAL",
+      "Total",
+      "PACKAGES",
+      "Packages",
+      "__COL_9",
+      "MSRP",
+      "__COL_10",
+      "__COL_8"
+    ]));
 
     const msrp55400Value =
       match["MSRP.1"] ||
