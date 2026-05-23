@@ -2883,16 +2883,40 @@ function buildWindowStickerHTML() {
   addRow(`${build.wheel.code} ${build.wheel.name}`, c.wheelPrice, { included: c.wheelPrice === 0 });
 
   build.packages.forEach(pkg => {
+    let bullets = bulletsFromDesc(pkg.desc);
+
+    if (["ZPP", "ZP2", "ZP3"].includes(pkg.code)) {
+      bullets = bullets.filter(line => {
+        const text = String(line || "");
+        return !text.includes("4MX") &&
+          !text.includes("4MY") &&
+          !text.includes("4MZ") &&
+          !text.includes("Blue Gray Aluminum Trim") &&
+          !text.includes("Carbon Leather Interior Trim") &&
+          !text.includes("Sycamore Anthracite Wood Trim");
+      });
+
+      if (premiumTrim) {
+        const seatIndex = bullets.findIndex(line =>
+          String(line || "").toLowerCase().includes("power front seats")
+        );
+
+        const selectedTrimLine = `${premiumTrim.code} ${premiumTrim.name}`;
+
+        if (seatIndex !== -1) {
+          bullets.splice(seatIndex + 1, 0, selectedTrimLine);
+        } else {
+          bullets.push(selectedTrimLine);
+        }
+      }
+    }
+
     addRow(`${pkg.code} ${pkg.name}`, pkg.price, {
       code: pkg.code,
-      bullets: bulletsFromDesc(pkg.desc),
+      bullets,
       className: "package-row"
     });
   });
-
-  if (premiumTrim) {
-    addRow(`${premiumTrim.code} ${premiumTrim.name}`, 0, { included: true, className: "included-row" });
-  }
 
   build.standaloneOptions.forEach(opt => {
     addRow(`${opt.code} ${opt.name}`, opt.price, {
