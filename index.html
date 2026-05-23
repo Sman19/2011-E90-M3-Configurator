@@ -1188,6 +1188,85 @@ const PREMIUM_PACKAGE_TRIM_CODE_MAP = {
   "ZP3.3": "4MY"
 };
 
+const INDIVIDUAL_EXTERIOR_COLOR_MAP = {
+  "490 moonstone": "Moonstone",
+  "490 - moonstone": "Moonstone",
+  "moonstone": "Moonstone",
+  "barbera red metallic": "Barbera Red Metallic",
+  "barbera red": "Barbera Red Metallic",
+  "blue water": "Blue Water Metallic",
+  "blue water metallic": "Blue Water Metallic",
+  "monte carlo blue": "Monte Carlo Blue Metallic",
+  "monte carlo blue metallic": "Monte Carlo Blue Metallic",
+  "atacama yellow": "Atacama Yellow",
+  "atcama yellow": "Atacama Yellow",
+  "fire orange ii": "Fire Orange II",
+  "fire orange 2": "Fire Orange II",
+  "fire orange": "Fire Orange II",
+  "black blue": "Black Blue",
+  "azurite black metallic": "Azurite Black Metallic",
+  "azurite black": "Azurite Black Metallic",
+  "frozen black": "Frozen Black",
+  "frozen grey": "Frozen Grey",
+  "frozen gray": "Frozen Grey"
+};
+
+const INDIVIDUAL_EXTERIOR_ACCESS_CODES = ["IND", "Z9B", "490"];
+
+function normalizeIndividualExteriorKey(value) {
+  return normalizeText(value)
+    .toLowerCase()
+    .replace(/[()]/g, " ")
+    .replace(/\bmetallic\b/g, "metallic")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getIndividualExteriorName(value) {
+  const raw = normalizeText(value);
+  if (!raw) return "";
+
+  const rawLower = raw.toLowerCase().trim();
+  if (INDIVIDUAL_EXTERIOR_COLOR_MAP[rawLower]) return INDIVIDUAL_EXTERIOR_COLOR_MAP[rawLower];
+
+  const normalized = normalizeIndividualExteriorKey(raw);
+  if (INDIVIDUAL_EXTERIOR_COLOR_MAP[normalized]) return INDIVIDUAL_EXTERIOR_COLOR_MAP[normalized];
+
+  for (const [key, name] of Object.entries(INDIVIDUAL_EXTERIOR_COLOR_MAP)) {
+    const normalizedKey = normalizeIndividualExteriorKey(key);
+    if (normalized.includes(normalizedKey) || normalizedKey.includes(normalized)) return name;
+  }
+
+  return "";
+}
+
+function hasIndividualExteriorAccessCode(value) {
+  const text = normalizeText(value).toUpperCase();
+  if (!text) return false;
+
+  return INDIVIDUAL_EXTERIOR_ACCESS_CODES.some(code => codeExistsInText(text, code));
+}
+
+function applyIndividualExteriorFromCsv(exteriorValue, packageText = "") {
+  const individualName = getIndividualExteriorName(exteriorValue);
+
+  if (individualName) {
+    state.exterior = "IND";
+    state.individualExteriorName = individualName;
+    return true;
+  }
+
+  if (hasIndividualExteriorAccessCode(exteriorValue) || hasIndividualExteriorAccessCode(packageText)) {
+    state.exterior = "IND";
+    state.individualExteriorName = "";
+    return true;
+  }
+
+  state.individualExteriorName = "";
+  return false;
+}
+
 const state = {
   exterior: "300",
   interior: "NCSW",
@@ -1200,6 +1279,7 @@ const state = {
   premiumTrim: "",
   showAllInteriors: false,
   vin: "",
+  individualExteriorName: "",
   sellingDealer: "",
   dealerAddress: "",
   dealerPhone: ""
@@ -1365,8 +1445,13 @@ function pricedExterior(item) {
 }
 
 function selectedItems() {
+  const exteriorBase = pricedExterior(findByCode(DATA.exteriorColors, state.exterior));
+  const exterior = state.exterior === "IND" && state.individualExteriorName
+    ? { ...exteriorBase, name: state.individualExteriorName, displayName: state.individualExteriorName, isIndividualCsvColor: true }
+    : exteriorBase;
+
   return {
-    exterior: pricedExterior(findByCode(DATA.exteriorColors, state.exterior)),
+    exterior,
     interior: pricedInterior(findByCode(DATA.interiors, state.interior)),
     transmission: findByCode(DATA.transmissions, state.transmission),
     wheel: findByCode(DATA.wheels, state.wheel),
@@ -1453,7 +1538,11 @@ function renderExterior() {
       <span class="swatch-code">${item.code}</span>
       <span class="swatch-name">${item.name}</span>
     `;
-    btn.onclick = () => { state.exterior = item.code; renderAll(); };
+    btn.onclick = () => {
+      state.exterior = item.code;
+      state.individualExteriorName = "";
+      renderAll();
+    };
     wrap.appendChild(btn);
   });
 }
@@ -2105,8 +2194,13 @@ async function lookupVIN() {
     state.dealerAddress = dealerInfo.address || "";
     state.dealerPhone = dealerInfo.phone || "";
 
-    const matchedExterior = findMatchingExterior(exterior);
-    if (matchedExterior) state.exterior = matchedExterior.code;
+    if (!applyIndividualExteriorFromCsv(exterior, packageText)) {
+      const matchedExterior = findMatchingExterior(exterior);
+      if (matchedExterior) {
+        state.exterior = matchedExterior.code;
+        state.individualExteriorName = "";
+      }
+    }
 
     const matchedInterior = findMatchingInterior(interior);
     if (matchedInterior) state.interior = matchedInterior.code;
