@@ -229,9 +229,6 @@ button, input { font: inherit; }
   width: 100%;
   overflow: hidden;
   position: relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
 }
 
 .car-wrap {
@@ -254,11 +251,11 @@ button, input { font: inherit; }
 .car-photo {
   display:none;
   position:absolute;
-  width:76%;
-  height:245px;
+  width:68%;
+  height:auto;
   max-width:none;
   max-height:none;
-  transform:translateY(8px);
+  transform:scale(1.32) translateY(-6px);
   object-fit:contain;
   object-position:center center;
   filter:drop-shadow(0 24px 20px rgba(0,0,0,.25));
@@ -2158,7 +2155,7 @@ function drawPageFooter(pageNo) {
   return pdfLine(44, 34, 568, 34, 0.78, 0.6) +
     pdfText(`2011 BMW M3 Sedan - ${vin}`, 44, 20, 7.0, "F2") +
     pdfText(`Page ${pageNo}`, 568, 20, 7.0, "F1", "right") +
-    pdfText("Custom BMW Spec sheet for enthusiast reference only. Not an official BMW label.", 44, 10, 5.8, "F1");
+    pdfText("Custom BMW V-Spec sheet for enthusiast reference only. Not an official BMW Monroney label.", 44, 10, 5.8, "F1");
 }
 
 function drawBMWRedHeader(title, x, y, w) {
@@ -2208,24 +2205,26 @@ function pdfSwatch(x, y, size, colorValue, fallback = "#141414") {
 }
 
 function drawPdfSideProfileCar(c) {
-  // Uses the real side-profile PNG when the PDF generator successfully loads it.
-  // The image is drawn with preserved aspect ratio so it no longer looks stretched.
-  // Falls back to a smaller vector silhouette only if the image cannot be loaded.
-  if (window.__pdfCarImageReady && window.__pdfCarImageData) {
-    const img = window.__pdfCarImageData;
-    const aspect = img.width && img.height ? img.width / img.height : 2.35;
-    const maxW = 205;
-    const maxH = 112;
-    let drawW = maxW;
+  // PDF-only sizing for the side-profile image.
+  // This does NOT affect the homepage configurator preview.
+  // The image is drawn proportionally inside this box so it will not look stretched.
+  if (window.__pdfCarImageReady) {
+    const boxX = 338;
+    const boxY = 584;
+    const boxW = 205;
+    const boxH = 118;
+    const aspect = Number(window.__pdfCarImageAspect || 1.72);
+
+    let drawW = boxW;
     let drawH = drawW / aspect;
 
-    if (drawH > maxH) {
-      drawH = maxH;
+    if (drawH > boxH) {
+      drawH = boxH;
       drawW = drawH * aspect;
     }
 
-    const drawX = 348 + ((maxW - drawW) / 2);
-    const drawY = 582 + ((maxH - drawH) / 2);
+    const drawX = boxX + ((boxW - drawW) / 2);
+    const drawY = boxY + ((boxH - drawH) / 2);
 
     return `q
 ${drawW.toFixed(2)} 0 0 ${drawH.toFixed(2)} ${drawX.toFixed(2)} ${drawY.toFixed(2)} cm
@@ -2506,7 +2505,7 @@ Q
   }
 
   out += pdfText("BMW", 120, 748, 34, "F2");
-  out += pdfText("BMW Spec Sheet", 120, 730, 10, "F1");
+  out += pdfText("BMW V-Spec recreation", 120, 730, 10, "F1");
   out += pdfLine(302, 720, 302, 782, 0.86, 0.7);
   out += pdfText(dealerName, 318, 762, 12.5, "F2");
   if (state.dealerAddress) {
@@ -2518,7 +2517,7 @@ Q
   if (state.dealerPhone) {
     out += pdfText(state.dealerPhone, 318, state.dealerAddress && state.dealerAddress.length > 58 ? 724 : 733, 8, "F1");
   } else if (!state.dealerAddress) {
-    out += pdfText("BMW Spec Sheet", 318, 733, 8, "F1");
+    out += pdfText("BMW V-Spec recreation", 318, 733, 8, "F1");
   }
   out += `q 0.80 0 0 rg 44 707 524 2.2 re f Q\n`;
 
@@ -2698,10 +2697,10 @@ async function downloadBMWBuildSheetPDF() {
   const c = calculate();
   const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
   const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
-  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 520);
+  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
-  window.__pdfCarImageData = pdfCarImageData;
+  window.__pdfCarImageAspect = pdfCarImageData ? (pdfCarImageData.width / pdfCarImageData.height) : 1.72;
   const pages = buildBMWStylePages(c);
 
   const objects = [];
