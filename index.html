@@ -817,7 +817,7 @@ textarea {
 
         <div class="drawer" id="premiumTrimBox">
           <h2 style="margin-top:18px;">Premium Package Interior Trim</h2>
-          <p class="note" style="margin-bottom:10px;">Required when ZP2 or ZP3 is selected. Choose one included trim.</p>
+          <p class="note" style="margin-bottom:10px;">Required when ZPP, ZP2, or ZP3 is selected. Choose one included trim.</p>
           <div class="choice-grid" id="premiumTrimGrid"></div>
         </div>
 
@@ -1014,7 +1014,7 @@ const INTERIOR_PHOTOS = {
 let activeView = "side";
 
 function hasNavigationSelected() {
-  return state.packages.has("ZCV") || state.options.has("609");
+  return state.packages.has("ZCV") || state.packages.has("ZTP") || state.options.has("609");
 }
 
 function getInteriorPhoto(interiorCode, transmissionCode) {
@@ -1177,6 +1177,9 @@ const PREMIUM_TRIMS = [
 ];
 
 const PREMIUM_PACKAGE_TRIM_CODE_MAP = {
+  "ZPP.1": "4MX",
+  "ZPP.2": "4MZ",
+  "ZPP.3": "4MY",
   "ZP2.1": "4MX",
   "ZP2.2": "4MZ",
   "ZP2.3": "4MY",
@@ -1207,7 +1210,7 @@ const money = n => Number(n || 0).toLocaleString("en-US", { style:"currency", cu
 const findByCode = (list, code) => list.find(item => item.code === code);
 
 function hasPremiumPackage() {
-  return state.packages.has("ZP2") || state.packages.has("ZP3");
+  return state.packages.has("ZPP") || state.packages.has("ZP2") || state.packages.has("ZP3");
 }
 
 function disabledOptionReason(code) {
@@ -1215,6 +1218,10 @@ function disabledOptionReason(code) {
 
   if (["302","322","507","609","6FL"].includes(code) && state.packages.has("ZCV")) {
     return "Included with ZCV";
+  }
+
+  if (["322","609"].includes(code) && state.packages.has("ZTP")) {
+    return "Included with ZTP";
   }
 
   if (hasPremiumPackage()) {
@@ -1466,7 +1473,7 @@ function renderChecks(containerId, list, setName) {
       else state[setName].delete(item.code);
 
       if (item.code === "ZCP") state.wheel = e.target.checked ? "ZCP" : "STD";
-      if ((item.code === "ZP2" || item.code === "ZP3") && !e.target.checked && !hasPremiumPackage()) state.premiumTrim = "";
+      if (["ZPP", "ZP2", "ZP3"].includes(item.code) && !e.target.checked && !hasPremiumPackage()) state.premiumTrim = "";
       enforceLockouts();
       renderAll();
     };
@@ -1511,6 +1518,7 @@ function renderPremiumTrim() {
 function compatibilityWarnings() {
   const warnings = [];
   if (state.packages.has("ZCV")) ["302","507","609","6FL"].forEach(code => { if (state.options.has(code)) warnings.push(`ZCV may already include ${code}, so check duplicate pricing.`); });
+  if (state.packages.has("ZTP")) ["322","609"].forEach(code => { if (state.options.has(code)) warnings.push(`ZTP may already include ${code}, so check duplicate pricing.`); });
   if (state.packages.has("ZCW")) ["465","494"].forEach(code => { if (state.options.has(code)) warnings.push(`ZCW may already include ${code}, so check duplicate pricing.`); });
   const trims = ["4MX","4MY","4MZ","771","XE2"].filter(code => state.options.has(code));
   if (trims.length > 1) warnings.push(`Multiple trim options selected (${trims.join(", ")}). Usually only one interior trim should be selected.`);
@@ -1950,7 +1958,7 @@ async function lookupVIN() {
     const msrp55400Value = findCSVValue(match, ["MSRP.1", "BASE MSRP.1", "Base MSRP.1", "BaseMSRP.1", "BASE_MSRP.1"]);
 
     // Column H is the package-code column in the CSV.
-    // Example: MSRP,ZCP,ZCV,ZCW,ZP2.3,2MK
+    // Example: MSRP,ZCP,ZCV,ZCW,ZPP.3,ZP2.3,2MK
     // Column L is still pulled as a fallback/additional-code column.
     const packageTextParts = [
       csvColumn(match, 8),
@@ -2139,7 +2147,7 @@ function parseDescLines(desc, itemCode = "") {
     .filter(line => !line.toLowerCase().includes("choose one trim"))
     .filter(line => !trimNames.includes(line.toLowerCase()));
 
-  if ((itemCode === "ZP2" || itemCode === "ZP3") && state.premiumTrim) {
+  if (["ZPP", "ZP2", "ZP3"].includes(itemCode) && state.premiumTrim) {
     const trim = selectedPremiumTrim();
     if (trim) {
       const trimLine = `${trim.code} ${trim.name}`;
@@ -2353,7 +2361,7 @@ function getInstalledItems(c) {
 }
 
 function drawInstalledItem(out, item, y, maxY) {
-  const isPremium = item.code === "ZP2" || item.code === "ZP3";
+  const isPremium = ["ZPP", "ZP2", "ZP3"].includes(item.code);
   const descLines = parseDescLines(item.desc, item.code).slice(0, isPremium ? 6 : 5);
   const needed = 19 + Math.min(descLines.length, 6) * 9.1;
   if (y - needed < maxY) return { out, y, drawn:false };
