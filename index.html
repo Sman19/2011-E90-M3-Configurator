@@ -1024,7 +1024,7 @@ function getInteriorPhoto(interiorCode, transmissionCode) {
   return byInterior[`${navKey}_${transKey}`] || null;
 }
 
-const CSV_URL = "https://raw.githubusercontent.com/Sman19/Active-Website/44d3097f60540920c97df9a3cfac518e1eca4204/2011%20E90%20M3%20Sedan.csv";
+const CSV_URL = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/dc6582d6f47c3a96b0d6fbbc385ed159cb7078b3/2011%20E90%20M3.csv";
 const DEALER_CSV_URL = "https://raw.githubusercontent.com/Sman19/DEALER-MAP/419b7c248513d9e7490713b2f7f760de186b76c6/bmw_dealers.csv";
 const M_PERFORMANCE_CSV_URL = "m-performance-parts.csv";
 let vinRows = [];
@@ -1282,7 +1282,8 @@ const state = {
   individualExteriorName: "",
   sellingDealer: "",
   dealerAddress: "",
-  dealerPhone: ""
+  dealerPhone: "",
+  csvTotalMSRP: 0
 };
 
 const $ = id => document.getElementById(id);
@@ -1467,8 +1468,9 @@ function calculate() {
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
   const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + item.price, 0);
-  const total = state.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
-  return { ...s, wheelPrice, packageTotal, optionTotal, mPerformanceTotal, total };
+  const calculatedTotal = state.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
+  const total = state.csvTotalMSRP > 0 ? state.csvTotalMSRP : calculatedTotal;
+  return { ...s, wheelPrice, packageTotal, optionTotal, mPerformanceTotal, calculatedTotal, total };
 }
 
 function getExteriorPhoto(exteriorCode, wheelCode) {
@@ -2145,6 +2147,7 @@ async function lookupVIN() {
     const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT"]);
     const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
     const dealer = findCSVValue(match, ["DEALER NAME", "Dealer Name", "DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER", "__COL_14"]);
+    const csvTotalMSRP = parseMoneyValue(findCSVValue(match, ["TOTAL MSRP", "Total MSRP", "MSRP", "__COL_10", "__COL_8"]));
 
     const msrp55400Value =
       match["MSRP.1"] ||
@@ -2189,6 +2192,7 @@ async function lookupVIN() {
 
     state.vin = vin;
     state.sellingDealer = dealer;
+    state.csvTotalMSRP = csvTotalMSRP;
 
     const dealerInfo = findDealerInfo(dealer);
     state.dealerAddress = dealerInfo.address || "";
@@ -2229,7 +2233,7 @@ async function lookupVIN() {
     enforceLockouts();
     renderAll();
 
-    note.textContent = `Loaded ${state.vin || input}${state.sellingDealer ? " | " + state.sellingDealer : ""} | Base MSRP ${money(state.baseMSRP)}`;
+    note.textContent = `Loaded ${state.vin || input}${state.sellingDealer ? " | " + state.sellingDealer : ""} | Base MSRP ${money(state.baseMSRP)}${state.csvTotalMSRP ? " | CSV Total " + money(state.csvTotalMSRP) : ""}`;
   } catch (error) {
     console.error(error);
     note.textContent = "CSV lookup failed. Check the console or CSV URL.";
@@ -3653,6 +3657,7 @@ $("resetBtn").onclick = () => {
   state.sellingDealer = "";
   state.dealerAddress = "";
   state.dealerPhone = "";
+  state.csvTotalMSRP = 0;
   if ($("vinSearch")) $("vinSearch").value = "";
   if ($("vinSearchNote")) $("vinSearchNote").textContent = "";
   renderAll();
