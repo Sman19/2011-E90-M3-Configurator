@@ -1210,6 +1210,16 @@ const money = n => Number(n || 0).toLocaleString("en-US", { style:"currency", cu
 const findByCode = (list, code) => list.find(item => item.code === code);
 
 const BMW_OPTION_ORDER = [
+  // Keep the main BMW packages at the top of the PDF/spec sheet.
+  "ZCP",
+  "ZCV",
+  "ZCW",
+  "ZP2",
+  "ZP3",
+  "ZPP",
+  "ZTP",
+
+  // Everything else follows by BMW option code order after the packages.
   "223",
   "2MK",
   "2MT",
@@ -1247,13 +1257,6 @@ const BMW_OPTION_ORDER = [
   "NDH3",
   "NCH4",
   "NCH5",
-  "ZCP",
-  "ZCV",
-  "ZCW",
-  "ZPP",
-  "ZP2",
-  "ZP3",
-  "ZTP",
   "Z04",
   "Z06",
   "Z10",
