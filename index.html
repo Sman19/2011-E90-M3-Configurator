@@ -3238,11 +3238,13 @@ function buildWindowStickerHTML() {
         <div class="panel">
           <div class="panel-title">Build Codes</div>
           <div class="panel-body">
-            <table class="small-table">
+           <table class="small-table">
+              <tr><td><strong>Base MSRP</strong></td><td><strong>${esc(moneyFull(build.baseMSRP))}</strong></td></tr>
+            
               <tr><td>Packages</td><td>${esc(packagesText)}</td></tr>
               <tr><td>Options</td><td>${esc(optionsText)}</td></tr>
               <tr><td>M Parts</td><td>${esc(mpText)}</td></tr>
-              <tr><td>Base MSRP</td><td>${esc(moneyFull(build.baseMSRP))}</td></tr>
+            
               <tr><td>Destination</td><td>${esc(moneyFull(build.destinationCharge))}</td></tr>
               <tr><td>Gas Tax</td><td>${esc(moneyFull(build.gasGuzzlerTax))}</td></tr>
             </table>
