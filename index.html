@@ -1954,8 +1954,37 @@ async function lookupVIN() {
     const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
     const dealer = findCSVValue(match, ["DEALER NAME", "Dealer Name", "DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER", "__COL_14"]);
 
-    const msrp55900Value = findCSVValue(match, ["MSRP", "BASE MSRP", "Base MSRP", "BaseMSRP", "BASE_MSRP"]);
-    const msrp55400Value = findCSVValue(match, ["MSRP.1", "BASE MSRP.1", "Base MSRP.1", "BaseMSRP.1", "BASE_MSRP.1"]);
+    const msrp55400Value =
+      match["MSRP.1"] ||
+      match["MSRP_1"] ||
+      match["MSRP 1"] ||
+      match["BASE MSRP.1"] ||
+      match["Base MSRP.1"] ||
+      match["BaseMSRP.1"] ||
+      match["BASE_MSRP.1"] ||
+      findCSVValue(match, [
+        "MSRP.1",
+        "MSRP_1",
+        "MSRP 1",
+        "BASE MSRP.1",
+        "Base MSRP.1",
+        "BaseMSRP.1",
+        "BASE_MSRP.1"
+      ]);
+
+    const msrp55900Value =
+      match["MSRP"] ||
+      match["BASE MSRP"] ||
+      match["Base MSRP"] ||
+      match["BaseMSRP"] ||
+      match["BASE_MSRP"] ||
+      findCSVValue(match, [
+        "MSRP",
+        "BASE MSRP",
+        "Base MSRP",
+        "BaseMSRP",
+        "BASE_MSRP"
+      ]);
 
     // Column H is the package-code column in the CSV.
     // Example: MSRP,ZCP,ZCV,ZCW,ZPP.3,ZP2.3,2MK
@@ -1979,11 +2008,20 @@ async function lookupVIN() {
     const matchedInterior = findMatchingInterior(interior);
     if (matchedInterior) state.interior = matchedInterior.code;
 
-    const hasMSRP55400 = normalizeText(msrp55400Value) !== "";
-    const hasMSRP55900 = normalizeText(msrp55900Value) !== "";
+    const packageTokens = packageText
+      .split(/[,\s]+/)
+      .map(token => token.trim().toUpperCase())
+      .filter(Boolean);
+
+    const hasPackageMSRP55400 = packageTokens.includes("MSRP.1");
+    const hasPackageMSRP55900 = packageTokens.includes("MSRP");
+
+    const hasMSRP55400 = hasPackageMSRP55400 || normalizeText(msrp55400Value) !== "";
+    const hasMSRP55900 = hasPackageMSRP55900 || normalizeText(msrp55900Value) !== "";
 
     // MSRP.1 gets priority because it represents the $55,400 2010-build base MSRP.
-    // If MSRP.1 is blank, fall back to MSRP for the $55,900 2011-build base MSRP.
+    // This checks the package-code text first, then falls back to the MSRP.1 column value.
+    // If MSRP.1 is not present, it falls back to MSRP for the $55,900 2011-build base MSRP.
     if (hasMSRP55400) {
       state.baseMSRP = 55400;
     } else if (hasMSRP55900) {
