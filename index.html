@@ -2956,16 +2956,29 @@ function buildWindowStickerHTML() {
     min-height: 100vh;
     width: 100%;
   }
+  body {
+    overflow-x: auto;
+  }
   .toolbar {
-    width: 17in;
+    max-width: 17in;
+    width: min(17in, calc(100vw - 24px));
     margin: 12px auto;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     color: #111827;
+    text-align: center;
   }
   .toolbar span { font: 700 13px Arial, Helvetica, sans-serif; }
+  .toolbar-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
   .toolbar button {
     border: 0;
     border-radius: 8px;
@@ -2974,6 +2987,22 @@ function buildWindowStickerHTML() {
     padding: 10px 16px;
     font: 800 13px Arial, Helvetica, sans-serif;
     cursor: pointer;
+    min-width: 118px;
+  }
+  .toolbar button.secondary {
+    background: #334155;
+    min-width: 82px;
+  }
+  .preview-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    transform-origin: top center;
+  }
+  .preview-wrap.fit {
+    transform: scale(var(--preview-scale, 1));
+    margin-bottom: calc((11in * var(--preview-scale, 1)) - 11in + 18px);
   }
   .sheet {
     width: 17in;
@@ -2983,8 +3012,7 @@ function buildWindowStickerHTML() {
     position: relative;
     overflow: hidden;
     border: 1px solid #111827;
-    left: 50%;
-    transform: translateX(-50%);
+    flex: 0 0 auto;
   }
   .top-band {
     height: .92in;
@@ -3191,13 +3219,19 @@ function buildWindowStickerHTML() {
       margin: 0 !important;
       padding: 0 !important;
       background: #fff;
+      overflow: visible !important;
     }
     .toolbar { display: none; }
+    .preview-wrap,
+    .preview-wrap.fit {
+      display: block;
+      width: 17in;
+      transform: none !important;
+      margin: 0 !important;
+    }
     .sheet {
       margin: 0 auto !important;
       border: 0;
-      left: 50%;
-      transform: translateX(-50%);
       box-shadow: none;
     }
   }
@@ -3205,10 +3239,16 @@ function buildWindowStickerHTML() {
 </head>
 <body>
   <div class="toolbar">
-    <span>11x17 landscape spec sheet. In print settings use paper size Tabloid/Ledger 11x17, Landscape, Scale 100%.</span>
-    <button onclick="window.print()">Print / Save PDF</button>
+    <span>11x17 landscape spec sheet. Use Zoom Out or Fit to Screen for preview only. Printing stays full 11x17.</span>
+    <div class="toolbar-actions">
+      <button class="secondary" onclick="zoomPreview(-0.05)">Zoom Out</button>
+      <button class="secondary" onclick="fitPreview()">Fit Screen</button>
+      <button onclick="window.print()">Print</button>
+      <button onclick="window.print()">Save PDF</button>
+    </div>
   </div>
 
+  <div class="preview-wrap" id="previewWrap">
   <section class="sheet">
     <div class="top-band">
       <div>
@@ -3282,6 +3322,31 @@ function buildWindowStickerHTML() {
       </div>
     </div>
   </section>
+  </div>
+
+  <script>
+    let previewScale = 1;
+    function setPreviewScale(scale) {
+      previewScale = Math.max(0.45, Math.min(1, scale));
+      const wrap = document.getElementById("previewWrap");
+      if (!wrap) return;
+      wrap.classList.add("fit");
+      wrap.style.setProperty("--preview-scale", previewScale);
+    }
+    function zoomPreview(step) {
+      setPreviewScale(previewScale + step);
+    }
+    function fitPreview() {
+      const available = Math.max(320, window.innerWidth - 32);
+      const sheetWidth = 17 * 96;
+      setPreviewScale(Math.min(1, available / sheetWidth));
+    }
+    window.addEventListener("resize", () => {
+      const wrap = document.getElementById("previewWrap");
+      if (wrap && wrap.classList.contains("fit")) fitPreview();
+    });
+    fitPreview();
+  <\/script>
 </body>
 </html>`;
 }
