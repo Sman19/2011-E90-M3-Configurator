@@ -1209,6 +1209,87 @@ const $ = id => document.getElementById(id);
 const money = n => Number(n || 0).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 const findByCode = (list, code) => list.find(item => item.code === code);
 
+const BMW_OPTION_ORDER = [
+  "223",
+  "2MK",
+  "2MT",
+  "302",
+  "322",
+  "403",
+  "417",
+  "430",
+  "431",
+  "459",
+  "465",
+  "488",
+  "494",
+  "507",
+  "5AC",
+  "521",
+  "540",
+  "609",
+  "620",
+  "639",
+  "655",
+  "6FL",
+  "6NF",
+  "6NR",
+  "752",
+  "760",
+  "771",
+  "NCSW",
+  "NDSW",
+  "NCH1",
+  "NDH1",
+  "NCH2",
+  "NDH2",
+  "NCH3",
+  "NDH3",
+  "NCH4",
+  "NCH5",
+  "ZCP",
+  "ZCV",
+  "ZCW",
+  "ZPP",
+  "ZP2",
+  "ZP3",
+  "ZTP",
+  "Z04",
+  "Z06",
+  "Z10",
+  "Z12",
+  "Z17",
+  "Z21",
+  "Z22",
+  "Z62",
+  "XE2",
+  "XE8"
+];
+
+function getBMWOptionOrderIndex(code) {
+  const normalized = String(code || "").toUpperCase().trim();
+  const index = BMW_OPTION_ORDER.indexOf(normalized);
+  return index === -1 ? 9999 : index;
+}
+
+function sortBMWOptionItems(items) {
+  return [...items].sort((a, b) => {
+    const aIndex = getBMWOptionOrderIndex(a && a.code);
+    const bIndex = getBMWOptionOrderIndex(b && b.code);
+
+    if (aIndex !== bIndex) return aIndex - bIndex;
+
+    return String(a && a.code || "").localeCompare(String(b && b.code || ""));
+  });
+}
+
+function isDuplicateZCPWheelItem(item) {
+  if (!item) return false;
+  const code = String(item.code || "").toUpperCase().trim();
+  const name = String(item.name || "").toLowerCase();
+  return code === "ZCP" && name.includes("359m");
+}
+
 function hasPremiumPackage() {
   return state.packages.has("ZPP") || state.packages.has("ZP2") || state.packages.has("ZP3");
 }
@@ -1528,6 +1609,24 @@ function compatibilityWarnings() {
 
 function buildOutput() {
   const c = calculate();
+
+  const orderedItems = sortBMWOptionItems([
+    ...(c.transmission.price > 0 ? [{
+      ...c.transmission,
+      desc:"M Double Clutch Transmission with Drivelogic",
+      type:"FIO"
+    }] : []),
+    ...(c.wheelPrice > 0 ? [{
+      ...c.wheel,
+      price:c.wheelPrice,
+      desc:"19 inch forged M light alloy wheels",
+      type:"FIO"
+    }] : []),
+    ...c.options.map(item => ({...item, type:"FIO"})),
+    ...c.packages.filter(item => !isDuplicateZCPWheelItem(item)).map(item => ({...item, type:"FIO"})),
+    ...c.mPerformanceParts.map(item => ({...item, type:"MP"}))
+  ]);
+
   return {
     model: "2011 BMW M3 Sedan (E90)",
     vin: state.vin,
@@ -1545,9 +1644,10 @@ function buildOutput() {
     previewImage: activeView === "interior" ? getInteriorPhoto(c.interior.code, c.transmission.code) : getExteriorPhoto(c.exterior.code, c.wheel.code),
     exteriorPreviewImage: getExteriorPhoto(c.exterior.code, c.wheel.code),
     interiorPreviewImage: getInteriorPhoto(c.interior.code, c.transmission.code),
-    packages: c.packages,
+    packages: c.packages.filter(item => !isDuplicateZCPWheelItem(item)),
     standaloneOptions: c.options,
     mPerformanceParts: c.mPerformanceParts,
+    orderedItems,
     totalMSRP: c.total
   };
 }
@@ -2379,26 +2479,36 @@ function getInstalledItems(c) {
     });
   }
 
+  const orderedFactoryItems = [];
+
   if (c.transmission.price > 0) {
-    installed.push({
+    orderedFactoryItems.push({
       ...c.transmission,
       desc:"M Double Clutch Transmission with Drivelogic",
       type:"FIO"
     });
   }
 
+  // Only list the standalone 2MT wheel option when it has its own price.
+  // Do not list "ZCP 19 inch Style 359M" as a separate included row because
+  // it is already shown inside the ZCP Competition Package.
   if (c.wheelPrice > 0) {
-    installed.push({
+    orderedFactoryItems.push({
       ...c.wheel,
+      code:c.wheel.code,
       desc:"19 inch forged M light alloy wheels",
       type:"FIO",
       price:c.wheelPrice
     });
   }
 
-  installed.push(...c.packages.map(item => ({...item, type:"FIO"})));
-  installed.push(...c.options.map(item => ({...item, type:"FIO"})));
-  installed.push(...c.mPerformanceParts.map(item => ({...item, type:"MP"})));
+  orderedFactoryItems.push(
+    ...c.options.map(item => ({...item, type:"FIO"})),
+    ...c.packages.filter(item => !isDuplicateZCPWheelItem(item)).map(item => ({...item, type:"FIO"})),
+    ...c.mPerformanceParts.map(item => ({...item, type:"MP"}))
+  );
+
+  installed.push(...sortBMWOptionItems(orderedFactoryItems));
 
   return installed;
 }
@@ -2879,58 +2989,64 @@ function buildWindowStickerHTML() {
   addRow("Base MSRP", build.baseMSRP, { className: "base-row" });
   addRow(`${build.exterior.code} ${build.exterior.name}`, build.exterior.price);
   addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
-  addRow(`${build.transmission.code} ${build.transmission.name}`, build.transmission.price);
-  addRow(`${build.wheel.code} ${build.wheel.name}`, c.wheelPrice, { included: c.wheelPrice === 0 });
 
-  build.packages.forEach(pkg => {
-    let bullets = bulletsFromDesc(pkg.desc);
+  const stickerFactoryItems = sortBMWOptionItems([
+    ...(build.transmission.price > 0 ? [{
+      ...build.transmission,
+      desc:"M Double Clutch Transmission with Drivelogic",
+      type:"transmission"
+    }] : []),
+    ...(c.wheelPrice > 0 ? [{
+      ...build.wheel,
+      price:c.wheelPrice,
+      desc:"19 inch forged M light alloy wheels",
+      type:"wheel"
+    }] : []),
+    ...build.standaloneOptions.map(item => ({...item, type:"option"})),
+    ...build.packages.filter(item => !isDuplicateZCPWheelItem(item)).map(item => ({...item, type:"package"})),
+    ...build.mPerformanceParts.map(item => ({...item, type:"mp"}))
+  ]);
 
-    if (["ZPP", "ZP2", "ZP3"].includes(pkg.code)) {
-      bullets = bullets.filter(line => {
-        const text = String(line || "");
-        return !text.includes("4MX") &&
-          !text.includes("4MY") &&
-          !text.includes("4MZ") &&
-          !text.includes("Blue Gray Aluminum Trim") &&
-          !text.includes("Carbon Leather Interior Trim") &&
-          !text.includes("Sycamore Anthracite Wood Trim");
-      });
+  stickerFactoryItems.forEach(item => {
+    let bullets = bulletsFromDesc(item.desc);
+    let className = "option-row";
 
-      if (premiumTrim) {
-        const seatIndex = bullets.findIndex(line =>
-          String(line || "").toLowerCase().includes("power front seats")
-        );
+    if (item.type === "package") {
+      className = "package-row";
 
-        const selectedTrimLine = `${premiumTrim.code} ${premiumTrim.name}`;
+      if (["ZPP", "ZP2", "ZP3"].includes(item.code)) {
+        bullets = bullets.filter(line => {
+          const text = String(line || "");
+          return !text.includes("4MX") &&
+            !text.includes("4MY") &&
+            !text.includes("4MZ") &&
+            !text.includes("Blue Gray Aluminum Trim") &&
+            !text.includes("Carbon Leather Interior Trim") &&
+            !text.includes("Sycamore Anthracite Wood Trim");
+        });
 
-        if (seatIndex !== -1) {
-          bullets.splice(seatIndex + 1, 0, selectedTrimLine);
-        } else {
-          bullets.push(selectedTrimLine);
+        if (premiumTrim) {
+          const seatIndex = bullets.findIndex(line =>
+            String(line || "").toLowerCase().includes("power front seats")
+          );
+
+          const selectedTrimLine = `${premiumTrim.code} ${premiumTrim.name}`;
+
+          if (seatIndex !== -1) {
+            bullets.splice(seatIndex + 1, 0, selectedTrimLine);
+          } else {
+            bullets.push(selectedTrimLine);
+          }
         }
       }
     }
 
-    addRow(`${pkg.code} ${pkg.name}`, pkg.price, {
-      code: pkg.code,
+    if (item.type === "mp") className = "mp-row";
+
+    addRow(`${item.code} ${item.name}`, item.price, {
+      code: item.code,
       bullets,
-      className: "package-row"
-    });
-  });
-
-  build.standaloneOptions.forEach(opt => {
-    addRow(`${opt.code} ${opt.name}`, opt.price, {
-      code: opt.code,
-      bullets: bulletsFromDesc(opt.desc),
-      className: "option-row"
-    });
-  });
-
-  build.mPerformanceParts.forEach(part => {
-    addRow(`${part.code} ${part.name}`, part.price, {
-      code: part.code,
-      bullets: bulletsFromDesc(part.desc),
-      className: "mp-row"
+      className
     });
   });
 
