@@ -2206,12 +2206,18 @@ function pdfSwatch(x, y, size, colorValue, fallback = "#141414") {
 
 function drawPdfSideProfileCar(c) {
   // Uses the real side-profile PNG when the PDF generator successfully loads it.
-  // Falls back to a smaller vector silhouette only if the image cannot be loaded.
+  // PDF-only layout: keep the homepage preview untouched and preserve the image aspect ratio.
   if (window.__pdfCarImageReady) {
-    // PDF ONLY: smaller exterior image so it stays above the EXTERIOR / INTERIOR row.
-    // This does not affect the homepage configurator preview.
+    const targetWidth = 172;
+    const sourceWidth = Number(window.__pdfCarImageWidth || 380);
+    const sourceHeight = Number(window.__pdfCarImageHeight || 210);
+    const aspectHeight = targetWidth * (sourceHeight / sourceWidth);
+    const targetHeight = Math.max(78, Math.min(96, Math.round(aspectHeight)));
+    const x = 346;
+    const y = 600;
+
     return `q
-160 0 0 70 350 610 cm
+${targetWidth} 0 0 ${targetHeight} ${x} ${y} cm
 /CarImage Do
 Q
 `;
@@ -2247,7 +2253,7 @@ function getPdfCarImageUrl(c) {
   return getExteriorPhoto(c.exterior.code, c.wheel.code) || null;
 }
 
-async function loadPdfImageData(url, maxWidth = 300) {
+async function loadPdfImageData(url, maxWidth = 360) {
   if (!url) return null;
 
   return new Promise(resolve => {
@@ -2684,6 +2690,8 @@ async function downloadBMWBuildSheetPDF() {
   const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
+  window.__pdfCarImageWidth = pdfCarImageData ? pdfCarImageData.width : 0;
+  window.__pdfCarImageHeight = pdfCarImageData ? pdfCarImageData.height : 0;
   const pages = buildBMWStylePages(c);
 
   const objects = [];
