@@ -2843,394 +2843,427 @@ function buildWindowStickerHTML() {
   const build = buildOutput();
   const c = calculate();
   const premiumTrim = selectedPremiumTrim();
+  const exteriorImage = build.exteriorPreviewImage || build.previewImage || "";
 
-  const googleSlidesTemplateEditUrl = "https://docs.google.com/presentation/d/1aSGjhXnDEAIzoW65KMqB39dqQGBjidkSRyz6uHfk4yk/edit?usp=sharing";
-  const templatePdfUrl = "https://docs.google.com/presentation/d/1aSGjhXnDEAIzoW65KMqB39dqQGBjidkSRyz6uHfk4yk/export/pdf";
+  const esc = value => stickerEscape(value);
+  const moneyFull = value => Number(value || 0).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 
   const optionRows = [];
 
-  function addRow(name, price, className = "") {
-    optionRows.push({ type: "row", name: String(name || ""), price: stickerPrice(price), className });
+  function addRow(label, price, opts = {}) {
+    optionRows.push({
+      type: opts.type || "row",
+      code: opts.code || "",
+      label: label || "",
+      price: Number(price || 0),
+      included: Boolean(opts.included),
+      bullets: opts.bullets || [],
+      className: opts.className || ""
+    });
   }
 
-  function addChild(text) {
-    const clean = String(text || "").replace(/^[-•]\s*/, "").trim();
-    if (clean && !/^choose one trim/i.test(clean)) {
-      optionRows.push({ type: "child", name: clean });
-    }
-  }
-
-  function addPackageLike(item, forcedPrice = null) {
-    if (!item) return;
-    const price = forcedPrice === null ? item.price : forcedPrice;
-    addRow(item.name || item.code, price, "package-row");
-    String(item.desc || "")
+  function bulletsFromDesc(desc) {
+    return String(desc || "")
       .split("\n")
       .map(v => v.trim())
       .filter(Boolean)
-      .forEach(addChild);
+      .filter(v => !/^choose one trim/i.test(v))
+      .map(v => v.replace(/^[-•]\s*/, ""));
   }
 
-  addRow(build.exterior.name, build.exterior.price);
-  addRow(build.interior.name, build.interior.price);
+  addRow("Base MSRP", build.baseMSRP, { className: "base-row" });
+  addRow(`${build.exterior.code} ${build.exterior.name}`, build.exterior.price);
+  addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
+  addRow(`${build.transmission.code} ${build.transmission.name}`, build.transmission.price);
+  addRow(`${build.wheel.code} ${build.wheel.name}`, c.wheelPrice, { included: c.wheelPrice === 0 });
 
-  (build.packages || []).forEach(pkg => addPackageLike(pkg));
+  build.packages.forEach(pkg => {
+    addRow(`${pkg.code} ${pkg.name}`, pkg.price, {
+      code: pkg.code,
+      bullets: bulletsFromDesc(pkg.desc),
+      className: "package-row"
+    });
+  });
 
-  if (premiumTrim) addChild(premiumTrim.name);
+  if (premiumTrim) {
+    addRow(`${premiumTrim.code} ${premiumTrim.name}`, 0, { included: true, className: "included-row" });
+  }
 
-  if (build.transmission && build.transmission.code !== "6MT") addPackageLike(build.transmission);
-  if (build.wheel && build.wheel.code === "2MT") addPackageLike(build.wheel, c.wheelPrice);
+  build.standaloneOptions.forEach(opt => {
+    addRow(`${opt.code} ${opt.name}`, opt.price, {
+      code: opt.code,
+      bullets: bulletsFromDesc(opt.desc),
+      className: "option-row"
+    });
+  });
 
-  (build.standaloneOptions || []).forEach(opt => addPackageLike(opt));
-  (build.mPerformanceParts || []).forEach(part => addPackageLike(part));
+  build.mPerformanceParts.forEach(part => {
+    addRow(`${part.code} ${part.name}`, part.price, {
+      code: part.code,
+      bullets: bulletsFromDesc(part.desc),
+      className: "mp-row"
+    });
+  });
 
-  addRow("Destination Charge", build.destinationCharge);
-  addRow("Gas Guzzler Tax", build.gasGuzzlerTax);
-  addRow("Total Suggested Retail Price", build.totalMSRP, "total-row");
+  addRow("Destination & Handling", build.destinationCharge, { className: "fee-row" });
+  addRow("Gas Guzzler Tax", build.gasGuzzlerTax, { className: "fee-row" });
 
-  const stickerData = {
-    templatePdfUrl,
-    googleSlidesTemplateEditUrl,
-    baseMSRP: stickerPrice(build.baseMSRP),
-    totalMSRP: stickerPrice(build.totalMSRP),
-    vin: build.vin || "WBSPM9C50BE698672",
-    dealerName: build.sellingDealer || "BMW Center",
-    dealerAddress: build.dealerAddress || "",
-    dealerPhone: build.dealerPhone || "",
-    portOfEntry: "BRUNSWICK, GEORGIA",
-    carrier: "HANSEN & ADKINS AUTO TRANSPORT",
-    vpcLocation: "BRUNSWICK, GA",
-    optionRows
-  };
+  const optionRowsHtml = optionRows.map(row => {
+    const priceText = row.included || Number(row.price || 0) === 0 ? "Included" : moneyFull(row.price);
+    const bullets = row.bullets && row.bullets.length
+      ? `<div class="bullets">${row.bullets.map(b => `<div>• ${esc(b)}</div>`).join("")}</div>`
+      : "";
+
+    return `
+      <div class="option-item ${esc(row.className)}">
+        <div class="option-main">
+          <div class="option-name">${esc(row.label)}</div>
+          <div class="option-price">${esc(priceText)}</div>
+        </div>
+        ${bullets}
+      </div>
+    `;
+  }).join("");
+
+  const dealerBlock = [build.sellingDealer, build.dealerAddress, build.dealerPhone]
+    .filter(Boolean)
+    .map(esc)
+    .join("<br>") || "BMW Center";
+
+  const packagesText = build.packages.map(p => p.code).join(", ") || "None selected";
+  const optionsText = build.standaloneOptions.map(o => o.code).join(", ") || "None selected";
+  const mpText = build.mPerformanceParts.map(p => p.code).join(", ") || "None selected";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BMW Window Sticker Overlay</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"><\/script>
+<title>2011 BMW M3 11x17 Spec Sheet</title>
 <style>
-  @page { size: 17in 11in landscape; margin: 0; }
+  @page { size: 17in 11in; margin: 0; }
   * { box-sizing: border-box; }
-
-  body {
+  html, body {
     margin: 0;
-    background: #202020;
-    color: #050505;
+    padding: 0;
+    background: #d8dde4;
+    color: #111827;
     font-family: Arial, Helvetica, sans-serif;
   }
-
   .toolbar {
     width: 17in;
     margin: 12px auto;
     display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    color: #111827;
   }
-
+  .toolbar span { font: 700 13px Arial, Helvetica, sans-serif; }
   .toolbar button {
     border: 0;
-    border-radius: 7px;
-    background: #111;
+    border-radius: 8px;
+    background: #111827;
     color: #fff;
-    padding: 10px 14px;
+    padding: 10px 16px;
     font: 800 13px Arial, Helvetica, sans-serif;
     cursor: pointer;
   }
-
-  .toolbar small {
-    color: #ddd;
-    margin-right: auto;
-    font: 12px Arial, Helvetica, sans-serif;
-  }
-
-  .sticker-page {
-    position: relative;
+  .sheet {
     width: 17in;
     height: 11in;
     margin: 0 auto 18px;
     background: #fff;
+    position: relative;
     overflow: hidden;
+    border: 1px solid #111827;
   }
-
-  #pdfCanvas {
-    position: absolute;
-    inset: 0;
-    width: 17in;
-    height: 11in;
-    z-index: 1;
-  }
-
-  /* These are only small covers for the marked placeholders in your PDF.
-     No new boxes/borders/static sections are being added here. */
-  .patch {
-    position: absolute;
-    z-index: 4;
-    background: rgba(238,241,239,.78);
-    pointer-events: none;
-  }
-
-  .overlay {
-    position: absolute;
-    z-index: 5;
-    color: #000;
-    font-family: Arial, Helvetica, sans-serif;
-    pointer-events: none;
-  }
-
-  .msrp-cover {
-    left: 3.02in;
-    top: .79in;
-    width: 1.38in;
-    height: .19in;
-  }
-
-  .msrp-text {
-    left: 3.72in;
-    top: .785in;
-    width: .70in;
-    font: 900 9pt/1 Arial, Helvetica, sans-serif;
-    text-align: right;
-  }
-
-  .packages-cover {
-    left: .28in;
-    top: 1.38in;
-    width: 4.38in;
-    height: 8.48in;
-  }
-
-  .option-list {
-    left: .31in;
-    top: 1.42in;
-    width: 4.30in;
-    height: 8.40in;
-    overflow: hidden;
-    font: 9pt/1.07 Arial, Helvetica, sans-serif;
-  }
-
-  .sticker-row {
+  .top-band {
+    height: .92in;
+    background: #111827;
+    color: #fff;
     display: grid;
-    grid-template-columns: 1fr .08in .92in;
-    gap: .03in;
-    align-items: baseline;
-    margin-bottom: .017in;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: .18in .38in;
   }
-
-  .package-row {
-    font-weight: 900;
-    margin-top: .035in;
+  .brand {
+    font-size: 34pt;
+    line-height: 1;
+    letter-spacing: -.04em;
+    font-weight: 950;
+    text-transform: uppercase;
   }
-
-  .sticker-child {
-    padding-left: .13in;
-    margin-bottom: .012in;
+  .subtitle {
+    margin-top: .06in;
+    font-size: 11pt;
+    letter-spacing: .16em;
+    font-weight: 700;
+    color: #cbd5e1;
+    text-transform: uppercase;
   }
-
-  .sticker-child::before { content: "- "; }
-
-  .price-col {
+  .vin-box {
     text-align: right;
-    white-space: nowrap;
+    font-size: 10pt;
+    line-height: 1.35;
+    color: #dbeafe;
+    font-weight: 800;
   }
-
-  .total-row {
-    font-weight: 900;
-    border-top: 2px solid #000;
-    padding-top: .035in;
-    margin-top: .035in;
-  }
-
-  .vin-cover {
-    left: .25in;
-    top: 9.63in;
-    width: 2.95in;
-    height: .22in;
-  }
-
-  .vin-text {
-    left: .31in;
-    top: 9.63in;
-    font: 900 14pt/1 Arial, Helvetica, sans-serif;
-  }
-
-  .sold-cover {
-    left: .49in;
-    top: 10.04in;
-    width: 1.58in;
-    height: .43in;
-  }
-
-  .ship-cover {
-    left: 2.41in;
-    top: 10.04in;
-    width: 1.58in;
-    height: .43in;
-  }
-
-  .dealer-text {
-    top: 10.04in;
-    width: 1.55in;
-    font: 8.5pt/1.05 Arial, Helvetica, sans-serif;
-  }
-
-  .sold-text { left: .52in; }
-  .ship-text { left: 2.44in; }
-
-  .port-cover { left: 4.91in; top: 10.45in; width: 1.50in; height: .14in; }
-  .carrier-cover { left: 8.78in; top: 10.45in; width: 1.85in; height: .14in; }
-  .vpc-cover { left: 12.55in; top: 10.45in; width: 1.40in; height: .14in; }
-
-  .bottom-text {
-    top: 10.445in;
-    font: 8pt/1 Arial, Helvetica, sans-serif;
-    white-space: nowrap;
-  }
-  .port-text { left: 4.91in; }
-  .carrier-text { left: 8.78in; }
-  .vpc-text { left: 12.55in; }
-
-  .loading {
-    position: absolute;
-    inset: 0;
+  .content {
     display: grid;
-    place-items: center;
-    z-index: 10;
+    grid-template-columns: 4.65in 7.05in 4.55in;
+    gap: .22in;
+    padding: .25in .33in .28in;
+    height: calc(11in - .92in);
+  }
+  .panel {
+    border: 2px solid #111827;
     background: #fff;
-    font: 900 18px Arial, Helvetica, sans-serif;
+    min-height: 0;
   }
-
-  .error {
-    color: #b00020;
-    padding: 24px;
-    font: 14px Arial, Helvetica, sans-serif;
+  .panel-title {
+    background: #111827;
+    color: #fff;
+    font-size: 12pt;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: .08in .12in;
   }
-
+  .panel-body { padding: .12in; }
+  .vehicle-photo {
+    height: 2.18in;
+    border: 1px solid #cbd5e1;
+    background: linear-gradient(180deg, #f8fafc, #e5e7eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: .13in;
+    overflow: hidden;
+  }
+  .vehicle-photo img {
+    max-width: 112%;
+    max-height: 112%;
+    object-fit: contain;
+  }
+  .no-photo {
+    color: #64748b;
+    font-size: 12pt;
+    font-weight: 800;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .07in;
+  }
+  .info-box {
+    border: 1px solid #cbd5e1;
+    padding: .08in .09in;
+  }
+  .label {
+    font-size: 7.5pt;
+    font-weight: 900;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .025in;
+  }
+  .value {
+    font-size: 11pt;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .dealer { font-size: 9.5pt; font-weight: 700; line-height: 1.25; }
+  .options-panel { display: flex; flex-direction: column; min-height: 0; }
+  .options-list {
+    padding: .08in .12in .1in;
+    overflow: hidden;
+    flex: 1;
+  }
+  .option-item {
+    border-bottom: 1px solid #e5e7eb;
+    padding: .038in 0;
+  }
+  .option-main {
+    display: grid;
+    grid-template-columns: 1fr 1.15in;
+    gap: .08in;
+    align-items: baseline;
+  }
+  .option-name {
+    font-size: 9.1pt;
+    line-height: 1.12;
+    font-weight: 800;
+  }
+  .option-price {
+    text-align: right;
+    font-size: 9.1pt;
+    white-space: nowrap;
+    font-weight: 800;
+  }
+  .base-row .option-name,
+  .base-row .option-price,
+  .package-row .option-name,
+  .package-row .option-price,
+  .fee-row .option-name,
+  .fee-row .option-price {
+    font-weight: 950;
+  }
+  .bullets {
+    margin-top: .018in;
+    padding-left: .16in;
+    color: #374151;
+    font-size: 7.7pt;
+    line-height: 1.12;
+  }
+  .right-stack {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: .16in;
+    min-height: 0;
+  }
+  .total-card {
+    border: 3px solid #111827;
+    background: #f8fafc;
+    padding: .16in;
+  }
+  .total-label {
+    font-size: 11pt;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #475569;
+  }
+  .total-price {
+    font-size: 35pt;
+    line-height: 1;
+    margin-top: .06in;
+    font-weight: 950;
+    letter-spacing: -.05em;
+    text-align: right;
+  }
+  .small-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .small-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: .055in 0;
+    vertical-align: top;
+    font-size: 9pt;
+    line-height: 1.2;
+  }
+  .small-table td:first-child {
+    width: 1.28in;
+    color: #475569;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 7.5pt;
+    letter-spacing: .04em;
+  }
+  .note-box {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    padding: .1in;
+    font-size: 8.1pt;
+    line-height: 1.25;
+    color: #334155;
+  }
+  .footer {
+    font-size: 7.4pt;
+    line-height: 1.18;
+    color: #475569;
+    border-top: 1px solid #cbd5e1;
+    padding-top: .08in;
+  }
   @media print {
-    body { background: #fff; }
+    html, body { background: #fff; }
     .toolbar { display: none; }
-    .sticker-page { margin: 0; }
+    .sheet { margin: 0; border: 0; }
   }
 </style>
 </head>
 <body>
-<div class="toolbar">
-  <small>Uses your Google Slides template export. Dynamic text replaces the marked placeholders.</small>
-  <button onclick="window.open(stickerData.googleSlidesTemplateEditUrl, '_blank')">Open Google Slides Template</button>
-  <button onclick="window.print()">Print / Save PDF</button>
-  <button onclick="window.close()">Close</button>
-</div>
+  <div class="toolbar">
+    <span>11x17 landscape spec sheet. In print settings use paper size Tabloid/Ledger 11x17, Landscape, Scale 100%.</span>
+    <button onclick="window.print()">Print / Save PDF</button>
+  </div>
 
-<div class="sticker-page">
-  <canvas id="pdfCanvas"></canvas>
-  <div class="loading" id="loading">Loading BMW template...</div>
+  <section class="sheet">
+    <div class="top-band">
+      <div>
+        <div class="brand">2011 BMW M3 Sedan</div>
+        <div class="subtitle">E90 Vehicle Specification Sheet</div>
+      </div>
+      <div class="vin-box">
+        VIN<br>${esc(build.vin || "Not supplied")}
+      </div>
+    </div>
 
-  <div class="patch msrp-cover"></div>
-  <div class="overlay msrp-text" id="baseMsrpText"></div>
+    <div class="content">
+      <div class="panel">
+        <div class="panel-title">Vehicle Information</div>
+        <div class="panel-body">
+          <div class="vehicle-photo">
+            ${exteriorImage ? `<img src="${esc(exteriorImage)}" alt="Vehicle preview">` : `<div class="no-photo">Vehicle Image</div>`}
+          </div>
 
-  <div class="patch packages-cover"></div>
-  <div class="overlay option-list" id="optionList"></div>
+          <div class="info-grid">
+            <div class="info-box"><div class="label">Exterior</div><div class="value">${esc(build.exterior.code)} ${esc(build.exterior.name)}</div></div>
+            <div class="info-box"><div class="label">Interior</div><div class="value">${esc(build.interior.code)} ${esc(build.interior.name)}</div></div>
+            <div class="info-box"><div class="label">Transmission</div><div class="value">${esc(build.transmission.code)} ${esc(build.transmission.name)}</div></div>
+            <div class="info-box"><div class="label">Wheels</div><div class="value">${esc(build.wheel.code)} ${esc(build.wheel.name)}</div></div>
+            <div class="info-box"><div class="label">Selling Dealer</div><div class="dealer">${dealerBlock}</div></div>
+          </div>
+        </div>
+      </div>
 
-  <div class="patch vin-cover"></div>
-  <div class="overlay vin-text" id="vinText"></div>
+      <div class="panel options-panel">
+        <div class="panel-title">Standard, Optional Equipment & Pricing</div>
+        <div class="options-list">
+          ${optionRowsHtml}
+        </div>
+      </div>
 
-  <div class="patch sold-cover"></div>
-  <div class="patch ship-cover"></div>
-  <div class="overlay dealer-text sold-text" id="soldDealer"></div>
-  <div class="overlay dealer-text ship-text" id="shipDealer"></div>
+      <div class="right-stack">
+        <div class="total-card">
+          <div class="total-label">Total Suggested Retail Price</div>
+          <div class="total-price">${esc(moneyFull(build.totalMSRP))}</div>
+        </div>
 
-  <div class="patch port-cover"></div>
-  <div class="patch carrier-cover"></div>
-  <div class="patch vpc-cover"></div>
-  <div class="overlay bottom-text port-text" id="portText"></div>
-  <div class="overlay bottom-text carrier-text" id="carrierText"></div>
-  <div class="overlay bottom-text vpcText" id="vpcText"></div>
-</div>
+        <div class="panel">
+          <div class="panel-title">Build Codes</div>
+          <div class="panel-body">
+            <table class="small-table">
+              <tr><td>Packages</td><td>${esc(packagesText)}</td></tr>
+              <tr><td>Options</td><td>${esc(optionsText)}</td></tr>
+              <tr><td>M Parts</td><td>${esc(mpText)}</td></tr>
+              <tr><td>Base MSRP</td><td>${esc(moneyFull(build.baseMSRP))}</td></tr>
+              <tr><td>Destination</td><td>${esc(moneyFull(build.destinationCharge))}</td></tr>
+              <tr><td>Gas Tax</td><td>${esc(moneyFull(build.gasGuzzlerTax))}</td></tr>
+            </table>
+          </div>
+        </div>
 
-<script>
-  const stickerData = ${JSON.stringify(stickerData)};
+        <div class="panel">
+          <div class="panel-title">Notes</div>
+          <div class="panel-body">
+            <div class="note-box">
+              This 11x17 sheet is generated from the selected configurator build and VIN-loaded CSV information. Pricing reflects the data currently coded in the configurator, including base MSRP, destination charge, gas guzzler tax, selected paint, interior, transmission, packages, standalone options, and M Performance parts.
+            </div>
+          </div>
+        </div>
 
-  function esc(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function priceNoDollar(value) {
-    return String(value || "").replace(/^\$/, "");
-  }
-
-  function renderOverlayText() {
-    document.getElementById("baseMsrpText").textContent = priceNoDollar(stickerData.baseMSRP);
-    document.getElementById("vinText").textContent = "VIN: " + stickerData.vin;
-
-    const dealerHtml = [stickerData.dealerName, stickerData.dealerAddress, stickerData.dealerPhone]
-      .filter(Boolean)
-      .map(esc)
-      .join("<br>");
-
-    document.getElementById("soldDealer").innerHTML = dealerHtml;
-    document.getElementById("shipDealer").innerHTML = dealerHtml;
-    document.getElementById("portText").textContent = stickerData.portOfEntry || "";
-    document.getElementById("carrierText").textContent = stickerData.carrier || "";
-    document.getElementById("vpcText").textContent = stickerData.vpcLocation || "";
-
-    const holder = document.getElementById("optionList");
-    holder.innerHTML = stickerData.optionRows.map(row => {
-      if (row.type === "child") {
-        return '<div class="sticker-child">' + esc(row.name) + '</div>';
-      }
-
-      const cleanPrice = row.price === "Included" ? "Included" : priceNoDollar(row.price);
-      const dollar = row.price === "Included" ? "" : "$";
-      return '<div class="sticker-row ' + esc(row.className || "") + '">' +
-        '<div>' + esc(row.name) + '</div>' +
-        '<div>' + dollar + '</div>' +
-        '<div class="price-col">' + esc(cleanPrice) + '</div>' +
-      '</div>';
-    }).join("");
-  }
-
-  async function renderPdfBackground() {
-    try {
-      if (!window.pdfjsLib) throw new Error("PDF.js did not load.");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-      const loadingTask = pdfjsLib.getDocument({ url: stickerData.templatePdfUrl, withCredentials: false });
-      const pdf = await loadingTask.promise;
-      const page = await pdf.getPage(1);
-
-      const canvas = document.getElementById("pdfCanvas");
-      const ctx = canvas.getContext("2d");
-      const targetW = 1632;
-      const targetH = 1056;
-      const viewport1 = page.getViewport({ scale: 1 });
-      const scale = Math.min(targetW / viewport1.width, targetH / viewport1.height);
-      const viewport = page.getViewport({ scale });
-
-      canvas.width = targetW;
-      canvas.height = targetH;
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      document.getElementById("loading").style.display = "none";
-    } catch (err) {
-      console.error(err);
-      const loading = document.getElementById("loading");
-      loading.className = "loading error";
-      loading.innerHTML = "Could not load the PDF template.<br>Check Google Slides sharing/export access or try refreshing.";
-    }
-  }
-
-  renderOverlayText();
-  renderPdfBackground();
-<\/script>
+        <div class="footer">
+          Not an original BMW Monroney label. Recreation/specification sheet for enthusiast documentation only. Verify all vehicle equipment, pricing, and production data independently.
+        </div>
+      </div>
+    </div>
+  </section>
 </body>
 </html>`;
 }
