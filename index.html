@@ -2953,6 +2953,8 @@ function buildWindowStickerHTML() {
     background: #d8dde4;
     color: #111827;
     font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    width: 100%;
   }
   .toolbar {
     width: 17in;
@@ -2976,11 +2978,13 @@ function buildWindowStickerHTML() {
   .sheet {
     width: 17in;
     height: 11in;
-    margin: 0 auto 18px;
+    margin: 0 auto 18px auto;
     background: #fff;
     position: relative;
     overflow: hidden;
     border: 1px solid #111827;
+    left: 50%;
+    transform: translateX(-50%);
   }
   .top-band {
     height: .92in;
@@ -3181,9 +3185,21 @@ function buildWindowStickerHTML() {
     padding-top: .08in;
   }
   @media print {
-    html, body { background: #fff; }
+    html, body {
+      width: 17in;
+      height: 11in;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff;
+    }
     .toolbar { display: none; }
-    .sheet { margin: 0; border: 0; }
+    .sheet {
+      margin: 0 auto !important;
+      border: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: none;
+    }
   }
 </style>
 </head>
