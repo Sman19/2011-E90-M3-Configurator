@@ -1979,11 +1979,16 @@ async function lookupVIN() {
     const matchedInterior = findMatchingInterior(interior);
     if (matchedInterior) state.interior = matchedInterior.code;
 
-    const hasMSRP55900 = normalizeText(msrp55900Value) !== "";
     const hasMSRP55400 = normalizeText(msrp55400Value) !== "";
+    const hasMSRP55900 = normalizeText(msrp55900Value) !== "";
 
-    if (hasMSRP55900) state.baseMSRP = 55900;
-    else if (hasMSRP55400) state.baseMSRP = 55400;
+    // MSRP.1 gets priority because it represents the $55,400 2010-build base MSRP.
+    // If MSRP.1 is blank, fall back to MSRP for the $55,900 2011-build base MSRP.
+    if (hasMSRP55400) {
+      state.baseMSRP = 55400;
+    } else if (hasMSRP55900) {
+      state.baseMSRP = 55900;
+    }
 
     applyPackageCodes(packageText);
     enforceLockouts();
