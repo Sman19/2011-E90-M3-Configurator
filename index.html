@@ -1464,12 +1464,26 @@ function selectedItems() {
 
 function calculate() {
   const s = selectedItems();
-  const wheelPrice = s.wheel.code === "2MT" ? s.wheel.price : 0;
-  const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
-  const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
-  const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + item.price, 0);
-  const calculatedTotal = state.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
-  const total = state.csvTotalMSRP > 0 ? state.csvTotalMSRP : calculatedTotal;
+  const wheelPrice = s.wheel && s.wheel.code === "2MT" ? Number(s.wheel.price || 0) : 0;
+  const packageTotal = s.packages.reduce((sum, item) => sum + Number(item.price || 0), 0);
+  const optionTotal = s.options.reduce((sum, item) => sum + Number(item.price || 0), 0);
+  const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + Number(item.price || 0), 0);
+  const calculatedTotal =
+    Number(state.baseMSRP || 0) +
+    Number(DATA.destination || 0) +
+    Number(DATA.gasGuzzler || 0) +
+    Number(s.exterior && s.exterior.price || 0) +
+    Number(s.interior && s.interior.price || 0) +
+    Number(s.transmission && s.transmission.price || 0) +
+    wheelPrice +
+    packageTotal +
+    optionTotal +
+    mPerformanceTotal;
+
+  // Use the configurator math as the source of truth.
+  // Some CSV rows have a shifted/dirty MSRP total column that can parse as "$2" or another bad value.
+  const total = calculatedTotal;
+
   return { ...s, wheelPrice, packageTotal, optionTotal, mPerformanceTotal, calculatedTotal, total };
 }
 
@@ -2237,7 +2251,9 @@ async function lookupVIN() {
 
     state.vin = vin;
     state.sellingDealer = dealer;
-    state.csvTotalMSRP = csvTotalMSRP;
+    // Do not trust/use the CSV total MSRP for display math.
+    // The build total is calculated from the selected base MSRP, paint, interior, transmission, packages/options, destination and gas guzzler.
+    state.csvTotalMSRP = 0;
 
     const dealerInfo = findDealerInfo(dealer);
     state.dealerAddress = dealerInfo.address || "";
@@ -2278,7 +2294,7 @@ async function lookupVIN() {
     enforceLockouts();
     renderAll();
 
-    note.textContent = `Loaded ${state.vin || input}${state.sellingDealer ? " | " + state.sellingDealer : ""} | Base MSRP ${money(state.baseMSRP)}${state.csvTotalMSRP ? " | CSV Total " + money(state.csvTotalMSRP) : ""}`;
+    note.textContent = `Loaded ${state.vin || input}${state.sellingDealer ? " | " + state.sellingDealer : ""} | Base MSRP ${money(state.baseMSRP)} | Calculated Total ${money(calculate().total)}`;
   } catch (error) {
     console.error(error);
     note.textContent = "CSV lookup failed. Check the console or CSV URL.";
