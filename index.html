@@ -1280,6 +1280,12 @@ function getIndividualExteriorDetails(value) {
     }
   }
 
+  // Do not treat normal production colors like A52 Space Gray, A73 Jerez Black, A75 Melbourne Red, etc. as IND.
+  // Only fall back to generic Individual when the CSV explicitly identifies an Individual paint/access code
+  // or shows a $5,000 Individual paint charge.
+  const explicitIndividualPaint = /\$\s*5,000(?:\.00)?/i.test(raw) || /(IND|Z9B|490)/i.test(raw);
+  if (!explicitIndividualPaint) return null;
+
   const fallbackName = getIndividualExteriorName(raw) || nameOnly;
   if (fallbackName) return { code: code || "490", name: fallbackName, hex:"#8fa8ff" };
   if (code) return { code, name:"BMW Individual Paint", hex:"#8fa8ff" };
