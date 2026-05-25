@@ -1511,6 +1511,17 @@ function selectedPremiumTrim() {
 
 function getInteriorPrice(item) {
   if (!item) return 0;
+
+  // BMW Individual pricing rule:
+  // IND exterior cars with ZP2 or ZP3 always use $950 interior pricing,
+  // even when the Premium Package would normally reduce interior cost.
+  if (
+    state.exterior === "IND" &&
+    (state.packages.has("ZP2") || state.packages.has("ZP3"))
+  ) {
+    return 950;
+  }
+
   const price = hasPremiumPackage() ? item.premiumPrice : item.basePrice;
   return Number.isFinite(Number(price)) ? Number(price) : Number(item.price || 0);
 }
