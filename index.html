@@ -1512,14 +1512,22 @@ function selectedPremiumTrim() {
 function getInteriorPrice(item) {
   if (!item) return 0;
 
-  // BMW Individual pricing rule:
-  // IND exterior cars with ZP2 or ZP3 always use $950 interior pricing,
-  // even when the Premium Package would normally reduce interior cost.
+  // BMW Individual pricing rule for IND + ZP2/ZP3 cars:
+  // Standard Novillo interiors stay $950.
+  // Extended Novillo interiors stay $1,100.
   if (
     state.exterior === "IND" &&
     (state.packages.has("ZP2") || state.packages.has("ZP3"))
   ) {
-    return 950;
+    const interiorCode = String(item.code || "").toUpperCase().trim();
+
+    if (["NCSW", "NCH1", "NCH2", "NCH3"].includes(interiorCode)) {
+      return 950;
+    }
+
+    if (["NDSW", "NDH1", "NDH2", "NDH3"].includes(interiorCode)) {
+      return 1100;
+    }
   }
 
   const price = hasPremiumPackage() ? item.premiumPrice : item.basePrice;
