@@ -3248,6 +3248,7 @@ function buildWindowStickerHTML() {
   const c = calculate();
   const premiumTrim = selectedPremiumTrim();
   const exteriorImage = build.exteriorPreviewImage || build.previewImage || "";
+  const interiorImage = build.interiorPreviewImage || "";
 
   const esc = value => stickerEscape(value);
   const moneyFull = value => Number(value || 0).toLocaleString("en-US", {
@@ -3256,20 +3257,6 @@ function buildWindowStickerHTML() {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
-
-  const optionRows = [];
-
-  function addRow(label, price, opts = {}) {
-    optionRows.push({
-      type: opts.type || "row",
-      code: opts.code || "",
-      label: label || "",
-      price: Number(price || 0),
-      included: Boolean(opts.included),
-      bullets: opts.bullets || [],
-      className: opts.className || ""
-    });
-  }
 
   function bulletsFromDesc(desc) {
     return String(desc || "")
@@ -3280,118 +3267,93 @@ function buildWindowStickerHTML() {
       .map(v => v.replace(/^[-•]\s*/, ""));
   }
 
-  addRow("Base MSRP", build.baseMSRP, { className: "base-row" });
-  addRow(formatExteriorLabel(build.exterior), build.exterior.price);
-  addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
-
-  const stickerFactoryItems = sortBMWOptionItems([
+  const orderedFactoryItems = sortBMWOptionItems([
     ...(build.transmission.price > 0 ? [{
       ...build.transmission,
-      desc:"M Double Clutch Transmission with Drivelogic",
-      type:"transmission"
+      desc: "7-speed M Double Clutch Transmission with Drivelogic",
+      type: "transmission"
     }] : []),
     ...(c.wheelPrice > 0 ? [{
       ...build.wheel,
-      price:c.wheelPrice,
-      desc:"19 inch forged M light alloy wheels",
-      type:"wheel"
+      price: c.wheelPrice,
+      desc: "19 inch forged M light alloy wheels",
+      type: "wheel"
     }] : []),
-    ...build.standaloneOptions.map(item => ({...item, type:"option"})),
-    ...build.packages.filter(item => !isDuplicateZCPWheelItem(item)).map(item => ({...item, type:"package"})),
-    ...build.mPerformanceParts.map(item => ({...item, type:"mp"}))
+    ...build.packages.filter(item => !isDuplicateZCPWheelItem(item)).map(item => ({ ...item, type: "package" })),
+    ...build.standaloneOptions.map(item => ({ ...item, type: "option" })),
+    ...build.mPerformanceParts.map(item => ({ ...item, type: "mp" }))
   ]);
 
-  stickerFactoryItems.forEach(item => {
+  const optionalRows = [];
+
+  function addOptionRow(item, forcedPrice = null) {
+    if (!item) return;
     let bullets = bulletsFromDesc(item.desc);
-    let className = "option-row";
 
-    if (item.type === "package") {
-      className = "package-row";
+    if (["ZPP", "ZP2", "ZP3"].includes(item.code)) {
+      bullets = bullets.filter(line => {
+        const text = String(line || "");
+        return !text.includes("4MX") &&
+          !text.includes("4MY") &&
+          !text.includes("4MZ") &&
+          !text.includes("Blue Gray Aluminum Trim") &&
+          !text.includes("Carbon Leather Interior Trim") &&
+          !text.includes("Sycamore Anthracite Wood Trim");
+      });
 
-      if (["ZPP", "ZP2", "ZP3"].includes(item.code)) {
-        bullets = bullets.filter(line => {
-          const text = String(line || "");
-          return !text.includes("4MX") &&
-            !text.includes("4MY") &&
-            !text.includes("4MZ") &&
-            !text.includes("Blue Gray Aluminum Trim") &&
-            !text.includes("Carbon Leather Interior Trim") &&
-            !text.includes("Sycamore Anthracite Wood Trim");
-        });
-
-        if (premiumTrim) {
-          const seatIndex = bullets.findIndex(line =>
-            String(line || "").toLowerCase().includes("power front seats")
-          );
-
-          const selectedTrimLine = `${premiumTrim.code} ${premiumTrim.name}`;
-
-          if (seatIndex !== -1) {
-            bullets.splice(seatIndex + 1, 0, selectedTrimLine);
-          } else {
-            bullets.push(selectedTrimLine);
-          }
-        }
+      if (premiumTrim) {
+        const seatIndex = bullets.findIndex(line => String(line || "").toLowerCase().includes("power front seats"));
+        const selectedTrimLine = `${premiumTrim.code} ${premiumTrim.name}`;
+        if (seatIndex !== -1) bullets.splice(seatIndex + 1, 0, selectedTrimLine);
+        else bullets.push(selectedTrimLine);
       }
     }
 
-    if (item.type === "mp") className = "mp-row";
-
-    addRow(`${item.code} ${item.name}`, item.price, {
-      code: item.code,
-      bullets,
-      className
+    optionalRows.push({
+      code: item.code || "",
+      name: item.name || item.code || "",
+      price: forcedPrice === null ? Number(item.price || 0) : Number(forcedPrice || 0),
+      bullets
     });
-  });
+  }
 
-  addRow("Destination & Handling", build.destinationCharge, { className: "fee-row" });
-  addRow("Gas Guzzler Tax", build.gasGuzzlerTax, { className: "fee-row" });
+  addOptionRow({ code: build.exterior.code === "IND" ? (build.exterior.individualCode || "IND") : build.exterior.code, name: formatExteriorLabel(build.exterior), price: build.exterior.price });
+  addOptionRow({ code: build.interior.code, name: build.interior.name, price: build.interior.price });
+  orderedFactoryItems.forEach(addOptionRow);
 
-  const optionRowsHtml = optionRows.map(row => {
-    const priceText = row.included || Number(row.price || 0) === 0 ? "Included" : moneyFull(row.price);
-    const bullets = row.bullets && row.bullets.length
-      ? `<div class="bullets">${row.bullets.map(b => `<div>• ${esc(b)}</div>`).join("")}</div>`
-      : "";
-
-    return `
-      <div class="option-item ${esc(row.className)}">
-        <div class="option-main">
-          <div class="option-name">${esc(row.label)}</div>
-          <div class="option-price">${esc(priceText)}</div>
-        </div>
-        ${bullets}
+  const optionalRowsHtml = optionalRows.map(row => `
+    <div class="ws-option-row">
+      <div class="ws-code">${esc(row.code)}</div>
+      <div class="ws-option-copy">
+        <strong>${esc(row.name)}</strong>
+        ${row.bullets.length ? `<div class="ws-bullets">${row.bullets.map(b => `<span>• ${esc(b)}</span>`).join("")}</div>` : ""}
       </div>
-    `;
-  }).join("");
+      <div class="ws-price">${row.price ? esc(moneyFull(row.price)) : "$0.00"}</div>
+    </div>
+  `).join("");
 
-  const dealerBlock = [build.sellingDealer, build.dealerAddress, build.dealerPhone]
-    .filter(Boolean)
-    .map(esc)
-    .join("<br>") || "BMW Center";
-
-  const packagesText = build.packages.map(p => p.code).join(", ") || "None selected";
-  const optionsText = build.standaloneOptions.map(o => o.code).join(", ") || "None selected";
-  const mpText = build.mPerformanceParts.map(p => p.code).join(", ") || "None selected";
+  const dealerName = build.sellingDealer || "BMW Center";
+  const dealerAddress = build.dealerAddress || "";
+  const dealerPhone = build.dealerPhone || "";
+  const vin = build.vin || "WBSPM9C50BE698672";
+  const subtotalBeforeFees = Number(build.totalMSRP || 0) - Number(build.destinationCharge || 0) - Number(build.gasGuzzlerTax || 0);
+  const totalOptional = optionalRows.reduce((sum, row) => sum + Number(row.price || 0), 0);
+  const barcodeBars = String(vin).split("").map((ch, i) => `<i style="width:${(ch.charCodeAt(0) % 3) + 1}px"></i>`).join("");
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>2011 BMW M3 11x17 Spec Sheet</title>
+<title>2011 BMW M3 Sedan Window Sticker</title>
 <style>
   @page { size: 17in 11in; margin: 0; }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
-    background: #d8dde4;
-    color: #111827;
+    background: #e5e7eb;
+    color: #000;
     font-family: Arial, Helvetica, sans-serif;
-    min-height: 100vh;
-    width: 100%;
-  }
-  body {
-    overflow-x: auto;
   }
   .toolbar {
     max-width: 17in;
@@ -3399,281 +3361,131 @@ function buildWindowStickerHTML() {
     margin: 12px auto;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    gap: 10px;
-    color: #111827;
-    text-align: center;
+    gap: 9px;
+    color: #111;
   }
   .toolbar span { font: 700 13px Arial, Helvetica, sans-serif; }
-  .toolbar-actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
+  .toolbar-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .toolbar button {
     border: 0;
-    border-radius: 8px;
-    background: #111827;
+    border-radius: 7px;
+    background: #111;
     color: #fff;
     padding: 10px 16px;
     font: 800 13px Arial, Helvetica, sans-serif;
     cursor: pointer;
-    min-width: 118px;
   }
-  .toolbar button.secondary {
-    background: #334155;
-    min-width: 82px;
-  }
-  .preview-wrap {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    transform-origin: top center;
-  }
-  .preview-wrap.fit {
-    transform: scale(var(--preview-scale, 1));
-    margin-bottom: calc((11in * var(--preview-scale, 1)) - 11in + 18px);
-  }
-  .sheet {
+  .toolbar button.secondary { background: #475569; }
+  .preview-wrap { width: 100%; display: flex; justify-content: center; transform-origin: top center; }
+  .preview-wrap.fit { transform: scale(var(--preview-scale, 1)); margin-bottom: calc((11in * var(--preview-scale, 1)) - 11in + 18px); }
+  .window-sticker {
     width: 17in;
     height: 11in;
-    margin: 0 auto 18px auto;
+    margin: 0 auto 18px;
     background: #fff;
+    border: 3px solid #000;
+    border-radius: 10px;
+    overflow: hidden;
     position: relative;
-    overflow: hidden;
-    border: 1px solid #111827;
-    flex: 0 0 auto;
   }
-  .top-band {
-    height: .92in;
-    background: #111827;
-    color: #fff;
+  .ws-watermark {
+    position: absolute;
+    left: 3.7in;
+    top: 4.65in;
+    width: 8.4in;
+    text-align: center;
+    font: 950 45pt Georgia, serif;
+    color: rgba(0,0,0,.16);
+    transform: rotate(-1deg);
+    pointer-events: none;
+    z-index: 30;
+  }
+  .ws-grid {
     display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    padding: .18in .38in;
+    grid-template-columns: 5.58in 4.05in 7.12in;
+    height: 100%;
   }
-  .brand {
-    font-size: 34pt;
-    line-height: 1;
-    letter-spacing: -.04em;
-    font-weight: 950;
-    text-transform: uppercase;
+  .ws-left, .ws-middle, .ws-right { min-width: 0; min-height: 0; }
+  .ws-left { border-right: 3px solid #000; display: grid; grid-template-rows: 3.75in 3.18in 4.07in; }
+  .ws-middle { border-right: 3px solid #000; display: grid; grid-template-rows: 7.95in 3.05in; }
+  .ws-right { display: grid; grid-template-rows: 7.95in 3.05in; }
+  .brand-block { padding: .15in .18in .1in; border-bottom: 2px solid #000; }
+  .brand-head { display: grid; grid-template-columns: .72in 1fr; gap: .14in; align-items: center; margin-bottom: .12in; }
+  .roundel {
+    width: .64in; height: .64in; border: 3px solid #000; border-radius: 50%; position: relative;
+    background: conic-gradient(#fff 0 25%, #2084c6 0 50%, #fff 0 75%, #2084c6 0);
   }
-  .subtitle {
-    margin-top: .06in;
-    font-size: 11pt;
-    letter-spacing: .16em;
-    font-weight: 700;
-    color: #cbd5e1;
-    text-transform: uppercase;
-  }
-  .vin-box {
-    text-align: right;
-    font-size: 10pt;
-    line-height: 1.35;
-    color: #dbeafe;
-    font-weight: 800;
-  }
-  .content {
-    display: grid;
-    grid-template-columns: 4.65in 7.05in 4.55in;
-    gap: .22in;
-    padding: .25in .33in .28in;
-    height: calc(11in - .92in);
-  }
-  .panel {
-    border: 2px solid #111827;
-    background: #fff;
-    min-height: 0;
-  }
-  .panel-title {
-    background: #111827;
-    color: #fff;
-    font-size: 12pt;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    padding: .08in .12in;
-  }
-  .panel-body { padding: .12in; }
-  .vehicle-photo {
-    height: 2.18in;
-    border: 1px solid #cbd5e1;
-    background: linear-gradient(180deg, #f8fafc, #e5e7eb);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: .13in;
-    overflow: hidden;
-  }
-  .vehicle-photo img {
-    max-width: 112%;
-    max-height: 112%;
-    object-fit: contain;
-  }
-  .no-photo {
-    color: #64748b;
-    font-size: 12pt;
-    font-weight: 800;
-  }
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: .07in;
-  }
-  .info-box {
-    border: 1px solid #cbd5e1;
-    padding: .08in .09in;
-  }
-  .label {
-    font-size: 7.5pt;
-    font-weight: 900;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    margin-bottom: .025in;
-  }
-  .value {
-    font-size: 11pt;
-    font-weight: 800;
-    line-height: 1.2;
-  }
-  .dealer { font-size: 9.5pt; font-weight: 700; line-height: 1.25; }
-  .options-panel { display: flex; flex-direction: column; min-height: 0; }
-  .options-list {
-    padding: .08in .12in .1in;
-    overflow: hidden;
-    flex: 1;
-  }
-  .option-item {
-    border-bottom: 1px solid #e5e7eb;
-    padding: .038in 0;
-  }
-  .option-main {
-    display: grid;
-    grid-template-columns: 1fr 1.15in;
-    gap: .08in;
-    align-items: baseline;
-  }
-  .option-name {
-    font-size: 9.1pt;
-    line-height: 1.12;
-    font-weight: 800;
-  }
-  .option-price {
-    text-align: right;
-    font-size: 9.1pt;
-    white-space: nowrap;
-    font-weight: 800;
-  }
-  .base-row .option-name,
-  .base-row .option-price,
-  .package-row .option-name,
-  .package-row .option-price,
-  .fee-row .option-name,
-  .fee-row .option-price {
-    font-weight: 950;
-  }
-  .bullets {
-    margin-top: .018in;
-    padding-left: .16in;
-    color: #374151;
-    font-size: 7.7pt;
-    line-height: 1.12;
-  }
-  .right-stack {
-    display: grid;
-    grid-template-rows: auto auto 1fr auto;
-    gap: .16in;
-    min-height: 0;
-  }
-  .total-card {
-    border: 3px solid #111827;
-    background: #f8fafc;
-    padding: .16in;
-  }
-  .total-label {
-    font-size: 11pt;
-    font-weight: 950;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: #475569;
-  }
-  .total-price {
-    font-size: 35pt;
-    line-height: 1;
-    margin-top: .06in;
-    font-weight: 950;
-    letter-spacing: -.05em;
-    text-align: right;
-  }
-  .small-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .small-table td {
-    border-bottom: 1px solid #e5e7eb;
-    padding: .055in 0;
-    vertical-align: top;
-    font-size: 9pt;
-    line-height: 1.2;
-  }
-  .small-table td:first-child {
-    width: 1.28in;
-    color: #475569;
-    font-weight: 900;
-    text-transform: uppercase;
-    font-size: 7.5pt;
-    letter-spacing: .04em;
-  }
-  .note-box {
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    padding: .1in;
-    font-size: 8.1pt;
-    line-height: 1.25;
-    color: #334155;
-  }
-  .footer {
-    font-size: 7.4pt;
-    line-height: 1.18;
-    color: #475569;
-    border-top: 1px solid #cbd5e1;
-    padding-top: .08in;
-  }
+  .roundel:after { content: "BMW"; position: absolute; inset: -0.16in; display: flex; align-items: flex-start; justify-content: center; font: 900 7pt Arial; padding-top: .02in; }
+  .tagline { font: 950 25pt Arial, Helvetica, sans-serif; line-height: 1.03; letter-spacing: -.03em; }
+  .model-title { font: 950 20pt Arial, Helvetica, sans-serif; margin: .05in 0 .12in; }
+  .vehicle-facts { display: grid; grid-template-columns: 1.35in 1fr; gap: .055in .09in; font-size: 9.2pt; line-height: 1.15; }
+  .vehicle-facts b { font-weight: 900; }
+  .bmw-na { margin-top: .17in; font-size: 8.9pt; line-height: 1.25; font-weight: 700; }
+  .black-title { background: #000; color: #fff; text-align: center; font: 950 11pt Arial; padding: .055in .08in; text-transform: uppercase; letter-spacing: .03em; }
+  .safety { border-bottom: 2px solid #000; }
+  .safety-body { padding: .08in .12in; font-size: 7.4pt; line-height: 1.1; }
+  .rating-row { display: grid; grid-template-columns: 1.55in 1fr 1.6in; border-top: 1px solid #000; padding: .065in 0; align-items: center; }
+  .stars { font-size: 16pt; letter-spacing: .02em; white-space: nowrap; }
+  .fuel { background: #fff; }
+  .fuel-head { display: grid; grid-template-columns: .35in 1fr 1.4in; align-items: center; background: #000; color: #fff; font-weight: 950; font-size: 16pt; padding: .06in .09in; }
+  .fuel-blue { background: #9dd0f3; color: #000; font-size: 9pt; padding: .06in; text-align: center; }
+  .fuel-main { display: grid; grid-template-columns: 1.45in 1.4in 1fr; gap: .1in; padding: .1in .12in .04in; align-items: center; }
+  .mpg-big { font: 950 55pt Arial; line-height: .9; }
+  .mpg-label { font: 900 18pt Arial; }
+  .fuel-cost { font-size: 14pt; line-height: 1.05; font-weight: 900; }
+  .fuel-cost strong { display:block; font-size: 30pt; }
+  .fuel-small { display: grid; grid-template-columns: 1.5in 1fr; border-top: 2px solid #000; border-bottom: 2px solid #000; }
+  .annual { border-right: 2px solid #000; padding: .08in .1in; font-size: 10pt; font-weight: 900; }
+  .annual strong { display:block; font-size: 27pt; }
+  .bar-ratings { padding: .08in .1in; font-size: 7pt; }
+  .bar { height: .18in; border: 1px solid #000; margin: .08in 0; position: relative; }
+  .bar:before { content: ""; position:absolute; left:0; top:0; bottom:0; width:30%; background:#000; }
+  .fuel-footer { background: #000; color: #fff; padding: .08in .12in; display:grid; grid-template-columns: 1fr .8in; gap:.12in; align-items:center; }
+  .fuel-footer strong { font-size: 20pt; }
+  .qr { width: .62in; height: .62in; background: repeating-linear-gradient(90deg,#000 0 3px,#fff 3px 6px), repeating-linear-gradient(0deg,transparent 0 4px,rgba(255,255,255,.5) 4px 8px); border:2px solid #fff; }
+  .standard { padding: .1in .14in; overflow: hidden; }
+  .section-head { font: 950 11.5pt Arial; text-transform: uppercase; margin: .02in 0 .07in; }
+  .section-sub { font: 900 9.2pt Arial; text-transform: uppercase; margin: .12in 0 .035in; }
+  .standard p { margin: 0 0 .055in; font-size: 7.5pt; line-height: 1.17; }
+  .standard ul { margin: 0; padding-left: .12in; list-style-position: inside; }
+  .standard li { font-size: 7.45pt; line-height: 1.17; margin: 0; }
+  .photos { border-top: 2px solid #000; display: grid; grid-template-columns: 1fr 1fr; gap: .12in; padding: .12in; }
+  .photo-box-title { font: 950 8pt Arial; text-transform: uppercase; margin-bottom: .04in; }
+  .photo-box { height: 1.42in; border: 1px solid #999; background: #f1f5f9; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-box.exterior img { object-fit: contain; background:#eef2f7; }
+  .optional { padding: .12in .13in; overflow: hidden; }
+  .price-top { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: .1in; margin-bottom: .1in; }
+  .price-top span { font: 950 7.5pt Arial; text-transform: uppercase; }
+  .price-top strong { font: 950 12pt Arial; }
+  .ws-option-row { display: grid; grid-template-columns: .48in 1fr 1.05in; gap: .08in; padding: .035in 0; font-size: 7.9pt; line-height: 1.13; page-break-inside: avoid; }
+  .ws-code { font-weight: 900; }
+  .ws-option-copy strong { font-weight: 900; }
+  .ws-price { text-align: right; white-space: nowrap; }
+  .ws-bullets { margin-top: .018in; display: grid; gap: .005in; color: #111; }
+  .pricing-summary { border-top: 2px solid #000; padding-top: .12in; margin-top: .14in; }
+  .summary-line { display:grid; grid-template-columns: 1fr 1.25in; font-size: 8.6pt; padding: .035in 0; }
+  .summary-line div:last-child { text-align:right; }
+  .total-line { border-top: 2px solid #000; margin-top:.07in; padding-top:.08in; display:grid; grid-template-columns: 1fr 1.45in; align-items: baseline; font: 950 12pt Arial; }
+  .total-line div:last-child { text-align:right; font-size: 13pt; }
+  .dealer-footer { border-top: 2px solid #000; display: grid; grid-template-columns: 1fr 1fr; padding: .14in .22in; gap: .35in; font-size: 9.2pt; line-height: 1.22; }
+  .dealer-footer b { display:block; margin-bottom:.03in; }
+  .barcode-wrap { grid-column: 1 / -1; margin-top: .12in; text-align:center; }
+  .barcode { height: .36in; display:flex; justify-content:center; align-items:stretch; gap:2px; margin: 0 auto .035in; }
+  .barcode i { display:block; background:#000; height:100%; }
+  .legal { font-size: 6.4pt; line-height: 1.13; color:#222; margin-top: .08in; }
   @media print {
-    html, body {
-      width: 17in;
-      height: 11in;
-      margin: 0 !important;
-      padding: 0 !important;
-      background: #fff;
-      overflow: visible !important;
-    }
+    html, body { width: 17in; height: 11in; margin: 0 !important; padding: 0 !important; background: #fff; overflow: hidden !important; }
     .toolbar { display: none; }
-    .preview-wrap,
-    .preview-wrap.fit {
-      display: block;
-      width: 17in;
-      transform: none !important;
-      margin: 0 !important;
-    }
-    .sheet {
-      margin: 0 auto !important;
-      border: 0;
-      box-shadow: none;
-    }
+    .preview-wrap, .preview-wrap.fit { display: block; width: 17in; transform: none !important; margin: 0 !important; }
+    .window-sticker { margin: 0 !important; border: 3px solid #000; box-shadow: none; }
   }
 </style>
 </head>
 <body>
   <div class="toolbar">
-    <span>11x17 landscape spec sheet. Use Zoom Out or Fit to Screen for preview only. Printing stays full 11x17.</span>
+    <span>11x17 landscape BMW window sticker preview. Printing stays full size.</span>
     <div class="toolbar-actions">
       <button class="secondary" onclick="zoomPreview(-0.05)">Zoom Out</button>
       <button class="secondary" onclick="fitPreview()">Fit Screen</button>
@@ -3683,79 +3495,137 @@ function buildWindowStickerHTML() {
   </div>
 
   <div class="preview-wrap" id="previewWrap">
-  <section class="sheet">
-    <div class="top-band">
-      <div>
-        <div class="brand">2011 BMW M3 Sedan</div>
-        <div class="subtitle">E90 Vehicle Specification Sheet</div>
-      </div>
-      <div class="vin-box">
-        VIN<br>${esc(build.vin || "Not supplied")}
-      </div>
-    </div>
-
-    <div class="content">
-      <div class="panel">
-        <div class="panel-title">Vehicle Information</div>
-        <div class="panel-body">
-          <div class="vehicle-photo">
-            ${exteriorImage ? `<img src="${esc(exteriorImage)}" alt="Vehicle preview">` : `<div class="no-photo">Vehicle Image</div>`}
+    <section class="window-sticker">
+      <div class="ws-watermark">Not Original - Copy</div>
+      <div class="ws-grid">
+        <div class="ws-left">
+          <div class="brand-block">
+            <div class="brand-head">
+              <div class="roundel"></div>
+              <div class="tagline">The Ultimate<br>Driving Machine</div>
+            </div>
+            <div class="model-title">2011 BMW M3 Sedan</div>
+            <div class="vehicle-facts">
+              <b>VIN:</b><div><b>${esc(vin)}</b></div>
+              <b>Exterior:</b><div>${esc(formatExteriorLabel(build.exterior))}</div>
+              <b>Interior:</b><div>${esc(build.interior.name)} (${esc(build.interior.code)})</div>
+              <b>Engine:</b><div>4.0L DOHC 32-valve V8 (S65)</div>
+              <b>Transmission:</b><div>${esc(build.transmission.name)} (${esc(build.transmission.code)})</div>
+              <b>Production Date:</b><div>03/2011</div>
+            </div>
+            <div class="bmw-na">
+              BMW of North America, LLC<br>
+              Woodcliff Lake, NJ 07677<br><br>
+              VPC Location: OXNARD, CALIFORNIA<br>
+              Port of Entry: HUENEME, CALIFORNIA
+            </div>
           </div>
 
-          <div class="info-grid">
-            <div class="info-box"><div class="label">Exterior</div><div class="value">${esc(formatExteriorLabel(build.exterior))}</div></div>
-            <div class="info-box"><div class="label">Interior</div><div class="value">${esc(build.interior.code)} ${esc(build.interior.name)}</div></div>
-            <div class="info-box"><div class="label">Transmission</div><div class="value">${esc(build.transmission.code)} ${esc(build.transmission.name)}</div></div>
-            <div class="info-box"><div class="label">Wheels</div><div class="value">${esc(build.wheel.code)} ${esc(build.wheel.name)}</div></div>
-            <div class="info-box"><div class="label">Selling Dealer</div><div class="dealer">${dealerBlock}</div></div>
+          <div class="safety">
+            <div class="black-title">Government 5-Star Safety Ratings</div>
+            <div class="safety-body">
+              <div style="display:grid;grid-template-columns:1fr 1.7in;gap:.1in;align-items:center;margin-bottom:.06in;"><b>Overall Vehicle Score</b><div class="stars">★★★★★</div></div>
+              Based on the combined ratings of frontal, side and rollover. Should ONLY be compared to other vehicles of similar size and weight.
+              <div class="rating-row"><b>Frontal<br>Crash</b><div>Driver<br>Passenger</div><div class="stars">★★★★★<br>★★★★★</div></div>
+              <div class="rating-row"><b>Side<br>Crash</b><div>Front seat<br>Rear seat</div><div class="stars">★★★★★<br>★★★★★</div></div>
+              <div class="rating-row"><b>Rollover</b><div></div><div class="stars">★★★★☆</div></div>
+              <div style="background:#000;color:#fff;margin:.07in -.12in -.08in;padding:.08in;text-align:center;font-weight:900;">Source: National Highway Traffic Safety Administration (NHTSA)<br>www.safercar.gov or 1-888-327-4236</div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="panel options-panel">
-        <div class="panel-title">Standard, Optional Equipment & Pricing</div>
-        <div class="options-list">
-          ${optionRowsHtml}
-        </div>
-      </div>
-
-      <div class="right-stack">
-        <div class="total-card">
-          <div class="total-label">Total Suggested Retail Price</div>
-          <div class="total-price">${esc(moneyFull(build.totalMSRP))}</div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">Build Codes</div>
-          <div class="panel-body">
-           <table class="small-table">
-              <tr><td><strong>Base MSRP</strong></td><td><strong>${esc(moneyFull(build.baseMSRP))}</strong></td></tr>
-            
-              <tr><td>Packages</td><td>${esc(packagesText)}</td></tr>
-              <tr><td>Options</td><td>${esc(optionsText)}</td></tr>
-              <tr><td>M Parts</td><td>${esc(mpText)}</td></tr>
-            
-              <tr><td>Destination</td><td>${esc(moneyFull(build.destinationCharge))}</td></tr>
-              <tr><td>Gas Tax</td><td>${esc(moneyFull(build.gasGuzzlerTax))}</td></tr>
-            </table>
+          <div class="fuel">
+            <div class="fuel-head"><div>EPA<br>DOT</div><div>Fuel Economy and Environment</div><div class="fuel-blue">Gasoline Vehicle</div></div>
+            <div class="fuel-main">
+              <div><div style="font-weight:900;font-size:9pt;">Fuel Economy</div><div class="mpg-big">14</div></div>
+              <div><div class="mpg-label">MPG</div><div style="font-weight:900;font-size:12pt;margin-top:.18in;">12&nbsp;&nbsp;&nbsp;&nbsp;19</div><div style="font-size:7pt;">city&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;highway</div></div>
+              <div class="fuel-cost">You Spend<strong>$7,250</strong>more in fuel costs<br>over 5 years</div>
+            </div>
+            <div style="font-size:12pt;font-weight:900;padding:0 .12in .08in;">7.1 <span style="font-size:8pt;">gallons per 100 miles</span></div>
+            <div class="fuel-small"><div class="annual">Annual fuel COST<strong>$3,150</strong></div><div class="bar-ratings"><b>Fuel Economy & Greenhouse Gas Rating</b><div class="bar"></div><b>Smog Rating</b><div class="bar"></div></div></div>
+            <div class="fuel-footer"><div><strong>fueleconomy.gov</strong><br>Calculate personalized estimates and compare vehicles</div><div class="qr"></div></div>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-title">Notes</div>
-          <div class="panel-body">
-            <div class="note-box">
-              This 11x17 sheet is generated from the selected configurator build and VIN-loaded CSV information. Pricing reflects the data currently coded in the configurator, including base MSRP, destination charge, gas guzzler tax, selected paint, interior, transmission, packages, standalone options, and M Performance parts.
+        <div class="ws-middle">
+          <div class="standard">
+            <div class="section-head">Standard Equipment</div>
+            <p>Items featured are included at no extra charge in the standard vehicle price shown at right.</p>
+            <div class="section-sub">Performance and Efficiency</div>
+            <ul>
+              <li>4.0-liter DOHC 32-valve V8 engine (S65)</li>
+              <li>M Double-VANOS and Valvetronic</li>
+              <li>M Drive and Onboard Computer</li>
+              <li>M Dynamic Stability Control (DSC)</li>
+              <li>M Servotronic</li>
+              <li>M Differential Lock</li>
+            </ul>
+            <div class="section-sub">Exterior</div>
+            <ul>
+              <li>Xenon Adaptive Headlights</li>
+              <li>LED Corona Headlight-rings</li>
+              <li>Power-folding, auto-dimming mirrors</li>
+              <li>M Double-spoke alloy wheels</li>
+              <li>Quad exhaust tips</li>
+            </ul>
+            <div class="section-sub">Interior</div>
+            <ul>
+              <li>Novillo Leather Upholstery</li>
+              <li>Power front sport seats with driver memory</li>
+              <li>3-spoke leather-wrapped M steering wheel</li>
+              <li>Automatic climate control</li>
+              <li>iDrive with 8.8 inch display</li>
+              <li>AM/FM/CD/MP3 Audio System</li>
+              <li>HD Radio with Satellite Radio</li>
+            </ul>
+            <div class="section-sub">Safety and Security</div>
+            <ul>
+              <li>Advanced Airbag System</li>
+              <li>Front-seat side-impact airbags</li>
+              <li>Side Curtain Head Protection</li>
+              <li>Dynamic Stability Control (DSC)</li>
+              <li>Tire Pressure Monitor</li>
+              <li>Anti-theft alarm system</li>
+            </ul>
+            <div class="section-sub">Warranty</div>
+            <ul>
+              <li>4-year/50,000-mile New Vehicle Limited Warranty</li>
+              <li>12-year Unlimited Mileage Rust Perforation Limited Warranty</li>
+              <li>4-year Unlimited Mileage Roadside Assistance Program</li>
+            </ul>
+          </div>
+          <div class="photos">
+            <div><div class="photo-box-title">Exterior</div><div class="photo-box exterior">${exteriorImage ? `<img src="${esc(exteriorImage)}" alt="Exterior">` : "Exterior Image"}</div></div>
+            <div><div class="photo-box-title">Interior</div><div class="photo-box">${interiorImage ? `<img src="${esc(interiorImage)}" alt="Interior">` : "Interior Image"}</div></div>
+          </div>
+        </div>
+
+        <div class="ws-right">
+          <div class="optional">
+            <div class="price-top"><span>Base Manufacturer's Suggested Retail Price</span><strong>${esc(moneyFull(build.baseMSRP))}</strong></div>
+            <div class="section-head">Optional Equipment</div>
+            <p style="font-size:8pt;margin:.02in 0 .1in;">Optionally-equipped / Check, excludes options in the standard equipment listed at left.</p>
+            ${optionalRowsHtml}
+            <div class="pricing-summary">
+              <div class="summary-line"><div>Total Optional Equipment</div><div>${esc(moneyFull(totalOptional))}</div></div>
+              <div class="summary-line"><div>Subtotal</div><div>${esc(moneyFull(subtotalBeforeFees))}</div></div>
+              <div class="summary-line"><div>Destination & Handling</div><div>${esc(moneyFull(build.destinationCharge))}</div></div>
+              <div class="summary-line"><div>Gas Guzzler Tax</div><div>${esc(moneyFull(build.gasGuzzlerTax))}</div></div>
+              <div class="total-line"><div>Total Suggested Retail Price</div><div>${esc(moneyFull(build.totalMSRP))}</div></div>
+            </div>
+          </div>
+
+          <div class="dealer-footer">
+            <div><b>Sold To:</b>${esc(dealerName)}<br>${esc(dealerAddress)}<br>${esc(dealerPhone)}</div>
+            <div><b>Ship To:</b>${esc(dealerName)}<br>${esc(dealerAddress)}<br>${esc(dealerPhone)}</div>
+            <div class="barcode-wrap">
+              <div class="barcode">${barcodeBars}</div>
+              <div>${esc(vin)}</div>
+              <div class="legal">BMW is pleased to offer a 4-year/50,000-mile New Vehicle Limited Warranty. Not an original BMW Monroney label. Recreation for enthusiast documentation only.</div>
             </div>
           </div>
         </div>
-
-        <div class="footer">
-          Not an original BMW Monroney label. Recreation/specification sheet for enthusiast documentation only. Verify all vehicle equipment, pricing, and production data independently.
-        </div>
       </div>
-    </div>
-  </section>
+    </section>
   </div>
 
   <script>
@@ -3767,9 +3637,7 @@ function buildWindowStickerHTML() {
       wrap.classList.add("fit");
       wrap.style.setProperty("--preview-scale", previewScale);
     }
-    function zoomPreview(step) {
-      setPreviewScale(previewScale + step);
-    }
+    function zoomPreview(step) { setPreviewScale(previewScale + step); }
     function fitPreview() {
       const available = Math.max(320, window.innerWidth - 32);
       const sheetWidth = 17 * 96;
