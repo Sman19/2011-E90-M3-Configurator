@@ -3506,11 +3506,46 @@ function buildWindowStickerHTML() {
   .barcode { height:.36in; display:flex; justify-content:center; align-items:stretch; gap:1px; margin:.02in auto; }
   .barcode i { display:block; background:#000; height:100%; }
 
+
+
+  /* RIGHT-CUTOFF FIX: slightly narrower sheet + wider right column + smaller right-side text */
+  .bmw-monroney {
+    width: 16.65in;
+    height: 10.75in;
+    padding: .18in .18in .15in;
+  }
+  .sheet-grid {
+    grid-template-columns: 4.45in 6.72in 4.86in;
+    grid-template-rows: 8.96in .96in;
+    gap: .06in;
+  }
+  .middle-main { grid-template-rows: 3.05in 1.20in 4.62in; gap: .06in; }
+  .right-main { grid-template-rows: 2.42in 3.42in 2.42in; gap: .06in; min-width: 0; }
+  .right-main .panel-box { min-width: 0; overflow: hidden; }
+  .parts-title { font-size: 10.2pt; line-height: 1.0; white-space: nowrap; }
+  .parts-line { grid-template-columns: minmax(0, 1fr) .82in; font-size: 9.2pt; line-height: 1.02; column-gap: .03in; }
+  .parts-line > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .parts-line b { white-space: normal; overflow-wrap: anywhere; }
+  .parts-note { font-size: 5.9pt; margin: .08in 0 .045in; }
+  .country-grid { grid-template-columns: minmax(0, 1fr) 1.02in; font-size: 8.9pt; line-height: 1.02; }
+  .country-grid > div { min-width: 0; overflow-wrap: anywhere; }
+  .safety-black { font-size: 9.8pt; line-height: 1.0; white-space: nowrap; }
+  .safety-real-row { grid-template-columns: .9in 1fr .8in; font-size: 8.4pt; line-height: 1.0; padding: .055in 0; }
+  .safe-small { font-size: 5.8pt; line-height: 1.05; }
+  .right-footer-black { font-size: 6.8pt; }
+  .env-title { font-size: 15.5pt; line-height: 1; white-space: nowrap; }
+  .env-bars { gap: .08in; font-size: 6.5pt; }
+  .green { font-size: 8.4pt; white-space: nowrap; }
+  .env-bottom { font-size: 5.8pt; }
+  .brand-footer { grid-template-columns: minmax(0,1fr) .38in; }
+  .bottom-right { font-size: 6.6pt; grid-template-columns: minmax(0,1fr) .52in; }
+  .barcode { max-width: .65in; }
+
   @media print {
     html, body { width: 17in; height: 11in; background: #fff; overflow: hidden !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .toolbar { display: none; }
-    .preview-wrap, .preview-wrap.fit { display: block; width: 17in; transform: none !important; margin: 0 !important; }
-    .bmw-monroney { margin: 0 !important; }
+    .preview-wrap, .preview-wrap.fit { display: flex; justify-content: center; width: 17in; transform: none !important; margin: 0 !important; }
+    .bmw-monroney { margin: 0 auto !important; }
   }
 </style>
 </head>
