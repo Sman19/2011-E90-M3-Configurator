@@ -3380,6 +3380,7 @@ function buildWindowStickerHTML() {
     background: #fff;
     color: #000;
     font-family: Arial, Helvetica, sans-serif;
+    overflow-x: auto;
   }
   .toolbar {
     max-width: 17in;
@@ -3403,14 +3404,14 @@ function buildWindowStickerHTML() {
     cursor: pointer;
   }
   .toolbar button.secondary { background: #475569; }
-  .preview-wrap { width: 100%; display: flex; justify-content: center; transform-origin: top center; }
+  .preview-wrap { width: 100%; display: flex; justify-content: center; transform-origin: top center; overflow: visible; }
   .preview-wrap.fit { transform: scale(var(--preview-scale, 1)); margin-bottom: calc((11in * var(--preview-scale, 1)) - 11in + 18px); }
 
   .bmw-monroney {
     width: 17in;
     height: 11in;
     margin: 0 auto 18px;
-    padding: .29in .30in .22in;
+    padding: .22in .22in .18in;
     position: relative;
     overflow: hidden;
     background: #fff;
@@ -3427,13 +3428,13 @@ function buildWindowStickerHTML() {
     position: relative;
     z-index: 2;
     display: grid;
-    grid-template-columns: 4.65in 7.1in 4.55in;
-    grid-template-rows: 9.3in 1.08in;
-    gap: .08in;
+    grid-template-columns: 4.48in 7.00in 4.34in;
+    grid-template-rows: 9.18in 1.04in;
+    gap: .07in;
     height: 100%;
   }
   .panel-box {
-    border: 4px solid #000;
+    border: 3px solid #000;
     background:#fff;
     overflow: hidden;
   }
@@ -3447,7 +3448,7 @@ function buildWindowStickerHTML() {
   .brand-title { font: 950 20pt Arial, Helvetica, sans-serif; letter-spacing: -.03em; margin: -.02in 0 .02in; }
   .brand-title sup { font-size: 8pt; }
   .model-title { font: 950 13pt Arial, Helvetica, sans-serif; margin-bottom: .06in; }
-  .top-price { border: 4px solid #000; padding: .07in .08in; margin-bottom: .07in; background:#fff; }
+  .top-price { border: 3px solid #000; padding: .07in .08in; margin-bottom: .07in; background:#fff; }
   .top-price-row { display:grid; grid-template-columns: 1fr .15in .76in; gap:.04in; font-size:8.4pt; line-height:1.15; }
   .top-price-row.header { font-weight:900; font-size:9.1pt; }
   .pricing-list { flex: 1; overflow: hidden; }
