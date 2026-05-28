@@ -3377,7 +3377,7 @@ function buildWindowStickerHTML() {
   html, body {
     margin: 0;
     padding: 0;
-    background: #e5e7eb;
+    background: #fff;
     color: #000;
     font-family: Arial, Helvetica, sans-serif;
   }
@@ -3413,37 +3413,15 @@ function buildWindowStickerHTML() {
     padding: .29in .30in .22in;
     position: relative;
     overflow: hidden;
-    background:
-      linear-gradient(rgba(255,255,255,.58), rgba(255,255,255,.58)),
-      radial-gradient(circle at 48% 56%, rgba(255,255,255,.35) 0, rgba(255,255,255,.16) 18%, transparent 34%),
-      linear-gradient(115deg, rgba(55,73,47,.65), rgba(215,225,205,.75) 37%, rgba(122,139,112,.62) 58%, rgba(220,228,214,.72)),
-      repeating-linear-gradient(92deg, rgba(255,255,255,.12) 0 .08in, rgba(0,0,0,.04) .08in .16in);
+    background: #fff;
     border: 0;
   }
   .bmw-monroney:before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: .95in;
-    height: 3.1in;
-    background:
-      linear-gradient(92deg, transparent 0 36%, rgba(255,255,255,.55) 36% 51%, transparent 51% 100%),
-      linear-gradient(180deg, rgba(185,195,180,.15), rgba(80,90,70,.18));
-    transform: skewY(-5deg);
-    opacity: .65;
+    content: none;
+    display: none;
   }
   .watermark {
-    position: absolute;
-    left: 4.15in;
-    top: 5.0in;
-    width: 7.6in;
-    text-align: center;
-    font: 950 57pt Arial, Helvetica, sans-serif;
-    color: rgba(255,255,255,.45);
-    text-shadow: 0 0 1px rgba(0,0,0,.16);
-    pointer-events: none;
-    z-index: 1;
+    display: none;
   }
   .sheet-grid {
     position: relative;
@@ -3456,7 +3434,7 @@ function buildWindowStickerHTML() {
   }
   .panel-box {
     border: 4px solid #000;
-    background: rgba(255,255,255,.54);
+    background:#fff;
     overflow: hidden;
   }
   .left-pricing { grid-row: 1 / 2; grid-column: 1 / 2; padding: .08in .10in; display: flex; flex-direction: column; }
@@ -3469,7 +3447,7 @@ function buildWindowStickerHTML() {
   .brand-title { font: 950 20pt Arial, Helvetica, sans-serif; letter-spacing: -.03em; margin: -.02in 0 .02in; }
   .brand-title sup { font-size: 8pt; }
   .model-title { font: 950 13pt Arial, Helvetica, sans-serif; margin-bottom: .06in; }
-  .top-price { border: 4px solid #000; padding: .07in .08in; margin-bottom: .07in; background: rgba(255,255,255,.52); }
+  .top-price { border: 4px solid #000; padding: .07in .08in; margin-bottom: .07in; background:#fff; }
   .top-price-row { display:grid; grid-template-columns: 1fr .15in .76in; gap:.04in; font-size:8.4pt; line-height:1.15; }
   .top-price-row.header { font-weight:900; font-size:9.1pt; }
   .pricing-list { flex: 1; overflow: hidden; }
@@ -3490,13 +3468,13 @@ function buildWindowStickerHTML() {
   .warranty-box p, .warranty-box li { font-size:7.8pt; line-height:1.14; margin:0; }
   .warranty-box ul { margin:0; padding-left:.12in; }
 
-  .epa-box { position:relative; display:grid; grid-template-rows:.55in 1fr .43in; background: rgba(255,255,255,.60); }
+  .epa-box { position:relative; display:grid; grid-template-rows:.55in 1fr .43in; background:#fff; }
   .epa-head { background:#000; color:#fff; font:950 23pt Arial; text-align:center; padding:.07in; }
   .epa-content { display:grid; grid-template-columns: 1fr 1.1in 1fr; align-items:center; text-align:center; padding:.1in .18in; }
   .mpg-label { font-size:13pt; }
   .mpg-number { font:950 49pt Arial; line-height:.9; }
   .mpg-sub { font-size:7.4pt; line-height:1.14; }
-  .fuel-center { border-radius:5px; background:rgba(255,255,255,.68); padding:.1in .05in; font-size:9pt; line-height:1.2; }
+  .fuel-center { border-radius:5px; background:#fff; padding:.1in .05in; font-size:9pt; line-height:1.2; }
   .fuel-center strong { display:block; font-size:16pt; }
   .combined { position:absolute; left:2.68in; right:2.68in; bottom:.62in; text-align:center; font-size:9pt; }
   .range-bar { height:.08in; background:#000; margin:.05in .15in; position:relative; }
@@ -3548,7 +3526,7 @@ function buildWindowStickerHTML() {
 
   <div class="preview-wrap" id="previewWrap">
     <section class="bmw-monroney">
-      <div class="watermark">Not Original</div>
+      <div class="watermark"></div>
       <div class="sheet-grid">
         <div class="panel-box left-pricing">
           <div class="brand-title">The Ultimate Driving Machine<sup>®</sup></div>
