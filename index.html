@@ -46,6 +46,36 @@ button, input { font: inherit; }
   margin-bottom: 18px;
 }
 
+.topbar-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.config-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,.12);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  transition: .15s ease;
+  white-space: nowrap;
+}
+
+.config-home-btn:hover {
+  border-color: #2384ff;
+  background: linear-gradient(180deg,#2384ff,#155ed0);
+  filter: brightness(1.08);
+}
+
 .title h1 {
   margin: 0;
   font-size: 30px;
@@ -669,6 +699,8 @@ textarea {
 
 @media(max-width:760px) {
   .topbar { flex-direction: column; }
+  .topbar-left { flex-direction: column; width: 100%; }
+  .config-home-btn { width: 100%; }
   .actions-column { align-items: stretch; width: 100%; }
   .actions { justify-content: stretch; }
   .actions .btn { flex: 1; }
@@ -686,10 +718,17 @@ textarea {
 <body>
 <div class="page">
   <header class="topbar">
-    <div class="title">
-      <h1>2011 BMW E90 M3 Sedan Configurator</h1>
-      <p>Build your ultimate driving machine.</p>
+    <div class="topbar-left">
+      <a class="config-home-btn" href="https://sman19.github.io/Active-Website/">
+        ← Home
+      </a>
+
+      <div class="title">
+        <h1>2011 BMW E90 M3 Sedan Configurator</h1>
+        <p>Build your ultimate driving machine.</p>
+      </div>
     </div>
+
     <div class="actions-column">
       <div class="actions">
         <button class="btn" id="resetBtn">Reset Build</button>
