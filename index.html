@@ -2996,7 +2996,7 @@ function buildWindowStickerHTML() {
   const dealerBlock = [build.sellingDealer, build.dealerAddress, build.dealerPhone]
     .filter(Boolean)
     .map(esc)
-    .join("<br>") || "BMW Center";
+    .join("<br>") || "BMW Conf";
 
   const packagesText = build.packages.map(p => p.code).join(", ") || "None selected";
   const optionsText = build.standaloneOptions.map(o => o.code).join(", ") || "None selected";
