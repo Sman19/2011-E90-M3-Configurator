@@ -1119,6 +1119,7 @@ const DATA = {
     { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
     { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
     { code:"NCH4", name:"Palladium/Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%3APadllaium%20Two-TOne.png" },
+    { code:"NDH4", name:"Palladium/Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%3APadllaium%20Two-TOne.png" },
     { code:"NCH5", name:"Fox Red/Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" },
     { code:"NDH5", name:"Fox Red/Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" }
   ],
@@ -2362,6 +2363,28 @@ Q
   return out;
 }
 
+function drawPdfInteriorImage(c, x = 318, y = 518, targetWidth = 80) {
+  if (window.__pdfInteriorImageReady) {
+    const sourceWidth = Number(window.__pdfInteriorImageWidth || 300);
+    const sourceHeight = Number(window.__pdfInteriorImageHeight || 180);
+    const aspectHeight = targetWidth * (sourceHeight / sourceWidth);
+    const targetHeight = Math.max(40, Math.min(58, Math.round(aspectHeight)));
+
+    return `q
+${targetWidth} 0 0 ${targetHeight} ${x} ${y} cm
+/InteriorImage Do
+Q
+` + pdfStrokeRect(x, y, targetWidth, targetHeight, 0.82, 0.45);
+  }
+
+  const interiorSwatch = c.interior.gradient || c.interior.hex || "#141414";
+  return pdfSwatch(x, y, 42, interiorSwatch, "#141414");
+}
+
+function getPdfInteriorImageUrl(c) {
+  return c && c.interior && c.interior.image ? c.interior.image : null;
+}
+
 function getPdfCarImageUrl(c) {
   return getExteriorPhoto(c.exterior.code, c.wheel.code) || null;
 }
@@ -2638,13 +2661,16 @@ Q
   out += drawPdfSideProfileCar(c);
 
   const exteriorSwatch = c.exterior.paintHex || c.exterior.hex || "#8fa8ff";
-  const interiorSwatch = c.interior.gradient || c.interior.hex || "#141414";
   out += pdfSwatch(318, 565, 20, exteriorSwatch, "#111111");
   out += pdfText("EXTERIOR", 345, 578, 8.5, "F2");
   out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 345, 565, 8.5, "F1");
-  out += pdfSwatch(455, 565, 20, interiorSwatch, "#111111");
-  out += pdfText("INTERIOR", 482, 578, 8.5, "F2");
-  out += pdfText(`${c.interior.code} ${c.interior.name}`, 482, 565, 8.5, "F1");
+
+  // Interior now uses the selected interior image instead of the old color swatch.
+  out += drawPdfInteriorImage(c, 318, 512, 86);
+  out += pdfText("INTERIOR", 414, 552, 8.5, "F2");
+  wrapPdfLine(`${c.interior.code} ${c.interior.name}`, 34).slice(0, 2).forEach((line, index) => {
+    out += pdfText(line, 414, 538 - (index * 12), 8.5, "F1");
+  });
 
   out += drawBMWRedHeader("PRICE", 44, 493, 246);
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 44, 471, 246);
@@ -2801,10 +2827,14 @@ async function downloadBMWBuildSheetPDF() {
   const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
   const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
   const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
+  const pdfInteriorImageData = await loadPdfImageData(getPdfInteriorImageUrl(c), 260);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
+  window.__pdfInteriorImageReady = Boolean(pdfInteriorImageData);
   window.__pdfCarImageWidth = pdfCarImageData ? pdfCarImageData.width : 0;
   window.__pdfCarImageHeight = pdfCarImageData ? pdfCarImageData.height : 0;
+  window.__pdfInteriorImageWidth = pdfInteriorImageData ? pdfInteriorImageData.width : 0;
+  window.__pdfInteriorImageHeight = pdfInteriorImageData ? pdfInteriorImageData.height : 0;
   const pages = buildBMWStylePages(c);
 
   const objects = [];
@@ -2821,11 +2851,14 @@ async function downloadBMWBuildSheetPDF() {
 
   const font1Obj = 3 + pages.length * 2;
   const font2Obj = font1Obj + 1;
-  const logoObj = pdfLogoImageData ? font2Obj + 1 : null;
-  const imageObj = pdfCarImageData ? font2Obj + (pdfLogoImageData ? 2 : 1) : null;
+  let nextXObjectObj = font2Obj + 1;
+  const logoObj = pdfLogoImageData ? nextXObjectObj++ : null;
+  const imageObj = pdfCarImageData ? nextXObjectObj++ : null;
+  const interiorObj = pdfInteriorImageData ? nextXObjectObj++ : null;
   const xObjectEntries = [];
   if (logoObj) xObjectEntries.push(`/LogoImage ${logoObj} 0 R`);
   if (imageObj) xObjectEntries.push(`/CarImage ${imageObj} 0 R`);
+  if (interiorObj) xObjectEntries.push(`/InteriorImage ${interiorObj} 0 R`);
   const imageResource = xObjectEntries.length ? ` /XObject << ${xObjectEntries.join(" ")} >>` : "";
   pages.forEach((content, i) => {
     addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${font1Obj} 0 R /F2 ${font2Obj} 0 R >>${imageResource} >> /Contents ${contentObjectNumbers[i]} 0 R >>`);
@@ -2839,6 +2872,7 @@ endstream`);
   addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   if (pdfLogoImageData) addObj(buildPdfImageObject(pdfLogoImageData));
   if (pdfCarImageData) addObj(buildPdfImageObject(pdfCarImageData));
+  if (pdfInteriorImageData) addObj(buildPdfImageObject(pdfInteriorImageData));
 
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
