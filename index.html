@@ -2363,11 +2363,20 @@ Q
 }
 
 function drawPdfInteriorImage(c, x = 318, y = 522, size = 20) {
-  // Keep this as a small thumbnail in the exact same spot/size as the original swatch.
-  // Do not let the interior photo expand into the layout.
+  // Interior thumbnail must stay EXACTLY inside the original swatch square.
+  // This clips the image to a 20x20 box and uses object-fit: cover logic.
   if (window.__pdfInteriorImageReady) {
+    const imgW = Number(window.__pdfInteriorImageWidth || size);
+    const imgH = Number(window.__pdfInteriorImageHeight || size);
+    const scale = Math.max(size / imgW, size / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const drawX = x + (size - drawW) / 2;
+    const drawY = y + (size - drawH) / 2;
+
     return `q
-${size} 0 0 ${size} ${x} ${y} cm
+${x} ${y} ${size} ${size} re W n
+${drawW} 0 0 ${drawH} ${drawX} ${drawY} cm
 /InteriorImage Do
 Q
 ` + pdfStrokeRect(x, y, size, size, 0.82, 0.45);
