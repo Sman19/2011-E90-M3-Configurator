@@ -1111,16 +1111,16 @@ const DATA = {
   interiors: [
     { code:"GEAT", name:"Anthracite & Black Cloth/Leather", price:0, basePrice:0, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/ANTHRACITE%20Black%20Cloth.png" },
     { code:"NCSW", name:"Black Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%20Novillo%20Leather.png" },
-    { code:"NDSW", name:"Black Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%20Novillo%20Leather.png" },
+    { code:"NDSW", name:"Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%20Novillo%20Leather.png" },
     { code:"NCH1", name:"Silver Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/05d770702ebbc9b3ba42808fbf60364a59a2bca1/Silver%20Novillo%20Leather.png" },
-    { code:"NDH1", name:"Silver Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/05d770702ebbc9b3ba42808fbf60364a59a2bca1/Silver%20Novillo%20Leather.png" },
+    { code:"NDH1", name:"Silver Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/05d770702ebbc9b3ba42808fbf60364a59a2bca1/Silver%20Novillo%20Leather.png" },
     { code:"NCH2", name:"Fox Red Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Fox%20Red%20Novillo%20Leather.png" },
-    { code:"NDH2", name:"Fox Red Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Fox%20Red%20Novillo%20Leather.png" },
+    { code:"NDH2", name:"Fox Red Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Fox%20Red%20Novillo%20Leather.png" },
     { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
-    { code:"NDH3", name:"Bamboo Beige Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
+    { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
     { code:"NCH4", name:"Palladium/Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%3APadllaium%20Two-TOne.png" },
     { code:"NCH5", name:"Fox Red/Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" },
-    { code:"NDH5", name:"Fox Red/Black IND. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" }
+    { code:"NDH5", name:"Fox Red/Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" }
   ],
 
   transmissions: [
@@ -2362,22 +2362,19 @@ Q
   return out;
 }
 
-function drawPdfInteriorImage(c, x = 318, y = 518, targetWidth = 80) {
+function drawPdfInteriorImage(c, x = 318, y = 522, size = 20) {
+  // Keep this as a small thumbnail in the exact same spot/size as the original swatch.
+  // Do not let the interior photo expand into the layout.
   if (window.__pdfInteriorImageReady) {
-    const sourceWidth = Number(window.__pdfInteriorImageWidth || 300);
-    const sourceHeight = Number(window.__pdfInteriorImageHeight || 180);
-    const aspectHeight = targetWidth * (sourceHeight / sourceWidth);
-    const targetHeight = Math.max(40, Math.min(58, Math.round(aspectHeight)));
-
     return `q
-${targetWidth} 0 0 ${targetHeight} ${x} ${y} cm
+${size} 0 0 ${size} ${x} ${y} cm
 /InteriorImage Do
 Q
-` + pdfStrokeRect(x, y, targetWidth, targetHeight, 0.82, 0.45);
+` + pdfStrokeRect(x, y, size, size, 0.82, 0.45);
   }
 
   const interiorSwatch = c.interior.gradient || c.interior.hex || "#141414";
-  return pdfSwatch(x, y, 42, interiorSwatch, "#141414");
+  return pdfSwatch(x, y, size, interiorSwatch, "#141414");
 }
 
 function getPdfInteriorImageUrl(c) {
@@ -2699,11 +2696,11 @@ Q
   out += pdfText("EXTERIOR", 345, 578, 8.5, "F2");
   out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 345, 565, 8.5, "F1");
 
-  // Interior now uses the selected interior image instead of the old color swatch.
-  out += drawPdfInteriorImage(c, 318, 508, 92);
-  out += pdfText("INTERIOR", 420, 552, 8.5, "F2");
-  wrapPdfLine(`${c.interior.code} ${c.interior.name}`, 34).slice(0, 2).forEach((line, index) => {
-    out += pdfText(line, 420, 538 - (index * 12), 8.5, "F1");
+  // Interior image thumbnail stays where the original swatch was.
+  out += drawPdfInteriorImage(c, 318, 522, 20);
+  out += pdfText("INTERIOR", 345, 535, 8.5, "F2");
+  wrapPdfLine(`${c.interior.code} ${c.interior.name}`, 42).slice(0, 2).forEach((line, index) => {
+    out += pdfText(line, 345, 522 - (index * 12), 8.5, "F1");
   });
 
   out += drawBMWRedHeader("PRICE", 44, 493, 246);
