@@ -2363,20 +2363,11 @@ Q
 }
 
 function drawPdfInteriorImage(c, x = 318, y = 522, size = 20) {
-  // Interior thumbnail must stay EXACTLY inside the original swatch square.
-  // This clips the image to a 20x20 box and uses object-fit: cover logic.
+  // This draws the already-cropped 20x20 interior thumbnail exactly where the old swatch was.
+  // No large image scaling is allowed here.
   if (window.__pdfInteriorImageReady) {
-    const imgW = Number(window.__pdfInteriorImageWidth || size);
-    const imgH = Number(window.__pdfInteriorImageHeight || size);
-    const scale = Math.max(size / imgW, size / imgH);
-    const drawW = imgW * scale;
-    const drawH = imgH * scale;
-    const drawX = x + (size - drawW) / 2;
-    const drawY = y + (size - drawH) / 2;
-
     return `q
-${x} ${y} ${size} ${size} re W n
-${drawW} 0 0 ${drawH} ${drawX} ${drawY} cm
+${size} 0 0 ${size} ${x} ${y} cm
 /InteriorImage Do
 Q
 ` + pdfStrokeRect(x, y, size, size, 0.82, 0.45);
@@ -2425,6 +2416,73 @@ function imageToPdfDataFromLoadedImage(img, maxWidth = 360) {
     console.warn("PDF image could not be embedded", error);
     return null;
   }
+}
+
+function imageToPdfSquareThumbFromLoadedImage(img, size = 20) {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size, size);
+
+    // object-fit: cover, centered, but baked into a real 20x20 image.
+    const scale = Math.max(size / img.naturalWidth, size / img.naturalHeight);
+    const drawW = img.naturalWidth * scale;
+    const drawH = img.naturalHeight * scale;
+    const drawX = (size - drawW) / 2;
+    const drawY = (size - drawH) / 2;
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+    const data = ctx.getImageData(0, 0, size, size).data;
+    let hex = "";
+    for (let i = 0; i < data.length; i += 4) {
+      hex += data[i].toString(16).padStart(2, "0");
+      hex += data[i + 1].toString(16).padStart(2, "0");
+      hex += data[i + 2].toString(16).padStart(2, "0");
+    }
+    return { width:size, height:size, hex };
+  } catch (error) {
+    console.warn("PDF thumbnail could not be embedded", error);
+    return null;
+  }
+}
+
+async function loadPdfSquareThumbData(url, size = 20) {
+  if (!url) return null;
+
+  try {
+    const response = await fetch(url, { cache: "no-store", mode: "cors" });
+    if (response.ok) {
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const data = await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const result = imageToPdfSquareThumbFromLoadedImage(img, size);
+          URL.revokeObjectURL(objectUrl);
+          resolve(result);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(null);
+        };
+        img.src = objectUrl;
+      });
+      if (data) return data;
+    }
+  } catch (error) {
+    console.warn("PDF thumbnail fetch failed, trying direct image load", error);
+  }
+
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(imageToPdfSquareThumbFromLoadedImage(img, size));
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
 }
 
 async function loadPdfImageData(url, maxWidth = 360) {
@@ -2701,15 +2759,26 @@ Q
   out += drawPdfSideProfileCar(c);
 
   const exteriorSwatch = c.exterior.paintHex || c.exterior.hex || "#8fa8ff";
-  out += pdfSwatch(318, 565, 20, exteriorSwatch, "#111111");
-  out += pdfText("EXTERIOR", 345, 578, 8.5, "F2");
-  out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 345, 565, 8.5, "F1");
 
-  // Interior image thumbnail stays where the original swatch was.
-  out += drawPdfInteriorImage(c, 318, 522, 20);
-  out += pdfText("INTERIOR", 345, 535, 8.5, "F2");
-  wrapPdfLine(`${c.interior.code} ${c.interior.name}`, 42).slice(0, 2).forEach((line, index) => {
-    out += pdfText(line, 345, 522 - (index * 12), 8.5, "F1");
+  // Exterior left, Interior right — same row, same swatch/image size.
+  // Keep both blocks above PERFORMANCE and prevent the interior image from changing layout.
+  const colorRowY = 565;
+  const swatchSize = 20;
+  const exteriorX = 318;
+  const exteriorTextX = exteriorX + 27;
+  const interiorX = 448;
+  const interiorTextX = interiorX + 27;
+
+  out += pdfSwatch(exteriorX, colorRowY, swatchSize, exteriorSwatch, "#111111");
+  out += pdfText("EXTERIOR", exteriorTextX, colorRowY + 13, 8.5, "F2");
+  wrapPdfLine(`${c.exterior.code} ${c.exterior.name}`, 24).slice(0, 2).forEach((line, index) => {
+    out += pdfText(line, exteriorTextX, colorRowY - (index * 11), 8.2, "F1");
+  });
+
+  out += drawPdfInteriorImage(c, interiorX, colorRowY, swatchSize);
+  out += pdfText("INTERIOR", interiorTextX, colorRowY + 13, 8.5, "F2");
+  wrapPdfLine(`${c.interior.code} ${c.interior.name}`, 23).slice(0, 2).forEach((line, index) => {
+    out += pdfText(line, interiorTextX, colorRowY - (index * 11), 8.2, "F1");
   });
 
   out += drawBMWRedHeader("PRICE", 44, 493, 246);
@@ -2867,14 +2936,14 @@ async function downloadBMWBuildSheetPDF() {
   const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
   const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
   const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 360);
-  const pdfInteriorImageData = await loadPdfImageData(getPdfInteriorImageUrl(c), 260);
+  const pdfInteriorImageData = await loadPdfSquareThumbData(getPdfInteriorImageUrl(c), 20);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
   window.__pdfInteriorImageReady = Boolean(pdfInteriorImageData);
   window.__pdfCarImageWidth = pdfCarImageData ? pdfCarImageData.width : 0;
   window.__pdfCarImageHeight = pdfCarImageData ? pdfCarImageData.height : 0;
-  window.__pdfInteriorImageWidth = pdfInteriorImageData ? pdfInteriorImageData.width : 0;
-  window.__pdfInteriorImageHeight = pdfInteriorImageData ? pdfInteriorImageData.height : 0;
+  window.__pdfInteriorImageWidth = 20;
+  window.__pdfInteriorImageHeight = 20;
   const pages = buildBMWStylePages(c);
 
   const objects = [];
