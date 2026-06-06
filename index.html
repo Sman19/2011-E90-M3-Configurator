@@ -1111,17 +1111,16 @@ const DATA = {
   interiors: [
     { code:"GEAT", name:"Anthracite & Black Cloth/Leather", price:0, basePrice:0, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/ANTHRACITE%20Black%20Cloth.png" },
     { code:"NCSW", name:"Black Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%20Novillo%20Leather.png" },
-    { code:"NDSW", name:"Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%20Novillo%20Leather.png" },
+    { code:"NDSW", name:"Black Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%20Novillo%20Leather.png" },
     { code:"NCH1", name:"Silver Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/05d770702ebbc9b3ba42808fbf60364a59a2bca1/Silver%20Novillo%20Leather.png" },
-    { code:"NDH1", name:"Silver Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/05d770702ebbc9b3ba42808fbf60364a59a2bca1/Silver%20Novillo%20Leather.png" },
+    { code:"NDH1", name:"Silver Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/05d770702ebbc9b3ba42808fbf60364a59a2bca1/Silver%20Novillo%20Leather.png" },
     { code:"NCH2", name:"Fox Red Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Fox%20Red%20Novillo%20Leather.png" },
-    { code:"NDH2", name:"Fox Red Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Fox%20Red%20Novillo%20Leather.png" },
+    { code:"NDH2", name:"Fox Red Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Fox%20Red%20Novillo%20Leather.png" },
     { code:"NCH3", name:"Bamboo Beige Novillo Leather", price:0, basePrice:950, premiumPrice:0, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
-    { code:"NDH3", name:"Bamboo Beige Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
+    { code:"NDH3", name:"Bamboo Beige Ext. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Bamboo%20Beige%20Novillo%20Leather.png" },
     { code:"NCH4", name:"Palladium/Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%3APadllaium%20Two-TOne.png" },
-    { code:"NDH4", name:"Palladium/Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Black%3APadllaium%20Two-TOne.png" },
     { code:"NCH5", name:"Fox Red/Black Novillo Leather", price:0, basePrice:1250, premiumPrice:300, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" },
-    { code:"NDH5", name:"Fox Red/Black Extended Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" }
+    { code:"NDH5", name:"Fox Red/Black IND. Novillo Leather", price:0, basePrice:2000, premiumPrice:1100, image:"https://raw.githubusercontent.com/Sman19/E9x-Interiors/c588c491108fbe4764bc1ff8c49809dc0991fa32/Two-Tone%20Fox%20Red%3ABlack%3ABlck.png" }
   ],
 
   transmissions: [
@@ -2382,44 +2381,79 @@ Q
 }
 
 function getPdfInteriorImageUrl(c) {
-  return c && c.interior && c.interior.image ? c.interior.image : null;
+  const code = String(c && c.interior && c.interior.code ? c.interior.code : state.interior || "").toUpperCase();
+  const fromBuild = c && c.interior && c.interior.image ? c.interior.image : "";
+  if (fromBuild) return fromBuild;
+
+  const fromData = DATA.interiors.find(item => String(item.code).toUpperCase() === code);
+  if (fromData && fromData.image) return fromData.image;
+
+  return DATA.interiors.find(item => item.code === "NCSW")?.image || null;
 }
 
 function getPdfCarImageUrl(c) {
   return getExteriorPhoto(c.exterior.code, c.wheel.code) || null;
 }
 
+function imageToPdfDataFromLoadedImage(img, maxWidth = 360) {
+  try {
+    const scale = Math.min(1, maxWidth / img.naturalWidth);
+    const width = Math.max(1, Math.round(img.naturalWidth * scale));
+    const height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    const data = ctx.getImageData(0, 0, width, height).data;
+    let hex = "";
+    for (let i = 0; i < data.length; i += 4) {
+      hex += data[i].toString(16).padStart(2, "0");
+      hex += data[i + 1].toString(16).padStart(2, "0");
+      hex += data[i + 2].toString(16).padStart(2, "0");
+    }
+    return { width, height, hex };
+  } catch (error) {
+    console.warn("PDF image could not be embedded", error);
+    return null;
+  }
+}
+
 async function loadPdfImageData(url, maxWidth = 360) {
   if (!url) return null;
+
+  // First try fetch -> blob -> local object URL. This is more reliable for PDF embedding
+  // than drawing a direct cross-origin image to canvas.
+  try {
+    const response = await fetch(url, { cache: "force-cache", mode: "cors" });
+    if (response.ok) {
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const data = await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const result = imageToPdfDataFromLoadedImage(img, maxWidth);
+          URL.revokeObjectURL(objectUrl);
+          resolve(result);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(null);
+        };
+        img.src = objectUrl;
+      });
+      if (data) return data;
+    }
+  } catch (error) {
+    console.warn("PDF fetch image load failed, trying direct image load", error);
+  }
 
   return new Promise(resolve => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => {
-      try {
-        const scale = Math.min(1, maxWidth / img.naturalWidth);
-        const width = Math.max(1, Math.round(img.naturalWidth * scale));
-        const height = Math.max(1, Math.round(img.naturalHeight * scale));
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-        const data = ctx.getImageData(0, 0, width, height).data;
-        let hex = "";
-        for (let i = 0; i < data.length; i += 4) {
-          hex += data[i].toString(16).padStart(2, "0");
-          hex += data[i + 1].toString(16).padStart(2, "0");
-          hex += data[i + 2].toString(16).padStart(2, "0");
-        }
-        resolve({ width, height, hex });
-      } catch (error) {
-        console.warn("PDF image could not be embedded", error);
-        resolve(null);
-      }
-    };
+    img.onload = () => resolve(imageToPdfDataFromLoadedImage(img, maxWidth));
     img.onerror = () => resolve(null);
     img.src = url;
   });
@@ -2666,10 +2700,10 @@ Q
   out += pdfText(`${c.exterior.code} ${c.exterior.name}`, 345, 565, 8.5, "F1");
 
   // Interior now uses the selected interior image instead of the old color swatch.
-  out += drawPdfInteriorImage(c, 318, 512, 86);
-  out += pdfText("INTERIOR", 414, 552, 8.5, "F2");
+  out += drawPdfInteriorImage(c, 318, 508, 92);
+  out += pdfText("INTERIOR", 420, 552, 8.5, "F2");
   wrapPdfLine(`${c.interior.code} ${c.interior.name}`, 34).slice(0, 2).forEach((line, index) => {
-    out += pdfText(line, 414, 538 - (index * 12), 8.5, "F1");
+    out += pdfText(line, 420, 538 - (index * 12), 8.5, "F1");
   });
 
   out += drawBMWRedHeader("PRICE", 44, 493, 246);
