@@ -2225,14 +2225,26 @@ async function lookupVIN() {
         "BASE_MSRP"
       ]);
 
-    // Column H is the package-code column in the CSV.
-    // Example: MSRP,ZCP,ZCV,ZCW,ZPP.3,ZP2.3,2MK
-    // Column L is still pulled as a fallback/additional-code column.
+    // Package-code lookup needs to support both the old fixed-column CSV
+    // and newer named-column CSV exports from the database page.
+    // Column H was the original package-code column; named fields are preferred
+    // so the silent PDF generator does not fall back to a base configuration.
     const packageTextParts = [
+      findCSVValue(match, [
+        "Package Codes",
+        "PACKAGE CODES",
+        "PACKAGES",
+        "Packages",
+        "Package",
+        "Options",
+        "OPTION CODES",
+        "Option Codes"
+      ]),
       csvColumn(match, 8),
       csvColumn(match, 12)
     ].filter(Boolean);
-    const packageText = packageTextParts.join(",");
+
+    const packageText = [...new Set(packageTextParts)].join(",");
 
     state.vin = vin;
     state.sellingDealer = dealer;
@@ -3886,8 +3898,18 @@ async function runAutoActionFromUrl() {
     return;
   }
 
+  // If the database page passes package codes with the VIN, apply them as a
+  // final fallback/override before generating. This prevents base-only PDFs
+  // when the configurator CSV has shifted columns or missing package headers.
+  const packageOverride = normalizeText(params.get("packages") || params.get("packageCodes") || "");
+  if (packageOverride) {
+    applyPackageCodes(packageOverride);
+    enforceLockouts();
+    renderAll();
+  }
+
   // Give the UI one paint cycle after VIN decode before generating documents.
-  await new Promise(resolve => setTimeout(resolve, 250));
+  await new Promise(resolve => setTimeout(resolve, 350));
 
   if (autoMode === "spec" || autoMode === "bmw-spec" || autoMode === "bmw_spec") {
     const btn = $("copyBuildBtn");
