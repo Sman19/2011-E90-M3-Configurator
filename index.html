@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>2011 BMW E90 M3 Sedan Configurator - Window Sticker + BMW Spec Sheet PDF</title>
+<link id="favicon" rel="icon" type="image/svg+xml">
 
 <script>
 (function () {
@@ -1765,6 +1766,33 @@ function renderMSRPSelector() {
   if (select) select.value = String(state.baseMSRP);
 }
 
+function updateFavicon() {
+  const favicon = document.getElementById("favicon");
+  if (!favicon) return;
+
+  const color = findByCode(DATA.exteriorColors, state.exterior);
+  const fallbackColor = "#f2f1ea";
+  const normalFill = color?.paintHex || color?.hex || fallbackColor;
+  const fill = state.exterior === "IND" ? "url(#indGradient)" : normalFill;
+
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+    <defs>
+      <linearGradient id="indGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#6b2cff"/>
+        <stop offset="20%" stop-color="#0057ff"/>
+        <stop offset="40%" stop-color="#00d5ff"/>
+        <stop offset="60%" stop-color="#ffe04d"/>
+        <stop offset="80%" stop-color="#ff5b5b"/>
+        <stop offset="100%" stop-color="#111111"/>
+      </linearGradient>
+    </defs>
+    <rect x="6" y="6" width="52" height="52" rx="10" ry="10" fill="${fill}" stroke="#b8bec7" stroke-width="3"/>
+  </svg>`;
+
+  favicon.href = "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
 function renderAll() {
   enforceLockouts();
   renderExterior();
@@ -1777,6 +1805,7 @@ function renderAll() {
   renderChecks("optionList", DATA.standaloneOptions, "options");
   renderChecks("mPerformanceList", DATA.mPerformanceParts, "mPerformanceParts");
   renderSummary();
+  updateFavicon();
 }
 
 function normalizeText(value) {
@@ -3290,6 +3319,41 @@ function buildWindowStickerHTML() {
       .map(v => v.replace(/^[-•]\s*/, ""));
   }
 
+  function packageBullets(pkg) {
+    if (!pkg) return [];
+
+    // Keep the Window Sticker package details complete. This prevents package
+    // descriptions from being shortened if CSV-loaded builds or older browser
+    // cache versions pass a partial desc value.
+    const forcedPackageBullets = {
+      ZCV: [
+        "Anti theft alarm system",
+        "Comfort Access keyless entry",
+        "Park Distance Control (rear)",
+        "Navigation System",
+        "Voice Command",
+        "iPod & USB adapter",
+        "Real Time Traffic Information"
+      ],
+      ZCW: [
+        "Split fold down rear seat",
+        "Heated front seats",
+        "Retractable headlight washers"
+      ],
+      ZTP: [
+        "M Drive",
+        "Comfort Access keyless entry",
+        "Navigation system"
+      ],
+      ZCP: [
+        "Dynamic Damper Control",
+        "19 inch Style 359M wheels"
+      ]
+    };
+
+    return forcedPackageBullets[pkg.code] || bulletsFromDesc(pkg.desc);
+  }
+
   addRow("Base MSRP", build.baseMSRP, { className: "base-row" });
   addRow(`${build.exterior.code} ${build.exterior.name}`, build.exterior.price);
   addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
@@ -3302,7 +3366,7 @@ function buildWindowStickerHTML() {
   }
 
   build.packages.forEach(pkg => {
-    let bullets = bulletsFromDesc(pkg.desc);
+    let bullets = packageBullets(pkg);
 
     if (["ZPP", "ZP2", "ZP3"].includes(pkg.code)) {
       bullets = bullets.filter(line => {
@@ -3555,12 +3619,12 @@ function buildWindowStickerHTML() {
   .options-panel { display: flex; flex-direction: column; min-height: 0; }
   .options-list {
     padding: .08in .12in .1in;
-    overflow: hidden;
+    overflow: visible;
     flex: 1;
   }
   .option-item {
     border-bottom: 1px solid #e5e7eb;
-    padding: .038in 0;
+    padding: .026in 0;
   }
   .option-main {
     display: grid;
@@ -3569,13 +3633,13 @@ function buildWindowStickerHTML() {
     align-items: baseline;
   }
   .option-name {
-    font-size: 9.1pt;
-    line-height: 1.12;
+    font-size: 8.9pt;
+    line-height: 1.1;
     font-weight: 800;
   }
   .option-price {
     text-align: right;
-    font-size: 9.1pt;
+    font-size: 8.9pt;
     white-space: nowrap;
     font-weight: 800;
   }
@@ -3588,11 +3652,11 @@ function buildWindowStickerHTML() {
     font-weight: 950;
   }
   .bullets {
-    margin-top: .018in;
+    margin-top: .012in;
     padding-left: .16in;
     color: #374151;
-    font-size: 7.7pt;
-    line-height: 1.12;
+    font-size: 7.35pt;
+    line-height: 1.08;
   }
   .right-stack {
     display: grid;
