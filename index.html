@@ -2812,8 +2812,8 @@ function getInstalledItems(c) {
 
 function drawInstalledItem(out, item, y, maxY) {
   const isPremium = ["ZPP", "ZP2", "ZP3"].includes(item.code);
-  const descLines = parseDescLines(item.desc, item.code).slice(0, isPremium ? 6 : 5);
-  const needed = 19 + Math.min(descLines.length, 6) * 9.1;
+  const descLines = parseDescLines(item.desc, item.code);
+  const needed = 19 + descLines.length * 9.1;
   if (y - needed < maxY) return { out, y, drawn:false };
 
   const title = item.type === "BASE" ? item.name : `${item.code || ""} ${item.name}`.trim();
@@ -2937,7 +2937,7 @@ function buildBMWStylePages(c) {
   const factoryTotal = c.packageTotal + c.optionTotal + c.mPerformanceTotal + c.wheelPrice + c.transmission.price + c.interior.price + c.exterior.price;
   const dealerName = state.sellingDealer || "BMW Dealer";
   const installed = getInstalledItems(c);
-  const page1Bottom = 86;
+  const page1Bottom = 52;
   let installedIndex = 0;
   let out = "";
   out += pdfRect(0, 0, 612, 792, 1);
@@ -3319,41 +3319,6 @@ function buildWindowStickerHTML() {
       .map(v => v.replace(/^[-•]\s*/, ""));
   }
 
-  function packageBullets(pkg) {
-    if (!pkg) return [];
-
-    // Keep the Window Sticker package details complete. This prevents package
-    // descriptions from being shortened if CSV-loaded builds or older browser
-    // cache versions pass a partial desc value.
-    const forcedPackageBullets = {
-      ZCV: [
-        "Anti theft alarm system",
-        "Comfort Access keyless entry",
-        "Park Distance Control (rear)",
-        "Navigation System",
-        "Voice Command",
-        "iPod & USB adapter",
-        "Real Time Traffic Information"
-      ],
-      ZCW: [
-        "Split fold down rear seat",
-        "Heated front seats",
-        "Retractable headlight washers"
-      ],
-      ZTP: [
-        "M Drive",
-        "Comfort Access keyless entry",
-        "Navigation system"
-      ],
-      ZCP: [
-        "Dynamic Damper Control",
-        "19 inch Style 359M wheels"
-      ]
-    };
-
-    return forcedPackageBullets[pkg.code] || bulletsFromDesc(pkg.desc);
-  }
-
   addRow("Base MSRP", build.baseMSRP, { className: "base-row" });
   addRow(`${build.exterior.code} ${build.exterior.name}`, build.exterior.price);
   addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
@@ -3366,7 +3331,7 @@ function buildWindowStickerHTML() {
   }
 
   build.packages.forEach(pkg => {
-    let bullets = packageBullets(pkg);
+    let bullets = bulletsFromDesc(pkg.desc);
 
     if (["ZPP", "ZP2", "ZP3"].includes(pkg.code)) {
       bullets = bullets.filter(line => {
@@ -3619,12 +3584,12 @@ function buildWindowStickerHTML() {
   .options-panel { display: flex; flex-direction: column; min-height: 0; }
   .options-list {
     padding: .08in .12in .1in;
-    overflow: visible;
+    overflow: hidden;
     flex: 1;
   }
   .option-item {
     border-bottom: 1px solid #e5e7eb;
-    padding: .026in 0;
+    padding: .038in 0;
   }
   .option-main {
     display: grid;
@@ -3633,13 +3598,13 @@ function buildWindowStickerHTML() {
     align-items: baseline;
   }
   .option-name {
-    font-size: 8.9pt;
-    line-height: 1.1;
+    font-size: 9.1pt;
+    line-height: 1.12;
     font-weight: 800;
   }
   .option-price {
     text-align: right;
-    font-size: 8.9pt;
+    font-size: 9.1pt;
     white-space: nowrap;
     font-weight: 800;
   }
@@ -3652,11 +3617,11 @@ function buildWindowStickerHTML() {
     font-weight: 950;
   }
   .bullets {
-    margin-top: .012in;
+    margin-top: .018in;
     padding-left: .16in;
     color: #374151;
-    font-size: 7.35pt;
-    line-height: 1.08;
+    font-size: 7.7pt;
+    line-height: 1.12;
   }
   .right-stack {
     display: grid;
