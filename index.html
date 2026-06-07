@@ -2843,14 +2843,11 @@ Q
 
   out += pdfText(`Model: 2011 BMW M3 Sedan`, 44, 581, 8.8, "F2");
   out += pdfText(`VIN: ${state.vin || "Not loaded"}`, 44, 567, 8.5, "F1");
+  // Left vehicle detail block should ONLY show the dealer name.
+  // Full dealer address stays in the upper-right dealer box.
   out += pdfText(`Selling Dealer: ${dealerName}`, 44, 553, 8.5, "F1");
-  const dealerDetailLines = getDealerDisplayLines().slice(1, 4);
-  dealerDetailLines.slice(0, 2).forEach((line, index) => {
-    out += pdfText(line, 44, 539 - (index * 14), 8.3, "F1");
-  });
-  const engineY = dealerDetailLines.length ? 511 : 539;
-  out += pdfText("Engine: S65 4.0L naturally aspirated V8", 44, engineY, 8.5, "F1");
-  out += pdfText(`Transmission: ${c.transmission.code} ${c.transmission.name}`, 44, engineY - 14, 8.5, "F1");
+  out += pdfText("Engine: S65 4.0L naturally aspirated V8", 44, 539, 8.5, "F1");
+  out += pdfText(`Transmission: ${c.transmission.code} ${c.transmission.name}`, 44, 525, 8.5, "F1");
 
   out += drawPdfSideProfileCar(c);
 
