@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>2011 BMW E90 M3 Sedan Configurator - Window Sticker + BMW Spec Sheet PDF</title>
 
 <style>
@@ -22,6 +22,8 @@
 
 body {
   margin: 0;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background:
     radial-gradient(circle at 18% 0%, rgba(37, 111, 255, .13), transparent 30%),
     radial-gradient(circle at 88% 7%, rgba(95, 130, 190, .10), transparent 25%),
@@ -120,8 +122,9 @@ button, input { font: inherit; }
   background: #101826;
   color: white;
   padding: 0 14px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
+  text-transform: uppercase;
 }
 
 #vinSearch::placeholder { color: rgba(255,255,255,.55); }
@@ -140,6 +143,7 @@ button, input { font: inherit; }
   background: linear-gradient(180deg,#2384ff,#155ed0);
   color: white;
   font-weight: 900;
+  font-size: 16px;
   cursor: pointer;
   text-transform: uppercase;
 }
@@ -723,6 +727,15 @@ textarea {
   .actions .btn { flex: 1; }
   .vin-box { flex-direction: column; }
   #vinSearch, #vinSearchBtn { width: 100%; }
+
+  #vinSearch {
+    font-size: 16px;
+    text-transform: uppercase;
+  }
+
+  #vinSearchBtn {
+    font-size: 16px;
+  }
   #vinSearchNote { text-align: left; }
   .view-tabs { display: none; }
   .swatch-row { grid-template-columns: repeat(3, 1fr); }
