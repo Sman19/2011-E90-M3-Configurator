@@ -1260,6 +1260,10 @@ const state = {
   vin: "",
   sellingDealer: "",
   dealerAddress: "",
+  dealerStreet: "",
+  dealerCity: "",
+  dealerState: "",
+  dealerZip: "",
   dealerPhone: ""
 };
 
@@ -1593,6 +1597,10 @@ function buildOutput() {
     vin: state.vin,
     sellingDealer: state.sellingDealer,
     dealerAddress: state.dealerAddress,
+    dealerStreet: state.dealerStreet,
+    dealerCity: state.dealerCity,
+    dealerState: state.dealerState,
+    dealerZip: state.dealerZip,
     dealerPhone: state.dealerPhone,
     baseMSRP: state.baseMSRP,
     destinationCharge: DATA.destination,
@@ -1615,10 +1623,20 @@ function buildOutput() {
 function plainSummary() {
   const c = buildOutput();
   const vinLine = c.vin ? `\nVIN: ${c.vin}` : "";
-  const dealerLine = c.sellingDealer ? `\nSelling Dealer: ${c.sellingDealer}` : "";
-  const dealerAddressLine = c.dealerAddress ? `\nDealer Address: ${c.dealerAddress}` : "";
-  const dealerPhoneLine = c.dealerPhone ? `\nDealer Phone: ${c.dealerPhone}` : "";
-  return `${c.model}${vinLine}${dealerLine}${dealerAddressLine}${dealerPhoneLine}\nExterior: ${c.exterior.code} ${c.exterior.name}\nInterior: ${c.interior.code} ${c.interior.name}\nTransmission: ${c.transmission.code} ${c.transmission.name}\nWheel: ${c.wheel.code} ${c.wheel.name}\nTotal MSRP: ${money(c.totalMSRP)}`;
+  const dealerLines = getDealerDisplayLines(c);
+  const dealerBlock = dealerLines.length ? `\nSelling Dealer:\n${dealerLines.join("\n")}` : "";
+  return `${c.model}${vinLine}${dealerBlock}
+
+Exterior: ${c.exterior.code} ${c.exterior.name} - ${money(c.exterior.price)}
+Interior: ${c.interior.code} ${c.interior.name} - ${money(c.interior.price)}
+Transmission: ${c.transmission.code} ${c.transmission.name} - ${money(c.transmission.price)}
+Wheels: ${c.wheel.code} ${c.wheel.name}
+
+Packages: ${c.packages.map(p => p.code).join(", ") || "None"}
+Options: ${c.standaloneOptions.map(o => o.code).join(", ") || "None"}
+M Performance Parts: ${c.mPerformanceParts.map(p => p.code).join(", ") || "None"}
+
+Total MSRP: ${money(c.totalMSRP)}`;
 }
 
 function renderSummary() {
@@ -1878,24 +1896,96 @@ async function loadDealerCSV() {
   return dealerRows;
 }
 
+function formatDealerCityStateZip(city, stateValue, zip) {
+  const cleanCity = normalizeText(city);
+  const cleanState = normalizeText(stateValue);
+  const cleanZip = normalizeText(zip);
+
+  if (cleanCity && cleanState && cleanZip) return `${cleanCity}, ${cleanState} ${cleanZip}`;
+  if (cleanCity && cleanState) return `${cleanCity}, ${cleanState}`;
+  if (cleanCity && cleanZip) return `${cleanCity} ${cleanZip}`;
+  return [cleanCity, cleanState, cleanZip].filter(Boolean).join(" ");
+}
+
+function parseDealerAddressParts(rawAddress) {
+  const raw = normalizeText(rawAddress);
+  if (!raw) return { street: "", city: "", state: "", zip: "" };
+
+  const parts = raw.split(",").map(v => v.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const street = parts[0];
+    const cityStateZip = parts.slice(1).join(" ").replace(/\s+/g, " ").trim();
+    const match = cityStateZip.match(/^(.+?)\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/i);
+    if (match) {
+      return {
+        street,
+        city: match[1].trim(),
+        state: match[2].toUpperCase(),
+        zip: match[3]
+      };
+    }
+    return { street, city: cityStateZip, state: "", zip: "" };
+  }
+
+  return { street: raw, city: "", state: "", zip: "" };
+}
+
+function makeDealerAddress(street, city, stateValue, zip) {
+  const cleanStreet = normalizeText(street);
+  const cityStateZip = formatDealerCityStateZip(city, stateValue, zip);
+  return [cleanStreet, cityStateZip].filter(Boolean).join("\n");
+}
+
+function getDealerDisplayLines(build = null) {
+  const source = build || state;
+  const name = normalizeText(source.sellingDealer);
+  let street = normalizeText(source.dealerStreet);
+  let city = normalizeText(source.dealerCity);
+  let stateValue = normalizeText(source.dealerState);
+  let zip = normalizeText(source.dealerZip);
+  const phone = normalizeText(source.dealerPhone);
+
+  if ((!street || !city) && source.dealerAddress) {
+    const parsed = parseDealerAddressParts(source.dealerAddress);
+    street = street || parsed.street;
+    city = city || parsed.city;
+    stateValue = stateValue || parsed.state;
+    zip = zip || parsed.zip;
+  }
+
+  return [
+    name,
+    street,
+    formatDealerCityStateZip(city, stateValue, zip),
+    phone
+  ].filter(Boolean);
+}
+
 function getDealerInfoFromRow(row) {
-  if (!row) return { address: "", phone: "" };
+  if (!row) return { address: "", street: "", city: "", state: "", zip: "", phone: "" };
 
-  const street = dealerField(row, ["street", "Street", "STREET", "address", "Address", "ADDRESS"]);
-  const city = dealerField(row, ["city", "City", "CITY"]);
-  const stateValue = dealerField(row, ["state", "State", "STATE"]);
-  const zip = dealerField(row, ["zip", "Zip", "ZIP", "postal", "Postal", "POSTAL"]);
-  const phone = dealerField(row, ["phone", "Phone", "PHONE"]);
+  let street = dealerField(row, ["street", "Street", "STREET", "address", "Address", "ADDRESS", "Street Address", "STREET ADDRESS"]);
+  let city = dealerField(row, ["city", "City", "CITY"]);
+  let stateValue = dealerField(row, ["state", "State", "STATE"]);
+  let zip = dealerField(row, ["zip", "Zip", "ZIP", "postal", "Postal", "POSTAL", "Postal Code", "POSTAL CODE"]);
+  const phone = dealerField(row, ["phone", "Phone", "PHONE", "telephone", "Telephone", "TELEPHONE"]);
 
-  const cityStateZip = [city, stateValue, zip].filter(Boolean).join(" ");
-  const address = [street, cityStateZip].filter(Boolean).join(", ");
+  if ((!city || !stateValue || !zip) && street && street.includes(",")) {
+    const parsed = parseDealerAddressParts(street);
+    street = parsed.street || street;
+    city = city || parsed.city;
+    stateValue = stateValue || parsed.state;
+    zip = zip || parsed.zip;
+  }
 
-  return { address, phone };
+  const address = makeDealerAddress(street, city, stateValue, zip);
+
+  return { address, street, city, state: stateValue, zip, phone };
 }
 
 function findDealerInfo(dealerValue) {
   const key = normalizeDealerKey(dealerValue);
-  if (!key) return { address: "", phone: "" };
+  if (!key) return { address: "", street: "", city: "", state: "", zip: "", phone: "" };
 
   let row = dealerMapByCode[key] || dealerMapByName[key];
 
@@ -2060,6 +2150,10 @@ async function lookupVIN() {
 
     const dealerInfo = findDealerInfo(dealer);
     state.dealerAddress = dealerInfo.address || "";
+    state.dealerStreet = dealerInfo.street || "";
+    state.dealerCity = dealerInfo.city || "";
+    state.dealerState = dealerInfo.state || "";
+    state.dealerZip = dealerInfo.zip || "";
     state.dealerPhone = dealerInfo.phone || "";
 
     const matchedExterior = findMatchingExterior(exterior);
@@ -2731,16 +2825,13 @@ Q
   out += pdfText("BMW", 120, 748, 34, "F2");
   out += pdfText("Spec Sheet", 120, 730, 10, "F1");
   out += pdfLine(302, 720, 302, 782, 0.86, 0.7);
-  out += pdfText(dealerName, 318, 762, 12.5, "F2");
-  if (state.dealerAddress) {
-    const dealerAddressLines = wrapPdfLine(state.dealerAddress, 58).slice(0, 2);
-    dealerAddressLines.forEach((line, index) => {
-      out += pdfText(line, 318, 746 - (index * 11), 8, "F1");
+  const dealerLines = getDealerDisplayLines();
+  if (dealerLines.length) {
+    dealerLines.slice(0, 4).forEach((line, index) => {
+      out += pdfText(line, 318, 762 - (index * 12), index === 0 ? 12.5 : 8, index === 0 ? "F2" : "F1");
     });
-  }
-  if (state.dealerPhone) {
-    out += pdfText(state.dealerPhone, 318, state.dealerAddress && state.dealerAddress.length > 58 ? 724 : 733, 8, "F1");
-  } else if (!state.dealerAddress) {
+  } else {
+    out += pdfText(dealerName, 318, 762, 12.5, "F2");
     out += pdfText("Spec Sheet", 318, 733, 8, "F1");
   }
   out += `q 0.80 0 0 rg 44 707 524 2.2 re f Q\n`;
@@ -2753,8 +2844,13 @@ Q
   out += pdfText(`Model: 2011 BMW M3 Sedan`, 44, 581, 8.8, "F2");
   out += pdfText(`VIN: ${state.vin || "Not loaded"}`, 44, 567, 8.5, "F1");
   out += pdfText(`Selling Dealer: ${dealerName}`, 44, 553, 8.5, "F1");
-  out += pdfText("Engine: S65 4.0L naturally aspirated V8", 44, 539, 8.5, "F1");
-  out += pdfText(`Transmission: ${c.transmission.code} ${c.transmission.name}`, 44, 525, 8.5, "F1");
+  const dealerDetailLines = getDealerDisplayLines().slice(1, 4);
+  dealerDetailLines.slice(0, 2).forEach((line, index) => {
+    out += pdfText(line, 44, 539 - (index * 14), 8.3, "F1");
+  });
+  const engineY = dealerDetailLines.length ? 511 : 539;
+  out += pdfText("Engine: S65 4.0L naturally aspirated V8", 44, engineY, 8.5, "F1");
+  out += pdfText(`Transmission: ${c.transmission.code} ${c.transmission.name}`, 44, engineY - 14, 8.5, "F1");
 
   out += drawPdfSideProfileCar(c);
 
@@ -3083,7 +3179,12 @@ function buildWindowStickerHTML() {
   addRow(`${build.exterior.code} ${build.exterior.name}`, build.exterior.price);
   addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
   addRow(`${build.transmission.code} ${build.transmission.name}`, build.transmission.price);
-  addRow(`${build.wheel.code} ${build.wheel.name}`, c.wheelPrice, { included: c.wheelPrice === 0 });
+
+  // ZCP already lists the 19 inch Style 359M wheels in the Competition Package details.
+  // Do not print a separate ZCP wheel line on the Window Sticker.
+  if (build.wheel.code !== "ZCP") {
+    addRow(`${build.wheel.code} ${build.wheel.name}`, c.wheelPrice, { included: c.wheelPrice === 0 });
+  }
 
   build.packages.forEach(pkg => {
     let bullets = bulletsFromDesc(pkg.desc);
@@ -3157,8 +3258,7 @@ function buildWindowStickerHTML() {
     `;
   }).join("");
 
-  const dealerBlock = [build.sellingDealer, build.dealerAddress, build.dealerPhone]
-    .filter(Boolean)
+  const dealerBlock = getDealerDisplayLines(build)
     .map(esc)
     .join("<br>") || "BMW North America | Not Affiliated w. BMW AG";
 
@@ -3642,6 +3742,10 @@ $("resetBtn").onclick = () => {
   state.vin = "";
   state.sellingDealer = "";
   state.dealerAddress = "";
+  state.dealerStreet = "";
+  state.dealerCity = "";
+  state.dealerState = "";
+  state.dealerZip = "";
   state.dealerPhone = "";
   if ($("vinSearch")) $("vinSearch").value = "";
   if ($("vinSearchNote")) $("vinSearchNote").textContent = "";
