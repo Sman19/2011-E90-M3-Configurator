@@ -3070,7 +3070,7 @@ Q
   return [out, page2];
 }
 
-async function downloadBMWBuildSheetPDF() {
+async function buildBMWBuildSheetPDFBlob() {
   renderAll();
 
   const c = calculate();
@@ -3141,7 +3141,22 @@ endstream`);
 
   const blob = new Blob([pdf], { type: "application/pdf" });
   const vinPart = state.vin ? state.vin.slice(-7) : `${c.exterior.code}-${c.wheel.code}`;
-  downloadBlob(blob, `2011-BMW-M3-bmw-vspec-${makeSafeFileName(vinPart)}.pdf`);
+  const filename = `2011-BMW-M3-bmw-spec-sheet-${makeSafeFileName(vinPart)}.pdf`;
+  return { blob, filename };
+}
+
+async function downloadBMWBuildSheetPDF() {
+  const result = await buildBMWBuildSheetPDFBlob();
+  downloadBlob(result.blob, result.filename);
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 
@@ -3798,10 +3813,24 @@ $("resetBtn").onclick = () => {
 };
 
 
+function postGeneratorMessage(payload) {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(payload, "https://sman19.github.io");
+    }
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage(payload, "https://sman19.github.io");
+    }
+  } catch (err) {
+    console.error("Unable to post generator message", err);
+  }
+}
+
 async function runAutoActionFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const vinFromUrl = normalizeVIN(params.get("vin") || params.get("last7") || "");
   const autoMode = normalizeText(params.get("auto") || "").toLowerCase();
+  const handoffMode = params.get("handoff") === "1";
 
   if (!vinFromUrl) return;
 
@@ -3809,29 +3838,52 @@ async function runAutoActionFromUrl() {
   if (input) input.value = vinFromUrl;
 
   const loaded = await lookupVIN();
-  if (!loaded) return;
+  if (!loaded) {
+    if (handoffMode) postGeneratorMessage({ type: "e90-document-error", auto: autoMode, vin: vinFromUrl });
+    return;
+  }
 
   // Give the UI one paint cycle after VIN decode before generating documents.
   await new Promise(resolve => setTimeout(resolve, 250));
 
   if (autoMode === "spec" || autoMode === "bmw-spec" || autoMode === "bmw_spec") {
     const btn = $("copyBuildBtn");
-    if (btn) btn.textContent = "Downloading...";
+    if (btn) btn.textContent = "Generating...";
     try {
-      await downloadBMWBuildSheetPDF();
+      const result = await buildBMWBuildSheetPDFBlob();
+      if (handoffMode) {
+        const dataUrl = await blobToDataURL(result.blob);
+        postGeneratorMessage({
+          type: "e90-pdf-data-url",
+          auto: "spec",
+          vin: state.vin || vinFromUrl,
+          filename: result.filename,
+          dataUrl
+        });
+      } else {
+        downloadBlob(result.blob, result.filename);
+      }
       if (btn) btn.textContent = "Downloaded";
     } catch (err) {
       console.error(err);
       if (btn) btn.textContent = "PDF Error";
-      alert("BMW Spec Sheet could not be generated. Check the browser console for details.");
+      if (handoffMode) postGeneratorMessage({ type: "e90-document-error", auto: "spec", vin: state.vin || vinFromUrl });
+      else alert("BMW Spec Sheet could not be generated. Check the browser console for details.");
     }
     return;
   }
 
   if (autoMode === "sticker" || autoMode === "window-sticker" || autoMode === "window_sticker") {
+    const stickerHtml = buildWindowStickerHTML();
+
+    if (handoffMode) {
+      postGeneratorMessage({ type: "e90-window-sticker-html", auto: "sticker", vin: state.vin || vinFromUrl, html: stickerHtml });
+      return;
+    }
+
     // Render in this same tab so mobile browsers do not block it as a popup.
     document.open();
-    document.write(buildWindowStickerHTML());
+    document.write(stickerHtml);
     document.close();
   }
 }
