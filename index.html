@@ -755,7 +755,16 @@ textarea {
       </div>
 
       <div class="vin-box">
-        <input id="vinSearch" placeholder="Enter VIN or Last 7..." autocomplete="off">
+        <input
+          id="vinSearch"
+          placeholder="Enter VIN or Last 7..."
+          autocomplete="off"
+          autocapitalize="characters"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="text"
+          style="text-transform: uppercase;"
+        >
         <button id="vinSearchBtn">Load VIN</button>
       </div>
 
@@ -1268,6 +1277,30 @@ const state = {
 };
 
 const $ = id => document.getElementById(id);
+
+function setupVinSearchUppercase() {
+  const vinSearchInput = $("vinSearch");
+  if (!vinSearchInput) return;
+
+  vinSearchInput.addEventListener("input", function () {
+    const start = this.selectionStart;
+    const end = this.selectionEnd;
+    const upperValue = this.value.toUpperCase();
+
+    if (this.value !== upperValue) {
+      this.value = upperValue;
+      if (typeof start === "number" && typeof end === "number") {
+        this.setSelectionRange(start, end);
+      }
+    }
+  });
+
+  vinSearchInput.addEventListener("paste", function () {
+    setTimeout(() => {
+      this.value = this.value.toUpperCase();
+    }, 0);
+  });
+}
 const money = n => Number(n || 0).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
 const findByCode = (list, code) => list.find(item => item.code === code);
 
@@ -3749,6 +3782,7 @@ $("resetBtn").onclick = () => {
   renderAll();
 };
 
+setupVinSearchUppercase();
 renderAll();
 loadMPerformanceCSVFromUrl();
 </script>
