@@ -893,8 +893,8 @@ html.silent-generator-mode body::before {
       <div class="section">
         <h2>Base MSRP</h2>
         <select id="msrpSelect" class="msrp-select" aria-label="Base MSRP">
-          <option value="55900">$55,900 — 2011 Build</option>
           <option value="55400">$55,400 — 2010 Build</option>
+          <option value="55900">$55,900 — 2011 Build</option>
         </select>
         <p class="note">Base MSRP depends on build timing, not transmission.</p>
       </div>
@@ -1156,8 +1156,8 @@ let dealerMapByCode = {};
 
 const DATA = {
   baseMSRPOptions: [
-    { label:"2011 Build", value:55900 },
-    { label:"2010 Build", value:55400 }
+    { label:"2010 Build", value:55400 },
+    { label:"2011 Build", value:55900 }
   ],
   gasGuzzler: 1300,
   destination: 875,
@@ -1826,6 +1826,70 @@ function findCSVValue(row, possibleNames) {
   return "";
 }
 
+function parseMSRPMoney(value) {
+  const cleaned = String(value || "").replace(/[^0-9.-]/g, "");
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function csvHasValue(row, possibleNames) {
+  const wanted = possibleNames.map(name => String(name).trim().toLowerCase());
+  for (const key of Object.keys(row || {})) {
+    const cleanKey = String(key || "").trim().toLowerCase();
+    if (wanted.includes(cleanKey) && normalizeText(row[key]) !== "") return true;
+  }
+  return false;
+}
+
+function detectBaseMSRPFromCSVRow(row, packageText = "") {
+  const packageTokens = normalizeText(packageText)
+    .split(/[,\s]+/)
+    .map(token => token.trim().toUpperCase())
+    .filter(Boolean);
+
+  const hasMSRP1Token = packageTokens.includes("MSRP.1");
+  const hasMSRPToken = packageTokens.includes("MSRP");
+
+  const hasMSRP1Column = csvHasValue(row, [
+    "MSRP.1",
+    "MSRP_1",
+    "MSRP 1",
+    "BASE MSRP.1",
+    "Base MSRP.1",
+    "BaseMSRP.1",
+    "BASE_MSRP.1"
+  ]);
+
+  const hasMSRPColumn = csvHasValue(row, [
+    "MSRP",
+    "BASE MSRP",
+    "Base MSRP",
+    "BaseMSRP",
+    "BASE_MSRP"
+  ]);
+
+  // Final safety net: if the CSV parser creates duplicate headers or a sheet export
+  // shifts the exact name, still honor an actual $55,400 value before $55,900.
+  const rowValues = Object.entries(row || {})
+    .filter(([key]) => !String(key).startsWith("__COL_"))
+    .map(([, value]) => parseMSRPMoney(value));
+
+  if (hasMSRP1Token || hasMSRP1Column || rowValues.includes(55400)) return 55400;
+  if (hasMSRPToken || hasMSRPColumn || rowValues.includes(55900)) return 55900;
+
+  return state.baseMSRP;
+}
+
+function applyBaseMSRPFromPackageText(packageText) {
+  const tokens = normalizeText(packageText)
+    .split(/[,\s]+/)
+    .map(token => token.trim().toUpperCase())
+    .filter(Boolean);
+
+  if (tokens.includes("MSRP.1")) state.baseMSRP = 55400;
+  else if (tokens.includes("MSRP")) state.baseMSRP = 55900;
+}
+
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -2222,101 +2286,10 @@ async function lookupVIN() {
     const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
     const dealer = findCSVValue(match, ["DEALER NAME", "Dealer Name", "DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER", "__COL_14"]);
 
-    const msrp55400Value =
-      match["MSRP.1"] ||
-      match["MSRP_1"] ||
-      match["MSRP 1"] ||
-      match["BASE MSRP.1"] ||
-      match["Base MSRP.1"] ||
-      match["BaseMSRP.1"] ||
-      match["BASE_MSRP.1"] ||
-      findCSVValue(match, [
-        "MSRP.1",
-        "MSRP_1",
-        "MSRP 1",
-        "BASE MSRP.1",
-        "Base MSRP.1",
-        "BaseMSRP.1",
-        "BASE_MSRP.1"
-      ]);
-
-    const msrp55900Value =
-      match["MSRP"] ||
-      match["BASE MSRP"] ||
-      match["Base MSRP"] ||
-      match["BaseMSRP"] ||
-      match["BASE_MSRP"] ||
-      findCSVValue(match, [
-        "MSRP",
-        "BASE MSRP",
-        "Base MSRP",
-        "BaseMSRP",
-        "BASE_MSRP"
-      ]);
-
-    // Package-code lookup needs to support both the old fixed-column CSV
-    // and newer named-column CSV exports from the database page.
-    // Column H was the original package-code column; named fields are preferred
-    // so the silent PDF generator does not fall back to a base configuration.
-    const packageTextParts = [
-      findCSVValue(match, [
-        "Package Codes",
-        "PACKAGE CODES",
-        "PACKAGES",
-        "Packages",
-        "Package",
-        "Options",
-        "OPTION CODES",
-        "Option Codes"
-      ]),
-      csvColumn(match, 8),
-      csvColumn(match, 12)
-    ].filter(Boolean);
-
-    const packageText = [...new Set(packageTextParts)].join(",");
-
-    state.vin = vin;
-    state.sellingDealer = dealer;
-
-    const dealerInfo = findDealerInfo(dealer);
-    state.dealerAddress = dealerInfo.address || "";
-    state.dealerStreet = dealerInfo.street || "";
-    state.dealerCity = dealerInfo.city || "";
-    state.dealerState = dealerInfo.state || "";
-    state.dealerZip = dealerInfo.zip || "";
-    state.dealerPhone = dealerInfo.phone || "";
-
-    const matchedExterior = findMatchingExterior(exterior);
-    if (matchedExterior) state.exterior = matchedExterior.code;
-
-    const matchedInterior = findMatchingInterior(interior);
-    if (matchedInterior) state.interior = matchedInterior.code;
-
-    const packageTokens = packageText
-      .split(/[,\s]+/)
-      .map(token => token.trim().toUpperCase())
-      .filter(Boolean);
-
-    function hasCSVCellValue(value) {
-      return normalizeText(value) !== "";
-    }
-
-    // Base MSRP column rule:
+    // Base MSRP must follow the CSV column marker:
     // MSRP   = $55,900
     // MSRP.1 = $55,400
-    // Use the actual CSV column first. Package-token fallback is only for older CSV exports.
-    const hasMSRP55900 = hasCSVCellValue(msrp55900Value) || packageTokens.includes("MSRP");
-    const hasMSRP55400 = hasCSVCellValue(msrp55400Value) || packageTokens.includes("MSRP.1");
-
-    if (hasCSVCellValue(msrp55900Value)) {
-      state.baseMSRP = 55900;
-    } else if (hasCSVCellValue(msrp55400Value)) {
-      state.baseMSRP = 55400;
-    } else if (packageTokens.includes("MSRP")) {
-      state.baseMSRP = 55900;
-    } else if (packageTokens.includes("MSRP.1")) {
-      state.baseMSRP = 55400;
-    }
+    state.baseMSRP = detectBaseMSRPFromCSVRow(match, packageText);
 
     applyPackageCodes(packageText);
     enforceLockouts();
@@ -3938,6 +3911,7 @@ async function runAutoActionFromUrl() {
   // when the configurator CSV has shifted columns or missing package headers.
   const packageOverride = normalizeText(params.get("packages") || params.get("packageCodes") || "");
   if (packageOverride) {
+    applyBaseMSRPFromPackageText(packageOverride);
     applyPackageCodes(packageOverride);
     enforceLockouts();
     renderAll();
