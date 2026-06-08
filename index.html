@@ -1322,6 +1322,7 @@ const state = {
   options: new Set(),
   mPerformanceParts: new Set(),
   premiumTrim: "",
+  individualPaint: false,
   showAllInteriors: false,
   vin: "",
   sellingDealer: "",
@@ -1450,8 +1451,22 @@ function calculate() {
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
   const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + item.price, 0);
-  const total = state.baseMSRP + DATA.destination + DATA.gasGuzzler + s.exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
-  return { ...s, wheelPrice, packageTotal, optionTotal, mPerformanceTotal, total };
+
+  // VIN/package-code safety rule:
+  // If the CSV package text contains IND, treat the selected paint as BMW Individual Paint.
+  // This forces the $5,000 Individual Paint charge into the on-screen total, BMW Spec Sheet PDF,
+  // and Window Sticker total MSRP, even when the exterior color code is a custom Individual code.
+  const individualPaintPrice = state.individualPaint ? 5000 : Number(s.exterior.price || 0);
+  const exterior = {
+    ...s.exterior,
+    price: individualPaintPrice,
+    name: state.individualPaint && s.exterior.code !== "IND"
+      ? `${s.exterior.name} (BMW Individual Paint)`
+      : s.exterior.name
+  };
+
+  const total = state.baseMSRP + DATA.destination + DATA.gasGuzzler + exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
+  return { ...s, exterior, wheelPrice, packageTotal, optionTotal, mPerformanceTotal, total };
 }
 
 function getExteriorPhoto(exteriorCode, wheelCode) {
@@ -1736,7 +1751,7 @@ function renderSummary() {
   updateCarPreview(c);
 
   $("previewCaption").textContent = activeView === "interior" ? `${c.interior.code} ${c.interior.name} | ${hasNavigationSelected() ? "Navigation" : "Slicktop / No Navigation"} | ${c.transmission.code === "2MK" ? "M DCT" : "6-Speed Manual"}` : `Shown with ${c.wheel.name} (${c.wheel.desc})`;
-  $("indLabel").textContent = c.exterior.code === "IND" ? "BMW Individual Paint    " + money(5000) : "";
+  $("indLabel").textContent = state.individualPaint || c.exterior.code === "IND" ? "BMW Individual Paint    " + money(5000) : "";
 
   const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice + c.mPerformanceTotal;
   $("summaryLines").innerHTML = `
@@ -2219,6 +2234,7 @@ function applyPackageCodes(packageText) {
   state.packages.clear();
   state.options.clear();
   state.mPerformanceParts.clear();
+  state.individualPaint = codeExistsInText(text, "IND");
 
   [...DATA.packages, ...DATA.standaloneOptions, ...DATA.mPerformanceParts].forEach(item => {
     const code = String(item.code || "").toUpperCase();
@@ -2297,7 +2313,7 @@ async function lookupVIN() {
 
     state.vin = vin || input;
 
-    const matchedExterior = findMatchingExterior(exterior || packageText);
+    const matchedExterior = findMatchingExterior(exterior) || findMatchingExterior(packageText);
     if (matchedExterior) state.exterior = matchedExterior.code;
 
     const matchedInterior = findMatchingInterior(interior || packageText);
@@ -2810,7 +2826,7 @@ function getInstalledItems(c) {
   if (c.exterior.price > 0) {
     installed.push({
       ...c.exterior,
-      desc:c.exterior.code === "IND" ? "BMW Individual exterior paint selection" : "Metallic exterior paint",
+      desc:state.individualPaint || c.exterior.code === "IND" ? "BMW Individual exterior paint selection" : "Metallic exterior paint",
       type:"FIO"
     });
   }
@@ -3940,6 +3956,7 @@ $("resetBtn").onclick = () => {
   state.packages.clear();
   state.options.clear();
   state.premiumTrim = "";
+  state.individualPaint = false;
   state.showAllInteriors = false;
   state.vin = "";
   state.sellingDealer = "";
