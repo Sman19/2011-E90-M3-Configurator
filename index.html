@@ -2282,9 +2282,35 @@ async function lookupVIN() {
     }
 
     const vin = findCSVValue(match, ["VIN", "Vin", "vin"]);
-    const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT"]);
-    const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY"]);
-    const dealer = findCSVValue(match, ["DEALER NAME", "Dealer Name", "DEALER", "Dealer", "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER", "__COL_14"]);
+    const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT", "__COL_5"]);
+    const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY", "__COL_6"]);
+    const packageText = findCSVValue(match, [
+      "Packages", "PACKAGES", "Package", "PACKAGE",
+      "Options", "OPTIONS", "Option Codes", "OPTION CODES",
+      "__COL_8"
+    ]);
+    const dealer = findCSVValue(match, [
+      "DEALER NAME", "Dealer Name", "DEALER", "Dealer",
+      "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER",
+      "__COL_14"
+    ]);
+
+    state.vin = vin || input;
+
+    const matchedExterior = findMatchingExterior(exterior || packageText);
+    if (matchedExterior) state.exterior = matchedExterior.code;
+
+    const matchedInterior = findMatchingInterior(interior || packageText);
+    if (matchedInterior) state.interior = matchedInterior.code;
+
+    state.sellingDealer = dealer || "";
+    const dealerInfo = findDealerInfo(dealer);
+    state.dealerAddress = dealerInfo.address || "";
+    state.dealerStreet = dealerInfo.street || "";
+    state.dealerCity = dealerInfo.city || "";
+    state.dealerState = dealerInfo.state || "";
+    state.dealerZip = dealerInfo.zip || "";
+    state.dealerPhone = dealerInfo.phone || "";
 
     // Base MSRP must follow the CSV column marker:
     // MSRP   = $55,900
