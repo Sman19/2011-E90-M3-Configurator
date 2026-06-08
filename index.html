@@ -2763,8 +2763,40 @@ ${stream}
 endstream`;
 }
 
+function getPackageSortIndex(code) {
+  const order = ["ZCP", "ZCV", "ZCW", "ZPP", "ZP2", "ZP3", "ZTP"];
+  const index = order.indexOf(String(code || "").toUpperCase());
+  return index === -1 ? 999 : index;
+}
+
+function getOptionSortIndex(code) {
+  const order = [
+    "302", "322", "403", "417", "465", "494", "507", "5AC",
+    "609", "639", "655", "6FL", "6NF", "6NR", "752", "771", "XE2", "XE8"
+  ];
+  const index = order.indexOf(String(code || "").toUpperCase());
+  return index === -1 ? 999 : index;
+}
+
+function sortedPackagesForPrint(packages) {
+  return [...(packages || [])].sort((a, b) => {
+    const diff = getPackageSortIndex(a.code) - getPackageSortIndex(b.code);
+    return diff || String(a.code || "").localeCompare(String(b.code || ""));
+  });
+}
+
+function sortedRemainingOptionsForPrint(options) {
+  return [...(options || [])]
+    .filter(item => String(item.code || "").toUpperCase() !== "223")
+    .sort((a, b) => {
+      const diff = getOptionSortIndex(a.code) - getOptionSortIndex(b.code);
+      return diff || String(a.code || "").localeCompare(String(b.code || ""));
+    });
+}
+
 function getInstalledItems(c) {
   const installed = [];
+  const selected223 = (c.options || []).find(item => String(item.code || "").toUpperCase() === "223");
 
   // Always show base model first in the Installed Packages & Accessories section.
   installed.push({
@@ -2791,6 +2823,14 @@ function getInstalledItems(c) {
     });
   }
 
+  // BMW-style print order:
+  // Packages first, then 223, 2MK, 2MT, then remaining standalone options.
+  installed.push(...sortedPackagesForPrint(c.packages).map(item => ({...item, type:"FIO"})));
+
+  if (selected223) {
+    installed.push({...selected223, type:"FIO"});
+  }
+
   if (c.transmission.price > 0) {
     installed.push({
       ...c.transmission,
@@ -2808,8 +2848,7 @@ function getInstalledItems(c) {
     });
   }
 
-  installed.push(...c.packages.map(item => ({...item, type:"FIO"})));
-  installed.push(...c.options.map(item => ({...item, type:"FIO"})));
+  installed.push(...sortedRemainingOptionsForPrint(c.options).map(item => ({...item, type:"FIO"})));
   installed.push(...c.mPerformanceParts.map(item => ({...item, type:"MP"})));
 
   return installed;
@@ -3327,15 +3366,10 @@ function buildWindowStickerHTML() {
   addRow("Base MSRP", build.baseMSRP, { className: "base-row" });
   addRow(`${build.exterior.code} ${build.exterior.name}`, build.exterior.price);
   addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
-  addRow(`${build.transmission.code} ${build.transmission.name}`, build.transmission.price);
 
-  // ZCP already lists the 19 inch Style 359M wheels in the Competition Package details.
-  // Do not print a separate ZCP wheel line on the Window Sticker.
-  if (build.wheel.code !== "ZCP") {
-    addRow(`${build.wheel.code} ${build.wheel.name}`, c.wheelPrice, { included: c.wheelPrice === 0 });
-  }
-
-  build.packages.forEach(pkg => {
+  // BMW-style print order:
+  // Packages first, then 223, 2MK, 2MT, then remaining standalone options.
+  sortedPackagesForPrint(build.packages).forEach(pkg => {
     let bullets = bulletsFromDesc(pkg.desc);
 
     if (["ZPP", "ZP2", "ZP3"].includes(pkg.code)) {
@@ -3371,7 +3405,26 @@ function buildWindowStickerHTML() {
     });
   });
 
-  build.standaloneOptions.forEach(opt => {
+  const option223 = build.standaloneOptions.find(opt => String(opt.code || "").toUpperCase() === "223");
+  if (option223) {
+    addRow(`${option223.code} ${option223.name}`, option223.price, {
+      code: option223.code,
+      bullets: bulletsFromDesc(option223.desc),
+      className: "option-row"
+    });
+  }
+
+  if (Number(build.transmission.price || 0) > 0) {
+    addRow(`${build.transmission.code} ${build.transmission.name}`, build.transmission.price);
+  }
+
+  // ZCP already lists the 19 inch Style 359M wheels in the Competition Package details.
+  // Do not print a separate ZCP wheel line on the Window Sticker.
+  if (build.wheel.code !== "ZCP" && Number(c.wheelPrice || 0) > 0) {
+    addRow(`${build.wheel.code} ${build.wheel.name}`, c.wheelPrice, { included: c.wheelPrice === 0 });
+  }
+
+  sortedRemainingOptionsForPrint(build.standaloneOptions).forEach(opt => {
     addRow(`${opt.code} ${opt.name}`, opt.price, {
       code: opt.code,
       bullets: bulletsFromDesc(opt.desc),
