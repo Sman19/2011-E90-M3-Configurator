@@ -893,8 +893,8 @@ html.silent-generator-mode body::before {
       <div class="section">
         <h2>Base MSRP</h2>
         <select id="msrpSelect" class="msrp-select" aria-label="Base MSRP">
-          <option value="55400">$55,400 — 2010 Build</option>
           <option value="55900">$55,900 — 2011 Build</option>
+          <option value="55400">$55,400 — 2010 Build</option>
         </select>
         <p class="note">Base MSRP depends on build timing, not transmission.</p>
       </div>
@@ -1156,8 +1156,8 @@ let dealerMapByCode = {};
 
 const DATA = {
   baseMSRPOptions: [
-    { label:"2010 Build", value:55400 },
-    { label:"2011 Build", value:55900 }
+    { label:"2011 Build", value:55900 },
+    { label:"2010 Build", value:55400 }
   ],
   gasGuzzler: 1300,
   destination: 875,
@@ -1317,7 +1317,7 @@ const state = {
   interior: "NCSW",
   transmission: "6MT",
   wheel: "STD",
-  baseMSRP: 55400,
+  baseMSRP: 55900,
   packages: new Set(),
   options: new Set(),
   mPerformanceParts: new Set(),
@@ -2297,19 +2297,25 @@ async function lookupVIN() {
       .map(token => token.trim().toUpperCase())
       .filter(Boolean);
 
-    const hasPackageMSRP55400 = packageTokens.includes("MSRP.1");
-    const hasPackageMSRP55900 = packageTokens.includes("MSRP");
+    function hasCSVCellValue(value) {
+      return normalizeText(value) !== "";
+    }
 
-    const hasMSRP55400 = hasPackageMSRP55400 || normalizeText(msrp55400Value) !== "";
-    const hasMSRP55900 = hasPackageMSRP55900 || normalizeText(msrp55900Value) !== "";
+    // Base MSRP column rule:
+    // MSRP   = $55,900
+    // MSRP.1 = $55,400
+    // Use the actual CSV column first. Package-token fallback is only for older CSV exports.
+    const hasMSRP55900 = hasCSVCellValue(msrp55900Value) || packageTokens.includes("MSRP");
+    const hasMSRP55400 = hasCSVCellValue(msrp55400Value) || packageTokens.includes("MSRP.1");
 
-    // MSRP.1 gets priority because it represents the $55,400 2010-build base MSRP.
-    // This checks the package-code text first, then falls back to the MSRP.1 column value.
-    // If MSRP.1 is not present, it falls back to MSRP for the $55,900 2011-build base MSRP.
-    if (hasMSRP55400) {
-      state.baseMSRP = 55400;
-    } else if (hasMSRP55900) {
+    if (hasCSVCellValue(msrp55900Value)) {
       state.baseMSRP = 55900;
+    } else if (hasCSVCellValue(msrp55400Value)) {
+      state.baseMSRP = 55400;
+    } else if (packageTokens.includes("MSRP")) {
+      state.baseMSRP = 55900;
+    } else if (packageTokens.includes("MSRP.1")) {
+      state.baseMSRP = 55400;
     }
 
     applyPackageCodes(packageText);
@@ -3878,7 +3884,7 @@ $("resetBtn").onclick = () => {
   state.interior = "NCSW";
   state.transmission = "6MT";
   state.wheel = "STD";
-  state.baseMSRP = 55400;
+  state.baseMSRP = 55900;
   state.packages.clear();
   state.options.clear();
   state.premiumTrim = "";
