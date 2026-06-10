@@ -984,36 +984,33 @@ function getAuthProUsername() {
 }
 
 function sendPdfAlert(documentType, vinOverride = "") {
-  const vin = String(vinOverride || (typeof state !== "undefined" && state.vin) || "").trim();
+  const vin = String(
+    vinOverride || (typeof state !== "undefined" && state.vin) || ""
+  ).trim();
 
   let cleanDocumentType = String(documentType || "").trim();
 
-  // Failsafe: if the caller forgot to pass the document type, infer it from the clicked button or auto mode.
+  // Fallback detection in case a button calls sendPdfAlert() without a document name.
   if (!cleanDocumentType || cleanDocumentType === "Unknown") {
-    const activeId = document.activeElement && document.activeElement.id ? document.activeElement.id : "";
-    const params = new URLSearchParams(window.location.search);
-    const autoMode = String(params.get("auto") || "").toLowerCase();
-
-    if (activeId === "copyBuildBtn" || autoMode.includes("spec") || autoMode.includes("build")) {
-      cleanDocumentType = "BMW Spec Sheet";
-    } else if (activeId === "windowStickerBtn" || autoMode.includes("sticker")) {
-      cleanDocumentType = "Window Sticker";
-    } else {
-      cleanDocumentType = "Unknown";
-    }
+    try {
+      const activeId = document.activeElement && document.activeElement.id;
+      if (activeId === "copyBuildBtn") cleanDocumentType = "BMW Spec Sheet";
+      if (activeId === "windowStickerBtn") cleanDocumentType = "Sticker";
+    } catch (err) {}
   }
+
+  if (!cleanDocumentType) cleanDocumentType = "Unknown";
 
   const payload = {
     username: getAuthProUsername(),
     vin: vin || "Unknown",
 
-    // Apps Script should read this exact field:
+    // Multiple names so Apps Script / Sheets can read it no matter which field is used.
     document: cleanDocumentType,
-
-    // Extra backups:
     documentType: cleanDocumentType,
     type: cleanDocumentType,
     doc: cleanDocumentType,
+    document_name: cleanDocumentType,
     button: cleanDocumentType,
 
     page: "2011 E90 M3 Configurator",
@@ -1021,15 +1018,22 @@ function sendPdfAlert(documentType, vinOverride = "") {
   };
 
   try {
-    const alertUrl =
-      PDF_ALERT_WEBHOOK_URL +
-      "?document=" + encodeURIComponent(cleanDocumentType) +
-      "&documentType=" + encodeURIComponent(cleanDocumentType) +
-      "&type=" + encodeURIComponent(cleanDocumentType) +
-      "&doc=" + encodeURIComponent(cleanDocumentType) +
-      "&vin=" + encodeURIComponent(payload.vin) +
-      "&username=" + encodeURIComponent(payload.username) +
-      "&page=" + encodeURIComponent(payload.page);
+    const query = new URLSearchParams({
+      document: cleanDocumentType,
+      documentType: cleanDocumentType,
+      type: cleanDocumentType,
+      doc: cleanDocumentType,
+      document_name: cleanDocumentType,
+      button: cleanDocumentType,
+      vin: payload.vin,
+      username: payload.username,
+      page: payload.page,
+      timestamp: payload.timestamp
+    });
+
+    const alertUrl = PDF_ALERT_WEBHOOK_URL + "?" + query.toString();
+
+    console.log("PDF ALERT SENT:", payload);
 
     fetch(alertUrl, {
       method: "POST",
@@ -3978,7 +3982,7 @@ function buildWindowStickerHTML() {
 }
 
 function generateWindowSticker() {
-  sendPdfAlert("Window Sticker", state.vin);
+  sendPdfAlert("Sticker", state.vin);
 
   const popup = window.open("", "_blank");
   if (!popup) {
@@ -4130,7 +4134,7 @@ async function runAutoActionFromUrl() {
 
   if (autoMode === "sticker" || autoMode === "window-sticker" || autoMode === "window_sticker") {
     const stickerHtml = buildWindowStickerHTML();
-    sendPdfAlert("Window Sticker", state.vin || vinFromUrl);
+    sendPdfAlert("Sticker", state.vin || vinFromUrl);
 
     if (handoffMode) {
       postGeneratorMessage({ type: "e90-window-sticker-html", auto: "sticker", vin: state.vin || vinFromUrl, html: stickerHtml });
