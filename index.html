@@ -986,10 +986,18 @@ function getAuthProUsername() {
 function sendPdfAlert(documentType, vinOverride = "") {
   const vin = String(vinOverride || (typeof state !== "undefined" && state.vin) || "").trim();
 
+  const cleanDocumentType = String(documentType || "").trim() || "Unknown";
+
   const payload = {
     username: getAuthProUsername(),
     vin: vin || "Unknown",
-    document: documentType || "Unknown",
+
+    // Send the document type in multiple field names so Google Apps Script
+    // can read it no matter which column/script version is active.
+    document: cleanDocumentType,
+    documentType: cleanDocumentType,
+    type: cleanDocumentType,
+
     page: "2011 E90 M3 Configurator",
     timestamp: new Date().toISOString()
   };
@@ -998,6 +1006,9 @@ function sendPdfAlert(documentType, vinOverride = "") {
     fetch(PDF_ALERT_WEBHOOK_URL, {
       method: "POST",
       mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
       body: JSON.stringify(payload)
     }).catch(err => console.error("PDF alert failed:", err));
   } catch (err) {
