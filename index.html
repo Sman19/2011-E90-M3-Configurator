@@ -985,25 +985,31 @@ function getAuthProUsername() {
 
 function sendPdfAlert(documentType, vinOverride = "") {
   const vin = String(vinOverride || (typeof state !== "undefined" && state.vin) || "").trim();
-
   const cleanDocumentType = String(documentType || "").trim() || "Unknown";
 
   const payload = {
     username: getAuthProUsername(),
     vin: vin || "Unknown",
-
-    // Send the document type in multiple field names so Google Apps Script
-    // can read it no matter which column/script version is active.
     document: cleanDocumentType,
     documentType: cleanDocumentType,
     type: cleanDocumentType,
-
     page: "2011 E90 M3 Configurator",
     timestamp: new Date().toISOString()
   };
 
   try {
-    fetch(PDF_ALERT_WEBHOOK_URL, {
+    // Put the document type in BOTH the URL and body. This prevents Google Apps Script
+    // from showing "Unknown" even if the body is parsed differently by a deployment.
+    const alertUrl =
+      PDF_ALERT_WEBHOOK_URL +
+      "?document=" + encodeURIComponent(cleanDocumentType) +
+      "&documentType=" + encodeURIComponent(cleanDocumentType) +
+      "&type=" + encodeURIComponent(cleanDocumentType) +
+      "&vin=" + encodeURIComponent(payload.vin) +
+      "&username=" + encodeURIComponent(payload.username) +
+      "&page=" + encodeURIComponent(payload.page);
+
+    fetch(alertUrl, {
       method: "POST",
       mode: "no-cors",
       headers: {
