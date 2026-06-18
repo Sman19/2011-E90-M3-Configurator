@@ -1533,7 +1533,7 @@ function selectedItems() {
 
 function calculate() {
   const s = selectedItems();
-  const wheelPrice = (s.wheel.code === "2MT" || s.wheel.code === "2MT.1") ? s.wheel.price  : 0;
+  const wheelPrice = (s.wheel.code === "2MT" || s.wheel.code === "2MT.1") ? s.wheel.price : 0;
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
   const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + item.price, 0);
@@ -2322,11 +2322,17 @@ function csvColumn(row, index) {
 }
 
 function codeExistsInText(text, code) {
-  const escaped = String(code || "")
-    .toUpperCase()
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const normalizedText = String(text || "").toUpperCase();
+  const normalizedCode = String(code || "").toUpperCase();
 
-  return new RegExp(`(^|[^A-Z0-9])${escaped}([^A-Z0-9]|$)`).test(text);
+  if (!normalizedCode) return false;
+
+  const escaped = normalizedCode.replace(/[.*+?^${}()|[\]\]/g, "\$&");
+
+  // Important:
+  // 2MT should NOT match 2MT.1.
+  // 2MT.1 should only match the exact 2MT.1 package code.
+  return new RegExp(`(^|[^A-Z0-9.])${escaped}([^A-Z0-9.]|$)`).test(normalizedText);
 }
 
 function applyPackageCodes(packageText) {
@@ -2355,6 +2361,7 @@ function applyPackageCodes(packageText) {
   else state.transmission = "6MT";
 
   if (state.packages.has("ZCP")) state.wheel = "ZCP";
+  else if (codeExistsInText(text, "2MT.1")) state.wheel = "2MT.1";
   else if (codeExistsInText(text, "2MT")) state.wheel = "2MT";
   else state.wheel = "STD";
 
