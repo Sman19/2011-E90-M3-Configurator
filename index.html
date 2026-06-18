@@ -1558,7 +1558,13 @@ function calculate() {
 function getExteriorPhoto(exteriorCode, wheelCode) {
   const byColor = EXTERIOR_PHOTOS[exteriorCode];
   if (!byColor) return null;
-  return byColor[wheelCode] || byColor.STD || null;
+
+  return (
+    byColor[wheelCode] ||
+    (wheelCode === "2MT.1" ? byColor["2MT"] : null) ||
+    byColor.STD ||
+    null
+  );
 }
 
 function updateCarPreview(c) {
