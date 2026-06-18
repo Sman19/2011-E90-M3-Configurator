@@ -1533,7 +1533,7 @@ function selectedItems() {
 
 function calculate() {
   const s = selectedItems();
-  const wheelPrice = s.wheel.code === "2MT" ? s.wheel.price : 0;
+  const wheelPrice = (s.wheel.code === "2MT" || s.wheel.code === "2MT.1") ? s.wheel.price  : 0;
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
   const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
   const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + item.price, 0);
