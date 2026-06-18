@@ -1609,8 +1609,17 @@ function updateCarPreview(c) {
 
 function setWheel(code) {
   state.wheel = code;
+
   if (code === "ZCP") state.packages.add("ZCP");
-  if (code === "STD" || code === "2MT") state.packages.delete("ZCP");
+
+  if (
+    code === "STD" ||
+    code === "2MT" ||
+    code === "2MT.1"
+  ) {
+    state.packages.delete("ZCP");
+  }
+
   enforceLockouts();
   renderAll();
 }
