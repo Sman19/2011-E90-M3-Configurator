@@ -2321,15 +2321,39 @@ function csvColumn(row, index) {
   return normalizeText(row[`__COL_${index}`]);
 }
 
+function expandPackageCodeShorthand(text) {
+  return String(text || "")
+    .toUpperCase()
+    .replace(/\b(ZPP|ZP2|ZP3)\.(\d)(?:,\.(\d))?(?:,\.(\d))?/g, function(match, prefix, d1, d2, d3) {
+      const parts = [`${prefix}.${d1}`];
+      if (d2) parts.push(`${prefix}.${d2}`);
+      if (d3) parts.push(`${prefix}.${d3}`);
+      return parts.join(",");
+    });
+}
+
+function packageCodeTokens(text) {
+  return expandPackageCodeShorthand(text)
+    .split(",")
+    .map(part => part.trim().toUpperCase())
+    .filter(Boolean);
+}
+
 function codeExistsInText(text, code) {
   const normalizedCode = String(code || "").trim().toUpperCase();
   if (!normalizedCode) return false;
 
-  return String(text || "")
-    .toUpperCase()
-    .split(",")
-    .map(part => part.trim())
-    .includes(normalizedCode);
+  const tokens = packageCodeTokens(text);
+
+  if (tokens.includes(normalizedCode)) return true;
+
+  // Premium Package trim codes in the CSV should still trigger the base package.
+  // Example: ZPP.3 should show/price ZPP Premium Package in the PDF and Window Sticker.
+  if (["ZPP", "ZP2", "ZP3"].includes(normalizedCode)) {
+    return tokens.some(token => token.startsWith(`${normalizedCode}.`));
+  }
+
+  return false;
 }
 
 function applyPackageCodes(packageText) {
