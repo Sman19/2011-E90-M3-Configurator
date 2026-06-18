@@ -6,6 +6,8 @@
 <title>2011 BMW E90 M3 Sedan Configurator - Window Sticker + BMW Spec Sheet PDF</title>
 <link id="favicon" rel="icon" type="image/svg+xml">
 <script type="text/javascript" src="https://www.authpro.com/auth/sman201/?action=pp"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.css">
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.js"></script>
 
 <script>
 (function () {
@@ -322,6 +324,40 @@ button, input { font: inherit; }
 }
 
 .interior-photo.show { display:block; }
+
+.interior-360-viewer {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #111;
+  z-index: 1;
+}
+
+.interior-360-viewer.show {
+  display: block;
+}
+
+.interior-360-viewer .pnlm-container {
+  background: #111 !important;
+}
+
+.interior-360-placeholder {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 5;
+  color: #e9f4ff;
+  background: rgba(5, 8, 13, .76);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  pointer-events: none;
+}
 
 .paint-layer {
   fill: var(--paint);
@@ -850,6 +886,8 @@ html.silent-generator-mode body::before {
           <div class="car-wrap">
             <img id="carPreview" class="car-photo" src="" alt="2011 BMW E90 M3 side profile preview">
             <img id="interiorPreview" class="car-photo interior-photo" src="" alt="2011 BMW E90 M3 interior preview">
+            <div id="interior360Viewer" class="interior-360-viewer"></div>
+            <div id="interior360Placeholder" class="interior-360-placeholder" style="display:none;">360 Interior Placeholder — replace panorama URL later</div>
             <svg id="carVectorPreview" class="car-svg" viewBox="0 0 900 330" role="img" aria-label="2011 BMW E90 M3 side profile">
               <path class="paint-layer" d="M112 205 C135 159 181 132 250 122 L355 82 C392 67 457 63 526 75 L643 116 C720 123 775 150 807 196 L831 201 C852 205 865 220 864 239 L862 250 L803 250 C798 207 766 178 723 178 C679 178 647 207 642 250 L279 250 C274 207 242 178 198 178 C154 178 122 207 117 250 L78 250 C61 250 49 239 50 223 L52 215 C62 211 82 207 112 205 Z"/>
               <path class="paint-dark" d="M132 198 C152 166 191 144 255 136 L364 98 C401 83 457 80 516 89 L625 126 C699 133 748 157 779 196 C633 184 360 178 132 198 Z" opacity=".30"/>
@@ -1219,6 +1257,43 @@ const INTERIOR_PHOTOS = {
 };
 
 let activeView = "side";
+let interior360 = null;
+
+// Temporary Pannellum demo panorama. Replace this with your own uploaded E90 M3 interior 360 image later.
+const INTERIOR_360_PLACEHOLDER = "https://pannellum.org/images/alma.jpg";
+
+function showInterior360Viewer() {
+  const viewerEl = $("interior360Viewer");
+  const placeholderEl = $("interior360Placeholder");
+  if (!viewerEl) return;
+
+  viewerEl.classList.add("show");
+  if (placeholderEl) placeholderEl.style.display = "block";
+
+  if (!interior360 && window.pannellum) {
+    interior360 = pannellum.viewer("interior360Viewer", {
+      type: "equirectangular",
+      panorama: INTERIOR_360_PLACEHOLDER,
+      autoLoad: true,
+      showZoomCtrl: true,
+      compass: false,
+      pitch: 0,
+      yaw: 0,
+      hfov: 100,
+      title: "BMW E90 M3 Interior 360 Preview",
+      author: "Placeholder image"
+    });
+  } else if (interior360) {
+    setTimeout(() => interior360.resize(), 50);
+  }
+}
+
+function hideInterior360Viewer() {
+  const viewerEl = $("interior360Viewer");
+  const placeholderEl = $("interior360Placeholder");
+  if (viewerEl) viewerEl.classList.remove("show");
+  if (placeholderEl) placeholderEl.style.display = "none";
+}
 
 function hasNavigationSelected() {
   return state.packages.has("ZCV") || state.packages.has("ZTP") || state.options.has("609");
@@ -1573,23 +1648,18 @@ function updateCarPreview(c) {
   const svg = $("carVectorPreview");
 
   if (activeView === "interior") {
-    const photo = getInteriorPhoto(c.interior.code, c.transmission.code);
-
     img.removeAttribute("src");
     img.classList.remove("show");
 
+    interiorImg.removeAttribute("src");
+    interiorImg.classList.remove("show");
+
     svg.classList.add("is-hidden");
-
-    if (photo) {
-      interiorImg.src = photo;
-      interiorImg.classList.add("show");
-    } else {
-      interiorImg.removeAttribute("src");
-      interiorImg.classList.remove("show");
-    }
-
+    showInterior360Viewer();
     return;
   }
+
+  hideInterior360Viewer();
 
   interiorImg.removeAttribute("src");
   interiorImg.classList.remove("show");
