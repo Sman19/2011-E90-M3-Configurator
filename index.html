@@ -2322,17 +2322,14 @@ function csvColumn(row, index) {
 }
 
 function codeExistsInText(text, code) {
-  const normalizedText = String(text || "").toUpperCase();
-  const normalizedCode = String(code || "").toUpperCase();
-
+  const normalizedCode = String(code || "").trim().toUpperCase();
   if (!normalizedCode) return false;
 
-  const escaped = normalizedCode.replace(/[.*+?^${}()|[\]\]/g, "\$&");
-
-  // Important:
-  // 2MT should NOT match 2MT.1.
-  // 2MT.1 should only match the exact 2MT.1 package code.
-  return new RegExp(`(^|[^A-Z0-9.])${escaped}([^A-Z0-9.]|$)`).test(normalizedText);
+  return String(text || "")
+    .toUpperCase()
+    .split(",")
+    .map(part => part.trim())
+    .includes(normalizedCode);
 }
 
 function applyPackageCodes(packageText) {
