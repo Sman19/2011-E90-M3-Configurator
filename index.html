@@ -3022,7 +3022,7 @@ function sortedPackagesForPrint(packages) {
 
 function sortedRemainingOptionsForPrint(options) {
   return [...(options || [])]
-    .filter(item => String(item.code || "").toUpperCase() !== "223")
+    .filter(item => !["1CC", "223"].includes(String(item.code || "").toUpperCase()))
     .sort((a, b) => {
       const diff = getOptionSortIndex(a.code) - getOptionSortIndex(b.code);
       return diff || String(a.code || "").localeCompare(String(b.code || ""));
@@ -3059,11 +3059,12 @@ function getInstalledItems(c) {
   }
 
   // BMW-style print order:
-  // Packages first, then 223, 2MK, 2MT, then remaining standalone options.
+  // Packages first, then 1CC, 2MK / 2MT, then 223 and remaining standalone options.
   installed.push(...sortedPackagesForPrint(c.packages).map(item => ({...item, type:"FIO"})));
 
-  if (selected223) {
-    installed.push({...selected223, type:"FIO"});
+  const option1CC = (c.options || []).find(item => String(item.code || "").toUpperCase() === "1CC");
+  if (option1CC) {
+    installed.push({...option1CC, type:"FIO"});
   }
 
   if (c.transmission.price > 0) {
@@ -3072,6 +3073,10 @@ function getInstalledItems(c) {
       desc:"M Double Clutch Transmission with Drivelogic",
       type:"FIO"
     });
+  }
+
+  if (selected223) {
+    installed.push({...selected223, type:"FIO"});
   }
 
   if (c.wheelPrice > 0) {
@@ -3603,7 +3608,7 @@ function buildWindowStickerHTML() {
   addRow(`${build.interior.code} ${build.interior.name}`, build.interior.price);
 
   // BMW-style print order:
-  // Packages first, then 223, 2MK, 2MT, then remaining standalone options.
+  // Packages first, then 1CC, 2MK / 2MT, then 223 and remaining standalone options.
   sortedPackagesForPrint(build.packages).forEach(pkg => {
     let bullets = bulletsFromDesc(pkg.desc);
 
@@ -3640,6 +3645,19 @@ function buildWindowStickerHTML() {
     });
   });
 
+  const option1CC = build.standaloneOptions.find(opt => String(opt.code || "").toUpperCase() === "1CC");
+  if (option1CC) {
+    addRow(`${option1CC.code} ${option1CC.name}`, option1CC.price, {
+      code: option1CC.code,
+      bullets: bulletsFromDesc(option1CC.desc),
+      className: "option-row"
+    });
+  }
+
+  if (Number(build.transmission.price || 0) > 0) {
+    addRow(`${build.transmission.code} ${build.transmission.name}`, build.transmission.price);
+  }
+
   const option223 = build.standaloneOptions.find(opt => String(opt.code || "").toUpperCase() === "223");
   if (option223) {
     addRow(`${option223.code} ${option223.name}`, option223.price, {
@@ -3647,10 +3665,6 @@ function buildWindowStickerHTML() {
       bullets: bulletsFromDesc(option223.desc),
       className: "option-row"
     });
-  }
-
-  if (Number(build.transmission.price || 0) > 0) {
-    addRow(`${build.transmission.code} ${build.transmission.name}`, build.transmission.price);
   }
 
   // ZCP already lists the 19 inch Style 359M wheels in the Competition Package details.
