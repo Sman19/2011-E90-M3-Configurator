@@ -2987,9 +2987,28 @@ function getPackageSortIndex(code) {
 
 function getOptionSortIndex(code) {
   const order = [
-    "302", "322", "403", "417", "465", "494", "507", "5AC",
-    "609", "639", "655", "6FL", "6NF", "6NR", "752", "771", "XE2", "XE8"
+    "1CC",
+    "223",
+    "302",
+    "322",
+    "403",
+    "417",
+    "465",
+    "494",
+    "507",
+    "5AC",
+    "609",
+    "639",
+    "655",
+    "6FL",
+    "6NF",
+    "6NR",
+    "752",
+    "771",
+    "XE2",
+    "XE8"
   ];
+
   const index = order.indexOf(String(code || "").toUpperCase());
   return index === -1 ? 999 : index;
 }
