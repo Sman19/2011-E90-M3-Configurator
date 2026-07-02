@@ -2054,6 +2054,18 @@ function findCSVValue(row, possibleNames) {
   return "";
 }
 
+function getCSVRowText(row) {
+  return Object.entries(row || {})
+    .filter(([key]) => !String(key).startsWith("__SOURCE_"))
+    .map(([, value]) => normalizeText(value))
+    .filter(Boolean)
+    .join(",");
+}
+
+function getCSVColumnValue(row, columnNumber) {
+  return normalizeText(row && row[`__COL_${columnNumber}`]);
+}
+
 function parseMSRPMoney(value) {
   const cleaned = String(value || "").replace(/[^0-9.-]/g, "");
   const num = Number(cleaned);
@@ -2070,7 +2082,8 @@ function csvHasValue(row, possibleNames) {
 }
 
 function detectBaseMSRPFromCSVRow(row, packageText = "") {
-  const packageTokens = normalizeText(packageText)
+  const fullRowText = `${normalizeText(packageText)},${getCSVRowText(row)}`.toUpperCase();
+  const packageTokens = fullRowText
     .split(/[,\s]+/)
     .map(token => token.trim().toUpperCase())
     .filter(Boolean);
@@ -2096,14 +2109,22 @@ function detectBaseMSRPFromCSVRow(row, packageText = "") {
     "BASE_MSRP"
   ]);
 
-  // Final safety net: if the CSV parser creates duplicate headers or a sheet export
-  // shifts the exact name, still honor an actual $55,400 value before $55,900.
   const rowValues = Object.entries(row || {})
-    .filter(([key]) => !String(key).startsWith("__COL_"))
+    .filter(([key]) => !String(key).startsWith("__SOURCE_"))
     .map(([, value]) => parseMSRPMoney(value));
 
+  // MSRP.1 / $55,400 always wins. This matters for 2011 CSV rows that use MSRP.1.
   if (hasMSRP1Token || hasMSRP1Column || rowValues.includes(55400)) return 55400;
   if (hasMSRPToken || hasMSRPColumn || rowValues.includes(55900)) return 55900;
+
+  const modelYear = normalizeText(
+    findCSVValue(row, ["MODEL YEAR", "Model Year", "model year", "YEAR", "Year", "year", "ModelYear", "MODEL_YEAR", "__COL_4"])
+      || getCSVColumnValue(row, 4)
+      || row.__SOURCE_YEAR
+  );
+
+  if (modelYear === "2010") return 55400;
+  if (modelYear === "2011") return 55900;
 
   return state.baseMSRP;
 }
@@ -2563,11 +2584,15 @@ async function lookupVIN() {
     const vin = findCSVValue(match, ["VIN", "Vin", "vin", "FULL VIN", "Full VIN", "Full Vin", "__COL_5"]);
     const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT", "__COL_6"]);
     const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY", "__COL_7"]);
-    const packageText = findCSVValue(match, [
+    const packageColumnText = findCSVValue(match, [
       "Packages", "PACKAGES", "Package", "PACKAGE",
       "Options", "OPTIONS", "Option Codes", "OPTION CODES",
       "__COL_8"
     ]);
+
+    // Use the whole row as a fallback for package-code detection.
+    // This keeps 2011 VINs working even when codes/MSRP.1 are spread across columns.
+    const packageText = [packageColumnText, getCSVRowText(match)].filter(Boolean).join(",");
     const dealer = findCSVValue(match, [
       "DEALER NAME", "Dealer Name", "DEALER", "Dealer",
       "SELLING DEALER", "Selling Dealer", "SellingDealer", "SELLING_DEALER",
@@ -2579,7 +2604,6 @@ async function lookupVIN() {
       "ModelYear", "MODEL_YEAR", "__COL_4"
     ]) || match.__SOURCE_YEAR || "";
 
-    applyModelYear(csvModelYear);
     state.vin = vin || input;
 
     const matchedExterior = findMatchingExterior(exterior) || findMatchingExterior(packageText);
@@ -2597,14 +2621,10 @@ async function lookupVIN() {
     state.dealerZip = dealerInfo.zip || "";
     state.dealerPhone = dealerInfo.phone || "";
 
-    // Base MSRP follows Column D/model year first:
-    // 2010 = $55,400
-    // 2011 = $55,900
-    // If model year is missing, fall back to existing MSRP/MSRP.1 detection.
-    if (!String(csvModelYear || "").trim()) {
-      state.baseMSRP = detectBaseMSRPFromCSVRow(match, packageText);
-      state.modelYear = Number(state.baseMSRP) === 55400 ? "2010" : "2011";
-    }
+    // Base MSRP follows MSRP.1 / $55,400 first, then MSRP / $55,900, then Column D model year.
+    // This keeps 2011 rows with MSRP.1 at $55,400.
+    state.baseMSRP = detectBaseMSRPFromCSVRow(match, packageText);
+    state.modelYear = String(csvModelYear || "").trim() || (Number(state.baseMSRP) === 55400 ? "2010" : "2011");
 
     applyPackageCodes(packageText);
     enforceLockouts();
