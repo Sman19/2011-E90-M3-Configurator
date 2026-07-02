@@ -3603,7 +3603,8 @@ endstream`);
 
   const blob = new Blob([pdf], { type: "application/pdf" });
   const vinPart = state.vin ? state.vin.slice(-7) : `${c.exterior.code}-${c.wheel.code}`;
-  const filename = `2011-BMW-M3-bmw-spec-sheet-${makeSafeFileName(vinPart)}.pdf`;
+  const vehicleYear = String(state.modelYear || state.year || "2011");
+  const pdfFileName = `${vehicleYear} BMW E90 M3 Sedan Spec Sheet.pdf`;
   return { blob, filename };
 }
 
