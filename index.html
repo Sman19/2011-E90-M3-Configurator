@@ -2041,7 +2041,7 @@ function normalizeText(value) {
 }
 
 function normalizeVIN(value) {
-  return normalizeText(value).replace(/\s/g, "").toUpperCase();
+  return normalizeText(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 function findCSVValue(row, possibleNames) {
@@ -2551,7 +2551,7 @@ async function lookupVIN() {
     await loadDealerCSV();
 
     const match = rows.find(row => {
-      const vin = normalizeVIN(findCSVValue(row, ["VIN", "Vin", "vin"]));
+      const vin = normalizeVIN(findCSVValue(row, ["VIN", "Vin", "vin", "FULL VIN", "Full VIN", "Full Vin", "__COL_5"]));
       return vin === input || vin.slice(-7) === input;
     });
 
@@ -2560,9 +2560,9 @@ async function lookupVIN() {
       return false;
     }
 
-    const vin = findCSVValue(match, ["VIN", "Vin", "vin"]);
-    const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT", "__COL_5"]);
-    const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY", "__COL_6"]);
+    const vin = findCSVValue(match, ["VIN", "Vin", "vin", "FULL VIN", "Full VIN", "Full Vin", "__COL_5"]);
+    const exterior = findCSVValue(match, ["COLOR", "Color", "Exterior", "EXTERIOR", "Paint", "PAINT", "__COL_6"]);
+    const interior = findCSVValue(match, ["INTERIOR", "Interior", "Upholstery", "UPHOLSTERY", "__COL_7"]);
     const packageText = findCSVValue(match, [
       "Packages", "PACKAGES", "Package", "PACKAGE",
       "Options", "OPTIONS", "Option Codes", "OPTION CODES",
