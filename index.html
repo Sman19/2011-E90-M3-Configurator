@@ -3603,8 +3603,7 @@ endstream`);
 
   const blob = new Blob([pdf], { type: "application/pdf" });
   const vinPart = state.vin ? state.vin.slice(-7) : `${c.exterior.code}-${c.wheel.code}`;
-  const vehicleYear = String(state.modelYear || state.year || "2011");
-  const pdfFileName = `${vehicleYear} BMW E90 M3 Sedan Spec Sheet.pdf`;
+  const filename = `${getModelYear()} BMW E90 M3 Sedan Spec Sheet - ${vinPart}.pdf`;
   return { blob, filename };
 }
 
@@ -3816,7 +3815,7 @@ function buildWindowStickerHTML() {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>${getModelYear()} BMW M3 11x17 Spec Sheet</title>
+<title>${getModelYear()} BMW M3 Sedan Window Sticker</title>
 <style>
   @page { size: 17in 11in; margin: 0; }
   * { box-sizing: border-box; }
@@ -4112,7 +4111,7 @@ function buildWindowStickerHTML() {
 </head>
 <body>
   <div class="toolbar">
-    <span>11x17 landscape spec sheet. Use Zoom Out or Fit to Screen for preview only. Printing stays full 11x17.</span>
+    <span>11x17 landscape window sticker. Use Zoom Out or Fit to Screen for preview only. Printing stays full 11x17.</span>
     <div class="toolbar-actions">
       <button class="secondary" onclick="zoomPreview(-0.05)">Zoom Out</button>
       <button class="secondary" onclick="fitPreview()">Fit Screen</button>
