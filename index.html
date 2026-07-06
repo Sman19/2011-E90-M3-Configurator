@@ -1327,6 +1327,7 @@ let dealerMapByCode = {};
 
 const DATA = {
   baseMSRPOptions: [
+    { label:"2009 Build", value:54850 },
     { label:"2010 Build", value:55400 },
     { label:"2011 Build", value:55900 }
   ],
@@ -1514,7 +1515,10 @@ const $ = id => document.getElementById(id);
 function getModelYear() {
   const cleanYear = String(state.modelYear || "").trim();
   if (/^20\d{2}$/.test(cleanYear)) return cleanYear;
-  return Number(state.baseMSRP) === 55400 ? "2010" : "2011";
+
+  if (Number(state.baseMSRP) === 54850) return "2009";
+  if (Number(state.baseMSRP) === 55400) return "2010";
+  return "2011";
 }
 
 function getModelName() {
@@ -1534,7 +1538,11 @@ function updateModelYearUI() {
 
 function applyModelYear(yearValue) {
   const year = String(yearValue || "").trim();
-  if (year === "2010") {
+
+  if (year === "2009") {
+    state.modelYear = "2009";
+    state.baseMSRP = 54850;
+  } else if (year === "2010") {
     state.modelYear = "2010";
     state.baseMSRP = 55400;
   } else if (year === "2011") {
@@ -1640,6 +1648,21 @@ function pricedExterior(item) {
   };
 }
 
+function getOptionPrice(item) {
+  if (!item) return 0;
+
+  // 2009 E90 M3 pricing override: option 507 was $350 for 2009 models.
+  if (getModelYear() === "2009" && String(item.code || "").toUpperCase() === "507") {
+    return 350;
+  }
+
+  return Number(item.price || 0);
+}
+
+function pricedOption(item) {
+  return item ? { ...item, price: getOptionPrice(item) } : item;
+}
+
 function selectedItems() {
   return {
     exterior: pricedExterior(findByCode(DATA.exteriorColors, state.exterior)),
@@ -1647,7 +1670,7 @@ function selectedItems() {
     transmission: findByCode(DATA.transmissions, state.transmission),
     wheel: findByCode(DATA.wheels, state.wheel),
     packages: [...state.packages].map(code => findByCode(DATA.packages, code)).filter(Boolean),
-    options: [...state.options].map(code => findByCode(DATA.standaloneOptions, code)).filter(Boolean),
+    options: [...state.options].map(code => findByCode(DATA.standaloneOptions, code)).filter(Boolean).map(pricedOption),
     mPerformanceParts: [...state.mPerformanceParts].map(code => findByCode(DATA.mPerformanceParts, code)).filter(Boolean)
   };
 }
@@ -1656,7 +1679,7 @@ function calculate() {
   const s = selectedItems();
   const wheelPrice = (s.wheel.code === "2MT" || s.wheel.code === "2MT.1") ? s.wheel.price : 0;
   const packageTotal = s.packages.reduce((sum, item) => sum + item.price, 0);
-  const optionTotal = s.options.reduce((sum, item) => sum + item.price, 0);
+  const optionTotal = s.options.reduce((sum, item) => sum + getOptionPrice(item), 0);
   const mPerformanceTotal = s.mPerformanceParts.reduce((sum, item) => sum + item.price, 0);
 
   // VIN/package-code safety rule:
@@ -1848,7 +1871,7 @@ function renderChecks(containerId, list, setName) {
         <div class="check-title">${item.code} ${item.name}</div>
         <div class="check-desc">${item.desc || ""}${disabled ? `<div class="lock-note">${disabledReason}</div>` : ""}</div>
       </div>
-      <div class="price">${disabled ? "Included" : money(item.price)}</div>
+      <div class="price">${disabled ? "Included" : money(setName === "options" ? getOptionPrice(item) : item.price)}</div>
     `;
 
     const input = row.querySelector("input");
@@ -2093,8 +2116,19 @@ function detectBaseMSRPFromCSVRow(row, packageText = "") {
     .map(token => token.trim().toUpperCase())
     .filter(Boolean);
 
+  const hasMSRP2Token = packageTokens.includes("MSRP.2");
   const hasMSRP1Token = packageTokens.includes("MSRP.1");
   const hasMSRPToken = packageTokens.includes("MSRP");
+
+  const hasMSRP2Column = csvHasValue(row, [
+    "MSRP.2",
+    "MSRP_2",
+    "MSRP 2",
+    "BASE MSRP.2",
+    "Base MSRP.2",
+    "BaseMSRP.2",
+    "BASE_MSRP.2"
+  ]);
 
   const hasMSRP1Column = csvHasValue(row, [
     "MSRP.1",
@@ -2118,7 +2152,8 @@ function detectBaseMSRPFromCSVRow(row, packageText = "") {
     .filter(([key]) => !String(key).startsWith("__SOURCE_"))
     .map(([, value]) => parseMSRPMoney(value));
 
-  // MSRP.1 / $55,400 always wins. This matters for 2011 CSV rows that use MSRP.1.
+  // MSRP.2 / $54,850 = 2009, MSRP.1 / $55,400 = 2010, MSRP / $55,900 = 2011.
+  if (hasMSRP2Token || hasMSRP2Column || rowValues.includes(54850)) return 54850;
   if (hasMSRP1Token || hasMSRP1Column || rowValues.includes(55400)) return 55400;
   if (hasMSRPToken || hasMSRPColumn || rowValues.includes(55900)) return 55900;
 
@@ -2128,6 +2163,7 @@ function detectBaseMSRPFromCSVRow(row, packageText = "") {
       || row.__SOURCE_YEAR
   );
 
+  if (modelYear === "2009") return 54850;
   if (modelYear === "2010") return 55400;
   if (modelYear === "2011") return 55900;
 
@@ -2140,8 +2176,16 @@ function applyBaseMSRPFromPackageText(packageText) {
     .map(token => token.trim().toUpperCase())
     .filter(Boolean);
 
-  if (tokens.includes("MSRP.1")) state.baseMSRP = 55400;
-  else if (tokens.includes("MSRP")) state.baseMSRP = 55900;
+  if (tokens.includes("MSRP.2")) {
+    state.modelYear = "2009";
+    state.baseMSRP = 54850;
+  } else if (tokens.includes("MSRP.1")) {
+    state.modelYear = "2010";
+    state.baseMSRP = 55400;
+  } else if (tokens.includes("MSRP")) {
+    state.modelYear = "2011";
+    state.baseMSRP = 55900;
+  }
 }
 
 function parseCSV(text) {
@@ -2629,7 +2673,8 @@ async function lookupVIN() {
     // Base MSRP follows MSRP.1 / $55,400 first, then MSRP / $55,900, then Column D model year.
     // This keeps 2011 rows with MSRP.1 at $55,400.
     state.baseMSRP = detectBaseMSRPFromCSVRow(match, packageText);
-    state.modelYear = String(csvModelYear || "").trim() || (Number(state.baseMSRP) === 55400 ? "2010" : "2011");
+    state.modelYear = String(csvModelYear || "").trim()
+      || (Number(state.baseMSRP) === 54850 ? "2009" : Number(state.baseMSRP) === 55400 ? "2010" : "2011");
 
     applyPackageCodes(packageText);
     enforceLockouts();
@@ -2654,7 +2699,7 @@ if ($("vinSearch")) {
 
 $("msrpSelect").onchange = e => {
   state.baseMSRP = Number(e.target.value);
-  state.modelYear = state.baseMSRP === 55400 ? "2010" : "2011";
+  state.modelYear = state.baseMSRP === 54850 ? "2009" : state.baseMSRP === 55400 ? "2010" : "2011";
   renderAll();
 };
 
