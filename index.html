@@ -1307,7 +1307,7 @@ function getInteriorPhoto(interiorCode, transmissionCode) {
   return byInterior[`${navKey}_${transKey}`] || null;
 }
   
-const CSV_URL_2009 = "https://raw.githubusercontent.com/Sman19/Active-Website/4183462b933e7dafd6483f9110ad9eb527e3a150/2009%20E90%20M3%20Sedan.csv";
+const CSV_URL_2009 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2009%20E90%20M3%20Sedan.csv";
 const CSV_URL_2010 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2010%20E90%20M3%20Sedan.csv";
 const CSV_URL_2011 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2011%20E90%20M3%20Sedan.csv";
 
@@ -1332,7 +1332,7 @@ const DATA = {
     { label:"2011 Build", value:55900 }
   ],
   gasGuzzler: 1300,
-  destination: (getModelYear() === "2009" ? 825 : 875),
+  destination: 875,
 
   exteriorColors: [
     { code:"300", name:"Alpine White", price:0, hex:"#f2f1ea", type:"Non-metallic" },
@@ -1521,6 +1521,10 @@ function getModelYear() {
   return "2011";
 }
 
+function getDestinationCharge() {
+  return getModelYear() === "2009" ? 825 : 875;
+}
+
 function getModelName() {
   return `${getModelYear()} BMW M3 Sedan`;
 }
@@ -1695,7 +1699,7 @@ function calculate() {
       : s.exterior.name
   };
 
-  const total = state.baseMSRP + DATA.destination + DATA.gasGuzzler + exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
+  const total = state.baseMSRP + getDestinationCharge() + DATA.gasGuzzler + exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
   return { ...s, exterior, wheelPrice, packageTotal, optionTotal, mPerformanceTotal, total };
 }
 
@@ -1948,7 +1952,7 @@ function buildOutput() {
     dealerZip: state.dealerZip,
     dealerPhone: state.dealerPhone,
     baseMSRP: state.baseMSRP,
-    destinationCharge: DATA.destination,
+    destinationCharge: getDestinationCharge(),
     gasGuzzlerTax: DATA.gasGuzzler,
     exterior: c.exterior,
     interior: c.interior,
@@ -2002,7 +2006,7 @@ function renderSummary() {
     ${selectedPremiumTrim() ? `<div class="summary-line"><span>Premium Package Trim<small>${selectedPremiumTrim().code} ${selectedPremiumTrim().name}</small></span><strong>Included</strong></div>` : ""}
     <div class="summary-line"><span>Transmission<small>${c.transmission.code} ${c.transmission.name}</small></span><strong>${money(c.transmission.price)}</strong></div>
     <div class="summary-line"><span>Options & Packages<small>${c.packages.length + c.options.length + c.mPerformanceParts.length} selected</small></span><strong>${money(optionsAndPackages)}</strong></div>
-    <div class="summary-line"><span>Destination & Handling</span><strong>${money(DATA.destination)}</strong></div>
+    <div class="summary-line"><span>Destination & Handling</span><strong>${money(getDestinationCharge())}</strong></div>
     <div class="summary-line"><span>Gas Guzzler Tax</span><strong>${money(DATA.gasGuzzler)}</strong></div>
   `;
 
@@ -3437,7 +3441,7 @@ Q
   out += drawBMWRedHeader("PRICE", 44, 493, 246);
   out += pdfPriceRow("Base MSRP *", moneyPdf(state.baseMSRP), 44, 471, 246);
   out += pdfPriceRow("Factory Installed Packages & Accessories", moneyPdf(factoryTotal), 44, 451, 246);
-  out += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 44, 431, 246);
+  out += pdfPriceRow("Destination & Handling", moneyPdf(getDestinationCharge()), 44, 431, 246);
   out += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 44, 411, 246);
   out += pdfText("Total Suggested Retail Price", 44, 386, 11.5, "F2");
   out += pdfText(moneyPdf(c.total), 290, 386, 11.5, "F2", "right");
@@ -3537,7 +3541,7 @@ Q
   yTotals -= 20;
   totalsPage += pdfPriceRow("Vehicle Base Model", moneyPdf(state.baseMSRP), 44, yTotals, 524);
   yTotals -= 20;
-  totalsPage += pdfPriceRow("Destination & Handling", moneyPdf(DATA.destination), 44, yTotals, 524);
+  totalsPage += pdfPriceRow("Destination & Handling", moneyPdf(getDestinationCharge()), 44, yTotals, 524);
   yTotals -= 20;
   totalsPage += pdfPriceRow("Gas Guzzler Tax", moneyPdf(DATA.gasGuzzler), 44, yTotals, 524);
   yTotals -= 26;
@@ -4333,6 +4337,7 @@ $("resetBtn").onclick = () => {
   state.transmission = "6MT";
   state.wheel = "STD";
   state.baseMSRP = 55900;
+  state.modelYear = "2011";
   state.packages.clear();
   state.options.clear();
   state.premiumTrim = "";
