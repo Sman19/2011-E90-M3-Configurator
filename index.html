@@ -1332,7 +1332,7 @@ const DATA = {
     { label:"2011 Build", value:55900 }
   ],
   gasGuzzler: 1300,
-  destination: 875,
+  get destination() { return getDestinationCharge(); },
 
   exteriorColors: [
     { code:"300", name:"Alpine White", price:0, hex:"#f2f1ea", type:"Non-metallic" },
@@ -1453,7 +1453,7 @@ const DATA = {
     { code:"465", name:"Split Fold Down Rear Seat", price:475, desc:"Folding rear seat" },
     { code:"494", name:"Heated Front Seats", price:500, desc:"Heated driver and passenger front seats" },
     { code:"302", name:"Alarm System", price:400, desc:"Anti-theft alarm system" },
-    { code:"507", name:"Rear Park Distance Control", price:getModelYear()==="2009"?350:380, desc:"Rear parking sensors" },
+    { code:"507", name:"Rear Park Distance Control", price:380, desc:"Rear parking sensors" },
     { code:"5AC", name:"Automatic High Beams", price:250, desc:"Automatic high beam" },
     { code:"609", name:"Navigation System", price:2100, desc:"Factory navigation" },
     { code:"6FL", name:"iPod & USB Adapter", price:400, desc:"USB audio interface" },
