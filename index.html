@@ -4295,19 +4295,44 @@ function generateWindowSticker(targetPopup) {
 let documentLimitExhausted = false;
 let lastDocumentLimitResult = null;
 
+function createDocumentNoticeModalIfMissing() {
+  if (document.getElementById("docNoticeModalOverlay")) return;
+
+  const overlay = document.createElement("div");
+  overlay.id = "docNoticeModalOverlay";
+  overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:999999;align-items:center;justify-content:center;padding:18px;";
+  overlay.innerHTML = `
+    <div style="max-width:580px;width:100%;background:#fff;color:#111827;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.45);overflow:hidden;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+      <div style="background:#111827;color:#fff;padding:18px 22px;font-size:20px;font-weight:950;letter-spacing:-.02em;">
+        E9x M3 Database Document Request
+      </div>
+      <div style="padding:22px;line-height:1.45;">
+        <p style="margin:0 0 12px;font-size:17px;font-weight:900;">Thanks for following along and supporting the E9x M3 Database.</p>
+        <p style="margin:0 0 12px;font-size:15px;color:#374151;">To help protect the information and ensure fair access for all members, document generation is limited to <strong>5 requests within any rolling 24-hour period</strong>.</p>
+        <p style="margin:0 0 12px;font-size:15px;color:#374151;">This only applies to BMW Spec Sheet and Window Sticker generation. You can still enter VINs and use the configurator normally.</p>
+        <div id="docNoticeRemainingLine" style="margin:12px 0 18px;padding:12px 14px;background:#f3f4f6;border-radius:10px;font-size:14px;font-weight:900;color:#111827;">Checking allowance...</div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" id="docNoticeCancel" style="border:1px solid #d1d5db;background:#fff;color:#111827;border-radius:999px;padding:10px 18px;font-weight:900;cursor:pointer;">Cancel</button>
+          <button type="button" id="docNoticeContinue" style="border:0;background:#1677ff;color:#fff;border-radius:999px;padding:10px 18px;font-weight:900;cursor:pointer;">Continue</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
 function createLimitModalIfMissing() {
   if (document.getElementById("docLimitModalOverlay")) return;
 
   const overlay = document.createElement("div");
   overlay.id = "docLimitModalOverlay";
-  overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:999999;align-items:center;justify-content:center;padding:18px;";
+  overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:1000000;align-items:center;justify-content:center;padding:18px;";
   overlay.innerHTML = `
     <div style="max-width:560px;width:100%;background:#fff;color:#111827;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.45);overflow:hidden;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
       <div style="background:#111827;color:#fff;padding:18px 22px;font-size:20px;font-weight:950;letter-spacing:-.02em;">
         Daily Document Limit Reached
       </div>
       <div style="padding:22px;line-height:1.45;">
-        <p style="margin:0 0 12px;font-size:17px;font-weight:900;">🔒 Your 5 document request limit has been met.</p>
+        <p style="margin:0 0 12px;font-size:17px;font-weight:900;">🔒 Sorry, your 5 document request limit has been met.</p>
         <p style="margin:0 0 12px;font-size:15px;color:#374151;">Thank you for supporting the E9x M3 Database.</p>
         <p style="margin:0 0 12px;font-size:15px;color:#374151;">To help protect the information contained in the database and ensure fair access for all members, BMW Spec Sheet and Window Sticker generation is limited to <strong>5 requests within any rolling 24-hour period</strong>.</p>
         <p style="margin:0 0 18px;font-size:15px;color:#374151;">Please stop back in 24 hours. You can still use the configurator, enter VINs, view builds, and browse options normally.</p>
@@ -4380,6 +4405,48 @@ function setDocumentButtonsLimitReached(isReached) {
   });
 }
 
+function updateNoticeRemainingLine(result, documentType) {
+  const line = document.getElementById("docNoticeRemainingLine");
+  if (!line) return;
+
+  if (result && result.admin) {
+    line.textContent = `${documentType}: Admin unlimited access. This request will not count against a limit.`;
+    return;
+  }
+
+  if (result && result.allowed) {
+    const remaining = Math.max(Number(result.remaining) || 0, 0);
+    const limit = Number(result.limit) || 5;
+    line.textContent = `${documentType}: approved. You will have ${remaining} of ${limit} document requests remaining after this download.`;
+    return;
+  }
+
+  line.textContent = `${documentType}: your 5 document request limit has been met.`;
+}
+
+function showDocumentNoticeModal(documentType, result) {
+  createDocumentNoticeModalIfMissing();
+  updateNoticeRemainingLine(result, documentType);
+
+  const overlay = document.getElementById("docNoticeModalOverlay");
+  const continueBtn = document.getElementById("docNoticeContinue");
+  const cancelBtn = document.getElementById("docNoticeCancel");
+  if (!overlay || !continueBtn || !cancelBtn) return Promise.resolve(true);
+
+  overlay.style.display = "flex";
+
+  return new Promise(resolve => {
+    function close(value) {
+      overlay.style.display = "none";
+      continueBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(value);
+    }
+    continueBtn.onclick = () => close(true);
+    cancelBtn.onclick = () => close(false);
+  });
+}
+
 function showDocumentRemainingToast(documentType, result) {
   const old = document.getElementById("documentRemainingToast");
   if (old) old.remove();
@@ -4396,7 +4463,7 @@ function showDocumentRemainingToast(documentType, result) {
     <div style="display:flex;gap:10px;align-items:flex-start;">
       <div style="font-size:20px;line-height:1;">✅</div>
       <div>
-        <div style="font-weight:950;font-size:14px;margin-bottom:3px;">${escapeHtml(documentType)} approved</div>
+        <div style="font-weight:950;font-size:14px;margin-bottom:3px;">${escapeHtml(documentType)} generated</div>
         <div style="font-size:13px;color:#d1d5db;">${escapeHtml(remainingLine)}</div>
       </div>
     </div>`;
@@ -4453,44 +4520,46 @@ async function checkDocumentLimitBeforeGenerate(documentType) {
     setDocumentButtonsLimitReached(true);
   }
 
+  return result;
+}
+
+async function requestDocumentPermission(documentType) {
+  if (documentLimitExhausted) {
+    showDocumentLimitModal(lastDocumentLimitResult || { allowed: false, remaining: 0, limit: 5 });
+    return { allowed: false, blockedLocal: true };
+  }
+
+  const result = await checkDocumentLimitBeforeGenerate(documentType);
+  if (!result.allowed) return result;
+
+  const proceed = await showDocumentNoticeModal(documentType, result);
+  if (!proceed) return { ...result, allowed: false, cancelled: true };
+
   showDocumentRemainingToast(documentType, result);
   return result;
 }
 
 async function handleWindowStickerClick() {
   const btn = $("windowStickerBtn");
-
-  if (documentLimitExhausted) {
-    showDocumentLimitModal(lastDocumentLimitResult || { allowed: false, remaining: 0, limit: 5 });
-    return;
-  }
-
-  const popup = window.open("", "_blank");
-  if (!popup) {
-    alert("Popup blocked. Please allow popups for this site to preview the window sticker.");
-    return;
-  }
-
-  popup.document.open();
-  popup.document.write("<html><body style='font-family:Arial,sans-serif;padding:28px;'>Checking your daily document limit...</body></html>");
-  popup.document.close();
-
   if (btn) btn.textContent = "Checking...";
+
+  let popup = null;
   try {
-    const limitResult = await checkDocumentLimitBeforeGenerate("Window Sticker");
-    if (!limitResult.allowed) {
-      try { popup.close(); } catch (err) {}
+    const limitResult = await requestDocumentPermission("Window Sticker");
+    if (!limitResult.allowed) return;
+
+    popup = window.open("", "_blank");
+    if (!popup) {
+      alert("Popup blocked. Please allow popups for this site to preview the window sticker.");
       return;
     }
+
     generateWindowSticker(popup);
   } catch (err) {
     console.error(err);
-    try { popup.close(); } catch (closeErr) {}
     alert("Document limit could not be verified. Please try again later.");
   } finally {
-    if (btn) {
-      btn.textContent = "🏷 Window Sticker";
-    }
+    if (btn) btn.textContent = "🏷 Window Sticker";
   }
 }
 
@@ -4500,15 +4569,10 @@ if ($("windowStickerBtn")) {
 
 $("copyBuildBtn").onclick = async () => {
   const btn = $("copyBuildBtn");
-
-  if (documentLimitExhausted) {
-    showDocumentLimitModal(lastDocumentLimitResult || { allowed: false, remaining: 0, limit: 5 });
-    return;
-  }
-
   btn.textContent = "Checking...";
+
   try {
-    const limitResult = await checkDocumentLimitBeforeGenerate("BMW Spec Sheet");
+    const limitResult = await requestDocumentPermission("BMW Spec Sheet");
     if (!limitResult.allowed) {
       btn.textContent = "▣ BMW Spec Sheet PDF";
       return;
