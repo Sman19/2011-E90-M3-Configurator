@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>BMW E90 M3 Sedan Configurator - Window Sticker + BMW Spec Sheet PDF</title>
+<title>BMW E90 M3 Sedan Configurator - Window Sticker + Spec Sheet PDF</title>
 <link id="favicon" rel="icon" type="image/svg+xml">
 <script type="text/javascript" src="https://www.authpro.com/auth/sman201/?action=pp"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.css">
@@ -1538,7 +1538,7 @@ function updateModelYearUI() {
   const titleText = `${getModelTitle()} Configurator`;
   const h1 = document.getElementById("configTitle");
   if (h1) h1.textContent = titleText;
-  document.title = `${titleText} - Window Sticker + BMW Spec Sheet PDF`;
+  document.title = `${titleText} - Window Sticker + Spec Sheet PDF`;
 }
 
 function applyModelYear(yearValue) {
@@ -1689,7 +1689,7 @@ function calculate() {
 
   // VIN/package-code safety rule:
   // If the CSV package text contains IND, treat the selected paint as BMW Individual Paint.
-  // This forces the $5,000 Individual Paint charge into the on-screen total, BMW Spec Sheet PDF,
+  // This forces the $5,000 Individual Paint charge into the on-screen total, Spec Sheet PDF,
   // and Window Sticker total MSRP, even when the exterior color code is a custom Individual code.
   const individualPaintPrice = state.individualPaint ? 5000 : Number(s.exterior.price || 0);
   const exterior = {
@@ -2864,7 +2864,7 @@ function drawPageFooter(pageNo) {
   return pdfLine(44, 34, 568, 34, 0.78, 0.6) +
     pdfText(`${getModelName()} - ${vin}`, 44, 20, 7.0, "F2") +
     pdfText(`Page ${pageNo}`, 568, 20, 7.0, "F1", "right") +
-    pdfText("Custom BMW Spec Sheet for enthusiast reference only. Not an official BMW Monroney label.", 44, 10, 5.8, "F1");
+    pdfText("Custom Spec Sheet for enthusiast reference only. Not an official BMW Monroney label.", 44, 10, 5.8, "F1");
 }
 
 function drawBMWRedHeader(title, x, y, w) {
