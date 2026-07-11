@@ -3787,77 +3787,77 @@ function buildWindowStickerHTML() {
   .preview-wrap { width:100%; display:flex; justify-content:center; transform-origin:top center; }
   .preview-wrap.fit { transform:scale(var(--preview-scale,1)); margin-bottom:calc((11in * var(--preview-scale,1)) - 11in + 16px); }
   .sheet { width:17in; height:11in; background:#fff; margin:0 auto 18px; padding:.28in; overflow:hidden; flex:0 0 auto; }
-  .sticker { width:100%; height:100%; border:3px solid #1f2937; display:grid; grid-template-rows:.88in 4.64in 1.52in 2.20in .58in; }
-  .header { display:grid; grid-template-columns:2.15in 1fr 3.45in; border-bottom:2px solid #1f2937; }
-  .logo-zone { padding:.12in .14in; display:flex; flex-direction:column; justify-content:center; }
-  .logo-row { display:flex; align-items:center; gap:.14in; height:.49in; }
-  .bmw-logo { width:.47in; height:.47in; object-fit:contain; }
-  .m-logo { width:.73in; height:.43in; object-fit:contain; }
-  .tagline { font-size:8.5pt; font-weight:800; line-height:1.05; margin-top:.03in; }
+  .sticker { width:100%; height:100%; border:3px solid #1f2937; display:grid; grid-template-rows:.84in 4.20in 1.56in 2.48in .58in; }
+  .header { display:grid; grid-template-columns:2.05in 1fr 3.35in; border-bottom:2px solid #1f2937; }
+  .logo-zone { padding:.08in .14in .06in; display:flex; flex-direction:column; justify-content:center; }
+  .logo-row { display:flex; align-items:center; gap:.12in; height:.43in; }
+  .bmw-logo { width:.39in; height:.39in; object-fit:contain; }
+  .m-logo { width:.62in; height:.34in; object-fit:contain; }
+  .tagline { font-size:7.7pt; font-weight:800; line-height:1.02; margin-top:.015in; }
   .model-zone { padding:.12in .16in .08in; display:flex; flex-direction:column; justify-content:center; }
-  .model-title { font-size:23pt; line-height:1; font-weight:950; letter-spacing:-.02em; text-transform:uppercase; }
-  .color-line { display:flex; gap:.28in; margin-top:.09in; font-size:8.4pt; font-weight:800; }
-  .spec-zone { padding:.10in .14in; display:grid; grid-template-columns:.9in 1fr; align-content:center; row-gap:.035in; font-size:7.6pt; line-height:1.05; }
+  .model-title { font-size:21pt; line-height:1; font-weight:950; letter-spacing:-.02em; text-transform:uppercase; }
+  .color-line { display:flex; gap:.18in; margin-top:.07in; font-size:7.9pt; font-weight:800; }
+  .spec-zone { padding:.07in .13in; display:grid; grid-template-columns:.86in 1fr; align-content:center; row-gap:.026in; font-size:7.1pt; line-height:1.03; }
   .spec-zone strong { font-weight:950; }
 
-  .main { display:grid; grid-template-columns:5.18in 7.15in 3.53in; border-bottom:2px solid #1f2937; min-height:0; }
+  .main { display:grid; grid-template-columns:5.05in 7.15in 3.66in; border-bottom:2px solid #1f2937; min-height:0; }
   .photo-panel { border-right:2px solid #1f2937; display:grid; grid-template-rows:1fr .31in; min-height:0; }
-  .vehicle-photo { display:flex; align-items:center; justify-content:center; overflow:hidden; padding:.12in; background:#fff; }
-  .vehicle-photo img { width:100%; height:100%; object-fit:contain; }
-  .photo-caption { padding:.07in .12in; font-size:7.4pt; font-style:italic; border-top:1px solid #9ca3af; }
+  .vehicle-photo { display:flex; align-items:center; justify-content:center; overflow:hidden; padding:.20in .22in .16in; background:#fff; }
+  .vehicle-photo img { width:88%; height:84%; object-fit:contain; }
+  .photo-caption { padding:.055in .11in; font-size:6.9pt; font-style:italic; border-top:1px solid #9ca3af; }
   .standard-panel { border-right:2px solid #1f2937; min-height:0; display:grid; grid-template-rows:.27in 1fr; }
-  .section-bar { height:.27in; padding:.055in .09in; background:#263344; color:#fff; font-size:8pt; font-weight:950; text-transform:uppercase; letter-spacing:.04em; }
+  .section-bar { height:.25in; padding:.048in .09in; background:#263344; color:#fff; font-size:7.5pt; font-weight:950; text-transform:uppercase; letter-spacing:.035em; }
   .feature-columns { display:grid; grid-template-columns:repeat(3,1fr); min-height:0; }
-  .feature-col { padding:.10in .11in; border-right:1px solid #9ca3af; font-size:6.85pt; line-height:1.22; }
+  .feature-col { padding:.075in .095in; border-right:1px solid #9ca3af; font-size:6.45pt; line-height:1.14; }
   .feature-col:last-child { border-right:0; }
-  .feature-head { font-size:7.1pt; font-weight:950; margin-bottom:.045in; text-transform:uppercase; }
-  .feature-head.space { margin-top:.105in; }
-  .feature-col div.item { margin-bottom:.025in; }
-  .pricing-panel { min-height:0; display:grid; grid-template-rows:.27in auto 1fr auto auto auto; }
-  .pricing-body { padding:.08in .11in; font-size:7.7pt; min-height:0; overflow:hidden; }
-  .pricing-intro { font-size:6.6pt; margin-bottom:.055in; }
-  .price-line { display:grid; grid-template-columns:1fr .82in; gap:.07in; align-items:start; padding:.021in 0; line-height:1.08; }
-  .price-line strong { text-align:right; white-space:nowrap; font-size:7.45pt; }
-  .base-price { padding:.07in .11in; border-bottom:1px solid #6b7280; display:grid; grid-template-columns:1fr auto; font-size:7.8pt; font-weight:950; }
-  .fee-line { margin:0 .11in; padding:.045in 0; border-top:1px solid #4b5563; display:grid; grid-template-columns:1fr auto; font-size:7.7pt; }
-  .total-msrp { background:#263344; color:#fff; padding:.09in .12in; display:grid; grid-template-columns:1fr auto; align-items:center; font-size:12pt; letter-spacing:.03em; }
-  .total-msrp strong { font-size:13.5pt; }
+  .feature-head { font-size:6.75pt; font-weight:950; margin-bottom:.025in; text-transform:uppercase; }
+  .feature-head.space { margin-top:.075in; }
+  .feature-col div.item { margin-bottom:.012in; }
+  .pricing-panel { min-height:0; display:grid; grid-template-rows:.25in auto 1fr auto auto .34in; }
+  .pricing-body { padding:.055in .11in .035in; font-size:7.05pt; min-height:0; overflow:hidden; }
+  .pricing-intro { font-size:6.15pt; margin-bottom:.035in; }
+  .price-line { display:grid; grid-template-columns:minmax(0,1fr) .86in; gap:.08in; align-items:start; padding:.012in 0; line-height:1.03; }
+  .price-line strong { text-align:right; white-space:nowrap; font-size:6.95pt; font-variant-numeric:tabular-nums; }
+  .base-price { padding:.052in .11in; border-bottom:1px solid #6b7280; display:grid; grid-template-columns:1fr auto; font-size:7.25pt; font-weight:950; }
+  .fee-line { margin:0 .11in; padding:.035in 0; border-top:1px solid #4b5563; display:grid; grid-template-columns:1fr auto; font-size:7.05pt; font-variant-numeric:tabular-nums; }
+  .total-msrp { background:#263344; color:#fff; padding:.045in .12in; display:grid; grid-template-columns:1fr auto; align-items:center; font-size:10.5pt; letter-spacing:.025em; }
+  .total-msrp strong { font-size:12pt; font-variant-numeric:tabular-nums; }
 
   .middle { display:grid; grid-template-columns:6.20in 2.12in 2.12in 5.42in; border-bottom:2px solid #1f2937; min-height:0; }
   .packages { border-right:2px solid #1f2937; display:grid; grid-template-rows:.27in 1fr; min-height:0; }
-  .package-grid { display:grid; grid-template-columns:repeat(2,1fr); padding:.07in .10in; gap:.10in; overflow:hidden; }
-  .package-card { font-size:6.75pt; line-height:1.19; }
-  .package-name { font-size:7.1pt; font-weight:950; text-transform:uppercase; margin-bottom:.025in; }
-  .swatch-panel { border-right:2px solid #1f2937; display:grid; grid-template-rows:.27in .81in 1fr; min-height:0; }
-  .swatch { margin:.09in .24in .04in; border:1px solid #4b5563; overflow:hidden; background:${exteriorSwatch}; }
+  .package-grid { display:grid; grid-template-columns:repeat(2,1fr); padding:.055in .09in; column-gap:.12in; row-gap:.04in; overflow:hidden; align-content:start; }
+  .package-card { font-size:6.25pt; line-height:1.10; }
+  .package-name { font-size:6.65pt; font-weight:950; text-transform:uppercase; margin-bottom:.018in; }
+  .swatch-panel { border-right:2px solid #1f2937; display:grid; grid-template-rows:.25in .75in 1fr; min-height:0; }
+  .swatch { margin:.075in .23in .035in; border:1px solid #4b5563; overflow:hidden; background:${exteriorSwatch}; }
   .swatch img { width:100%; height:100%; object-fit:cover; display:block; }
-  .swatch-copy { padding:0 .20in; font-size:6.9pt; line-height:1.17; font-weight:800; }
-  .dealer-panel { display:grid; grid-template-rows:.27in 1fr; min-height:0; }
-  .dealer-body { padding:.12in .16in; display:grid; grid-template-columns:1.15fr .85fr; gap:.18in; font-size:7pt; line-height:1.25; }
-  .dealer-name { font-size:10pt; font-weight:950; margin-bottom:.06in; }
-  .dealer-label { font-size:6.4pt; font-weight:950; text-transform:uppercase; margin-top:.06in; }
+  .swatch-copy { padding:0 .18in; font-size:6.45pt; line-height:1.08; font-weight:800; }
+  .dealer-panel { display:grid; grid-template-rows:.25in 1fr; min-height:0; }
+  .dealer-body { padding:.085in .14in; display:grid; grid-template-columns:1.25fr .75fr; gap:.16in; font-size:6.55pt; line-height:1.15; }
+  .dealer-name { font-size:8.8pt; font-weight:950; margin-bottom:.035in; }
+  .dealer-label { font-size:5.95pt; font-weight:950; text-transform:uppercase; margin-top:.045in; }
 
   .epa { display:grid; grid-template-columns:8.05in 2.35in 2.30in 3.56in; border-bottom:2px solid #1f2937; min-height:0; }
-  .epa-panel { border-right:2px solid #1f2937; display:grid; grid-template-rows:.27in 1fr; }
+  .epa-panel { border-right:2px solid #1f2937; display:grid; grid-template-rows:.25in 1fr; }
   .epa-panel:last-child { border-right:0; }
-  .epa-body { padding:.10in .12in; }
-  .mpg-grid { display:grid; grid-template-columns:1fr 1.55in 1fr; align-items:center; gap:.12in; text-align:center; }
-  .mpg-number { font-size:25pt; line-height:1; font-weight:500; }
-  .mpg-label { font-size:7pt; font-weight:950; text-transform:uppercase; }
-  .mpg-small { font-size:6.8pt; line-height:1.2; margin-top:.05in; }
-  .cost-box { font-size:7.3pt; line-height:1.25; text-align:center; }
-  .cost-big { font-size:18pt; font-weight:950; margin:.05in 0; }
-  .engine-copy { font-size:7.2pt; line-height:1.35; text-align:center; margin-top:.16in; }
-  .pump-icon { font-size:37pt; line-height:1; text-align:center; margin-top:.08in; }
-  .guzzler-copy { text-align:center; font-size:8pt; line-height:1.28; margin-top:.09in; }
-  .guzzler-copy strong { font-size:13pt; }
+  .epa-body { padding:.08in .11in; }
+  .mpg-grid { display:grid; grid-template-columns:1fr 1.85in 1fr; align-items:center; gap:.12in; text-align:center; height:100%; }
+  .mpg-number { font-size:22pt; line-height:.95; font-weight:500; }
+  .mpg-label { font-size:6.7pt; font-weight:950; text-transform:uppercase; }
+  .mpg-small { font-size:6.35pt; line-height:1.15; margin-top:.04in; }
+  .cost-box { font-size:6.8pt; line-height:1.18; text-align:center; }
+  .cost-big { font-size:16.5pt; font-weight:950; margin:.035in 0; }
+  .engine-copy { font-size:6.75pt; line-height:1.28; text-align:center; margin-top:.11in; }
+  .pump-icon { font-size:31pt; line-height:1; text-align:center; margin-top:.055in; }
+  .guzzler-copy { text-align:center; font-size:7.25pt; line-height:1.20; margin-top:.065in; }
+  .guzzler-copy strong { font-size:11.5pt; }
 
-  .footer { display:grid; grid-template-columns:4.7in 2.5in 1.15in 3.2in 1fr; align-items:center; font-size:7pt; }
-  .footer > div { height:100%; display:flex; align-items:center; padding:.07in .12in; border-right:1px solid #6b7280; }
+  .footer { display:grid; grid-template-columns:4.55in 2.55in 1.15in 3.25in 1fr; align-items:center; font-size:6.6pt; }
+  .footer > div { height:100%; display:flex; align-items:center; padding:.055in .11in; border-right:1px solid #6b7280; }
   .footer > div:last-child { border-right:0; justify-content:flex-end; font-weight:950; }
   .barcode { display:flex; flex-direction:column; gap:.03in; }
-  .bars { width:2.02in; height:.18in; background:repeating-linear-gradient(90deg,#000 0 2px,#fff 2px 4px,#000 4px 5px,#fff 5px 8px); }
-  .footer-m { width:.48in; height:.26in; object-fit:contain; margin:auto; }
+  .bars { width:2.05in; height:.15in; background:repeating-linear-gradient(90deg,#000 0 2px,#fff 2px 4px,#000 4px 5px,#fff 5px 8px); }
+  .footer-m { width:.42in; height:.22in; object-fit:contain; margin:auto; }
 
   @media print {
     html,body { width:17in; height:11in; background:#fff; overflow:visible; }
