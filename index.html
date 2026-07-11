@@ -3883,9 +3883,9 @@ function buildWindowStickerHTML() {
   .swatch img { width:100%; height:100%; object-fit:cover; display:block; }
   .swatch-copy { padding:0 .13in; font-size:6.15pt; line-height:1.02; font-weight:800; overflow:hidden; }
   .dealer-panel { grid-column:4; grid-row:1 / span 2; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; }
-  .dealer-body { padding:.075in .12in; display:grid; grid-template-columns:1.18fr .82fr; gap:.13in; font-size:6.25pt; line-height:1.10; min-height:0; overflow:hidden; }
-  .dealer-name { font-size:8.4pt; font-weight:950; margin-bottom:.030in; }
-  .dealer-label { font-size:5.70pt; font-weight:950; text-transform:uppercase; margin-top:.040in; }
+  .dealer-body { padding:.11in .16in; display:grid; grid-template-columns:1.18fr .82fr; gap:.18in; font-size:8.25pt; line-height:1.18; min-height:0; overflow:hidden; }
+  .dealer-name { font-size:11.8pt; line-height:1.05; font-weight:950; margin-bottom:.055in; }
+  .dealer-label { font-size:7.6pt; line-height:1.05; font-weight:950; text-transform:uppercase; margin-top:.075in; }
 
   .epa-panel { grid-row:2; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; border-right:2px solid #1f2937; }
   .epa-panel.fuel { grid-column:1; }
@@ -4023,7 +4023,7 @@ function buildWindowStickerHTML() {
         <div class="packages"><div class="section-bar">Packages</div><div class="package-grid fit-target" data-fit-start="5.90" data-fit-min="4.90">${packageCards}</div></div>
         <div class="swatch-panel exterior"><div class="section-bar">Exterior Color</div><div class="swatch"></div><div class="swatch-copy">${esc(build.exterior.name)}<br>${esc(build.exterior.code)}</div></div>
         <div class="swatch-panel interior"><div class="section-bar">Interior Upholstery</div><div class="swatch">${interiorImage ? `<img src="${esc(interiorImage)}">` : ""}</div><div class="swatch-copy">${esc(build.interior.name)}<br>${esc(build.interior.code)}</div></div>
-        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="6.25" data-fit-min="5.10"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
+        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="8.25" data-fit-min="6.50"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
         <div class="epa-panel fuel"><div class="section-bar">EPA Fuel Economy Estimates</div><div class="epa-body"><div class="mpg-grid"><div><div class="mpg-label">City MPG</div><div class="mpg-number">${esc(epa.city)}</div><div class="mpg-small">Expected range<br>${esc(epa.cityRange)}</div></div><div class="cost-box"><div>Estimated Annual Fuel Cost</div><div class="cost-big">${esc(moneyFull(epa.annualFuelCost))}</div><div>Based on ${Number(epa.annualMiles || 15000).toLocaleString("en-US")} miles<br>at ${esc(moneyFull(epa.fuelPrice))} per gallon</div><hr><strong>Combined Fuel Economy ${esc(epa.combined)} MPG</strong></div><div><div class="mpg-label">Highway MPG</div><div class="mpg-number">${esc(epa.highway)}</div><div class="mpg-small">Expected range<br>${esc(epa.highwayRange)}</div></div></div></div></div>
         <div class="epa-panel power"><div class="section-bar">Powertrain</div><div class="epa-body"><div class="engine-copy">4.0L V8 Engine<br>${esc(build.transmission.name)}<br>Rear-Wheel Drive</div></div></div>
         <div class="epa-panel guzzler"><div class="section-bar">Gas Guzzler Tax</div><div class="epa-body"><div class="guzzler-copy">This vehicle is subject to a Gas Guzzler Tax of<br><strong>${esc(moneyFull(build.gasGuzzlerTax))}</strong></div><div class="pump-icon">⛽</div></div></div>
