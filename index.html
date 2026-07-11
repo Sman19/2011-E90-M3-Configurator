@@ -3715,10 +3715,54 @@ function renderStickerOptionItem(item, forcedPrice = null) {
   `;
 }
 
+// EPA window-sticker values by model year.
+// Update any year's values here without changing the sticker layout.
+const EPA_DATA_BY_YEAR = {
+  "2009": {
+    city: 14,
+    highway: 20,
+    combined: 16,
+    annualFuelCost: 3000,
+    fuelPrice: 3.20,
+    annualMiles: 15000,
+    cityRange: "11 to 17 MPG",
+    highwayRange: "16 to 24 MPG",
+    methodNote: "These estimates reflect EPA methods designated for this model year."
+  },
+  "2010": {
+    city: 14,
+    highway: 20,
+    combined: 16,
+    annualFuelCost: 3000,
+    fuelPrice: 3.20,
+    annualMiles: 15000,
+    cityRange: "11 to 17 MPG",
+    highwayRange: "16 to 24 MPG",
+    methodNote: "These estimates reflect EPA methods designated for this model year."
+  },
+  "2011": {
+    city: 14,
+    highway: 20,
+    combined: 16,
+    annualFuelCost: 3000,
+    fuelPrice: 3.20,
+    annualMiles: 15000,
+    cityRange: "11 to 17 MPG",
+    highwayRange: "16 to 24 MPG",
+    methodNote: "These estimates reflect EPA methods designated for this model year."
+  }
+};
+
+function getEPADataForModelYear(year = getModelYear()) {
+  const key = String(year || "2011");
+  return EPA_DATA_BY_YEAR[key] || EPA_DATA_BY_YEAR["2011"];
+}
+
 function buildWindowStickerHTML() {
   const build = buildOutput();
   const c = calculate();
   const premiumTrim = selectedPremiumTrim();
+  const epa = getEPADataForModelYear(getModelYear());
   const exteriorImage = build.exteriorPreviewImage || build.previewImage || "";
   const bmwLogo = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/34cc711c2b38bc0cb5fdbbe5796948dff4f84643/BMW%20Logo.webp";
   const mLogo = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/aeb4f20926e624ef390e5887fef2b5affbf0e96d/bmw%20m%20logo.png";
@@ -3980,7 +4024,7 @@ function buildWindowStickerHTML() {
         <div class="swatch-panel exterior"><div class="section-bar">Exterior Color</div><div class="swatch"></div><div class="swatch-copy">${esc(build.exterior.name)}<br>${esc(build.exterior.code)}</div></div>
         <div class="swatch-panel interior"><div class="section-bar">Interior Upholstery</div><div class="swatch">${interiorImage ? `<img src="${esc(interiorImage)}">` : ""}</div><div class="swatch-copy">${esc(build.interior.name)}<br>${esc(build.interior.code)}</div></div>
         <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="6.25" data-fit-min="5.10"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
-        <div class="epa-panel fuel"><div class="section-bar">EPA Fuel Economy Estimates</div><div class="epa-body"><div class="mpg-grid"><div><div class="mpg-label">City MPG</div><div class="mpg-number">14</div><div class="mpg-small">Expected range<br>11 to 17 MPG</div></div><div class="cost-box"><div>Estimated Annual Fuel Cost</div><div class="cost-big">$3,000</div><div>Based on 15,000 miles<br>at $3.20 per gallon</div><hr><strong>Combined Fuel Economy 16 MPG</strong></div><div><div class="mpg-label">Highway MPG</div><div class="mpg-number">20</div><div class="mpg-small">Expected range<br>16 to 24 MPG</div></div></div></div></div>
+        <div class="epa-panel fuel"><div class="section-bar">EPA Fuel Economy Estimates</div><div class="epa-body"><div class="mpg-grid"><div><div class="mpg-label">City MPG</div><div class="mpg-number">${esc(epa.city)}</div><div class="mpg-small">Expected range<br>${esc(epa.cityRange)}</div></div><div class="cost-box"><div>Estimated Annual Fuel Cost</div><div class="cost-big">${esc(moneyFull(epa.annualFuelCost))}</div><div>Based on ${Number(epa.annualMiles || 15000).toLocaleString("en-US")} miles<br>at ${esc(moneyFull(epa.fuelPrice))} per gallon</div><hr><strong>Combined Fuel Economy ${esc(epa.combined)} MPG</strong></div><div><div class="mpg-label">Highway MPG</div><div class="mpg-number">${esc(epa.highway)}</div><div class="mpg-small">Expected range<br>${esc(epa.highwayRange)}</div></div></div></div></div>
         <div class="epa-panel power"><div class="section-bar">Powertrain</div><div class="epa-body"><div class="engine-copy">4.0L V8 Engine<br>${esc(build.transmission.name)}<br>Rear-Wheel Drive</div></div></div>
         <div class="epa-panel guzzler"><div class="section-bar">Gas Guzzler Tax</div><div class="epa-body"><div class="guzzler-copy">This vehicle is subject to a Gas Guzzler Tax of<br><strong>${esc(moneyFull(build.gasGuzzlerTax))}</strong></div><div class="pump-icon">⛽</div></div></div>
       </section>
