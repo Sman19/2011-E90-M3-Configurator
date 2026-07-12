@@ -2936,9 +2936,11 @@ function drawPdfSideProfileCar(c) {
     const sourceWidth = Number(window.__pdfCarImageWidth || 380);
     const sourceHeight = Number(window.__pdfCarImageHeight || 210);
     const aspectHeight = targetWidth * (sourceHeight / sourceWidth);
-    const targetHeight = Math.max(78, Math.min(96, Math.round(aspectHeight)));
+    // Preserve the source image's exact aspect ratio. Do not force a minimum height,
+    // because wide side-profile PNGs become vertically stretched.
+    const targetHeight = Math.max(1, Math.round(aspectHeight));
     const x = 346;
-    const y = 600;
+    const y = 600 + Math.round((78 - targetHeight) / 2);
 
     return `q
 ${targetWidth} 0 0 ${targetHeight} ${x} ${y} cm
