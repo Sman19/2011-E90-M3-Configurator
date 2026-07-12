@@ -835,6 +835,7 @@ html.silent-generator-mode body::before {
 
       <div class="title">
         <h1 id="configTitle">BMW E90 M3 Sedan Configurator</h1>
+        <p>Build your ultimate driving machine.</p>
       </div>
     </div>
 
@@ -3835,7 +3836,7 @@ function buildWindowStickerHTML() {
   .preview-wrap { width:100%; display:flex; justify-content:center; transform-origin:top center; }
   .preview-wrap.fit { transform:scale(var(--preview-scale,1)); margin-bottom:calc((11in * var(--preview-scale,1)) - 11in + 16px); }
   .sheet { width:17in; height:11in; background:#fff; margin:0 auto 18px; padding:.28in; overflow:hidden; flex:0 0 auto; }
-  .sticker { width:100%; height:100%; border:3px solid #1f2937; display:grid; grid-template-rows:.86in 6.66in 2.30in .62in; }
+  .sticker { width:100%; height:100%; border:3px solid #1f2937; display:grid; grid-template-rows:.86in 4.85in 3.05in .62in; }
   .header { display:grid; grid-template-columns:2.02in 1fr 3.28in; border-bottom:2px solid #1f2937; min-height:0; }
   .logo-zone { padding:.07in .13in .045in; display:flex; flex-direction:column; justify-content:center; min-width:0; overflow:hidden; }
   .logo-row { display:flex; align-items:center; gap:.11in; height:.43in; }
@@ -3878,7 +3879,7 @@ function buildWindowStickerHTML() {
   .total-msrp { background:#263344; color:#fff; padding:.045in .11in; display:grid; grid-template-columns:1fr auto; align-items:center; font-size:10.6pt; letter-spacing:.02em; line-height:1; }
   .total-msrp strong { font-size:12.4pt; font-variant-numeric:tabular-nums; }
 
-  .lower { display:grid; grid-template-columns:15.5% 17.5% 33.5% 33.5%; grid-template-rows:.72in 1.58in; min-height:0; border-bottom:2px solid #1f2937; }
+  .lower { display:grid; grid-template-columns:15.5% 17.5% 33.5% 33.5%; grid-template-rows:.98in 2.07in; min-height:0; border-bottom:2px solid #1f2937; }
   .swatch-panel { grid-row:1; border-right:2px solid #1f2937; border-bottom:2px solid #1f2937; display:grid; grid-template-rows:.25in .43in 1fr; min-height:0; overflow:hidden; }
   .swatch-panel.exterior { grid-column:1; }
   .swatch-panel.interior { grid-column:2; }
@@ -4021,7 +4022,7 @@ function buildWindowStickerHTML() {
       <section class="lower">
         <div class="swatch-panel exterior"><div class="section-bar">Exterior Color</div><div class="swatch"></div><div class="swatch-copy">${esc(build.exterior.name)}<br>${esc(build.exterior.code)}</div></div>
         <div class="swatch-panel interior"><div class="section-bar">Interior Upholstery</div><div class="swatch">${interiorImage ? `<img src="${esc(interiorImage)}">` : ""}</div><div class="swatch-copy">${esc(build.interior.name)}<br>${esc(build.interior.code)}</div></div>
-        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="6.75" data-fit-min="5.65"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
+        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="6.75" data-fit-min="5.65"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
         <div class="epa-panel fuel"><div class="section-bar">EPA Fuel Economy Estimates</div><div class="epa-body"><div class="mpg-grid"><div><div class="mpg-label">City MPG</div><div class="mpg-number">${esc(epa.city)}</div><div class="mpg-small">Expected range<br>${esc(epa.cityRange)}</div></div><div class="cost-box"><div>Estimated Annual Fuel Cost</div><div class="cost-big">${esc(moneyFull(epa.annualFuelCost))}</div><div>Based on ${Number(epa.annualMiles || 15000).toLocaleString("en-US")} miles<br>at ${esc(moneyFull(epa.fuelPrice))} per gallon</div><hr><strong>Combined Fuel Economy ${esc(epa.combined)} MPG</strong></div><div><div class="mpg-label">Highway MPG</div><div class="mpg-number">${esc(epa.highway)}</div><div class="mpg-small">Expected range<br>${esc(epa.highwayRange)}</div></div></div></div></div>
         <div class="epa-panel guzzler"><div class="section-bar">Gas Guzzler Tax</div><div class="epa-body"><div class="guzzler-copy">This vehicle is subject to a Gas Guzzler Tax of<br><strong>${esc(moneyFull(build.gasGuzzlerTax))}</strong></div><div class="pump-icon">⛽</div></div></div>
       </section>
