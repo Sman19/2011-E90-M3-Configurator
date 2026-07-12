@@ -835,7 +835,6 @@ html.silent-generator-mode body::before {
 
       <div class="title">
         <h1 id="configTitle">BMW E90 M3 Sedan Configurator</h1>
-        <p>Build your ultimate driving machine.</p>
       </div>
     </div>
 
@@ -1512,9 +1511,25 @@ const state = {
 
 const $ = id => document.getElementById(id);
 
+function detectModelYearFromVIN(vinValue) {
+  const vin = normalizeVIN(vinValue);
+  if (vin.length < 10) return "";
+
+  // The 10th VIN character is the model-year designator:
+  // 9 = 2009, A = 2010 (AE sequence), B = 2011 (BE sequence).
+  const yearCode = vin.charAt(9).toUpperCase();
+  if (yearCode === "9") return "2009";
+  if (yearCode === "A") return "2010";
+  if (yearCode === "B") return "2011";
+  return "";
+}
+
 function getModelYear() {
   const cleanYear = String(state.modelYear || "").trim();
   if (/^20\d{2}$/.test(cleanYear)) return cleanYear;
+
+  const vinYear = detectModelYearFromVIN(state.vin);
+  if (vinYear) return vinYear;
 
   if (Number(state.baseMSRP) === 54850) return "2009";
   if (Number(state.baseMSRP) === 55400) return "2010";
@@ -2180,14 +2195,13 @@ function applyBaseMSRPFromPackageText(packageText) {
     .map(token => token.trim().toUpperCase())
     .filter(Boolean);
 
+  // MSRP markers select the applicable base price only.
+  // They must not overwrite the model year because some 2011 BE VINs use MSRP.1 pricing.
   if (tokens.includes("MSRP.2")) {
-    state.modelYear = "2009";
     state.baseMSRP = 54850;
   } else if (tokens.includes("MSRP.1")) {
-    state.modelYear = "2010";
     state.baseMSRP = 55400;
   } else if (tokens.includes("MSRP")) {
-    state.modelYear = "2011";
     state.baseMSRP = 55900;
   }
 }
@@ -2674,10 +2688,12 @@ async function lookupVIN() {
     state.dealerZip = dealerInfo.zip || "";
     state.dealerPhone = dealerInfo.phone || "";
 
-    // Base MSRP follows MSRP.1 / $55,400 first, then MSRP / $55,900, then Column D model year.
-    // This keeps 2011 rows with MSRP.1 at $55,400.
+    // Base price and model year are separate:
+    // MSRP.1 can be $55,400 on either a 2010 or a 2011 vehicle.
+    // VIN year code A (AE) = 2010 and B (BE) = 2011.
     state.baseMSRP = detectBaseMSRPFromCSVRow(match, packageText);
-    state.modelYear = String(csvModelYear || "").trim()
+    state.modelYear = detectModelYearFromVIN(state.vin)
+      || String(csvModelYear || "").trim()
       || (Number(state.baseMSRP) === 54850 ? "2009" : Number(state.baseMSRP) === 55400 ? "2010" : "2011");
 
     applyPackageCodes(packageText);
@@ -3836,7 +3852,7 @@ function buildWindowStickerHTML() {
   .preview-wrap { width:100%; display:flex; justify-content:center; transform-origin:top center; }
   .preview-wrap.fit { transform:scale(var(--preview-scale,1)); margin-bottom:calc((11in * var(--preview-scale,1)) - 11in + 16px); }
   .sheet { width:17in; height:11in; background:#fff; margin:0 auto 18px; padding:.28in; overflow:hidden; flex:0 0 auto; }
-  .sticker { width:100%; height:100%; border:3px solid #1f2937; display:grid; grid-template-rows:.86in 4.85in 3.05in .62in; }
+  .sticker { width:100%; height:100%; border:3px solid #1f2937; display:grid; grid-template-rows:.86in 6.66in 2.30in .62in; }
   .header { display:grid; grid-template-columns:2.02in 1fr 3.28in; border-bottom:2px solid #1f2937; min-height:0; }
   .logo-zone { padding:.07in .13in .045in; display:flex; flex-direction:column; justify-content:center; min-width:0; overflow:hidden; }
   .logo-row { display:flex; align-items:center; gap:.11in; height:.43in; }
@@ -3879,7 +3895,7 @@ function buildWindowStickerHTML() {
   .total-msrp { background:#263344; color:#fff; padding:.045in .11in; display:grid; grid-template-columns:1fr auto; align-items:center; font-size:10.6pt; letter-spacing:.02em; line-height:1; }
   .total-msrp strong { font-size:12.4pt; font-variant-numeric:tabular-nums; }
 
-  .lower { display:grid; grid-template-columns:15.5% 17.5% 33.5% 33.5%; grid-template-rows:.98in 2.07in; min-height:0; border-bottom:2px solid #1f2937; }
+  .lower { display:grid; grid-template-columns:15.5% 17.5% 33.5% 33.5%; grid-template-rows:.72in 1.58in; min-height:0; border-bottom:2px solid #1f2937; }
   .swatch-panel { grid-row:1; border-right:2px solid #1f2937; border-bottom:2px solid #1f2937; display:grid; grid-template-rows:.25in .43in 1fr; min-height:0; overflow:hidden; }
   .swatch-panel.exterior { grid-column:1; }
   .swatch-panel.interior { grid-column:2; }
