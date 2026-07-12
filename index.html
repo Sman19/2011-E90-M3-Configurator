@@ -3852,20 +3852,20 @@ function buildWindowStickerHTML() {
   .photo-caption { padding:.052in .10in; font-size:6.65pt; font-style:italic; border-top:1px solid #9ca3af; overflow:hidden; }
   .standard-panel { border-right:2px solid #1f2937; min-height:0; display:grid; grid-template-rows:.25in 1fr; overflow:hidden; }
   .section-bar { height:.25in; padding:.046in .085in; background:#263344; color:#fff; font-size:7.25pt; font-weight:950; text-transform:uppercase; letter-spacing:.03em; line-height:1.05; overflow:hidden; white-space:nowrap; }
-  .feature-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)) 1.16fr; min-height:0; overflow:hidden; }
+  .feature-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); min-height:0; overflow:hidden; }
   .feature-col { padding:.064in .078in; border-right:1px solid #9ca3af; font-size:6.15pt; line-height:1.08; min-width:0; overflow:hidden; }
   .feature-col:last-child { border-right:0; }
   .feature-head { font-size:6.45pt; font-weight:950; margin-bottom:.020in; text-transform:uppercase; }
   .feature-head.space { margin-top:.058in; }
   .feature-col div.item { margin-bottom:.008in; }
-  .package-feature-col { padding:0; display:grid; grid-template-rows:.25in 1fr; background:#f8fafc; }
-  .package-feature-col .section-bar { font-size:6.85pt; }
-  .package-feature-grid { padding:.060in .080in; overflow:hidden; align-content:start; font-size:5.95pt; line-height:1.04; }
-  .package-feature-grid .package-card { margin-bottom:.050in; }
 
   .pricing-panel { min-height:0; display:grid; grid-template-rows:.25in .31in minmax(0,1fr) .25in .25in .34in; overflow:hidden; }
   .pricing-body { padding:.052in .105in .030in; font-size:7.35pt; line-height:1.03; min-height:0; overflow:hidden; }
   .pricing-intro { font-size:6.55pt; margin-bottom:.030in; }
+  .pricing-packages { margin-top:.070in; padding-top:.055in; border-top:1px solid #9ca3af; }
+  .pricing-packages-title { font-size:6.75pt; font-weight:950; text-transform:uppercase; margin-bottom:.035in; }
+  .pricing-packages-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.045in .12in; font-size:6.2pt; line-height:1.05; }
+  .pricing-packages-grid .package-card { margin:0; }
   .price-line { display:grid; grid-template-columns:minmax(0,1fr) .92in; gap:.065in; align-items:start; padding:.008in 0; line-height:1.02; }
   .price-line span { min-width:0; overflow-wrap:anywhere; }
   .price-line strong { text-align:right; white-space:nowrap; font-size:7.25pt; font-variant-numeric:tabular-nums; }
@@ -3874,22 +3874,22 @@ function buildWindowStickerHTML() {
   .total-msrp { background:#263344; color:#fff; padding:.045in .11in; display:grid; grid-template-columns:1fr auto; align-items:center; font-size:10.6pt; letter-spacing:.02em; line-height:1; }
   .total-msrp strong { font-size:12.4pt; font-variant-numeric:tabular-nums; }
 
-  .lower { display:grid; grid-template-columns:15.5% 17.5% 31.7% 35.3%; grid-template-rows:1.22in 2.50in; min-height:0; border-bottom:2px solid #1f2937; }
-  .swatch-panel { grid-row:1; border-right:2px solid #1f2937; border-bottom:2px solid #1f2937; display:grid; grid-template-rows:.25in .60in 1fr; min-height:0; overflow:hidden; }
+  .lower { display:grid; grid-template-columns:15.5% 17.5% 33.5% 33.5%; grid-template-rows:1.42in 2.30in; min-height:0; border-bottom:2px solid #1f2937; }
+  .swatch-panel { grid-row:1; border-right:2px solid #1f2937; border-bottom:2px solid #1f2937; display:grid; grid-template-rows:.25in .72in 1fr; min-height:0; overflow:hidden; }
   .swatch-panel.exterior { grid-column:1; }
   .swatch-panel.interior { grid-column:2; }
-  .swatch { margin:.050in .16in .020in; border:1px solid #4b5563; overflow:hidden; background:${exteriorSwatch}; min-height:0; }
+  .swatch { margin:.050in .14in .020in; border:1px solid #4b5563; overflow:hidden; background:${exteriorSwatch}; min-height:0; }
   .swatch img { width:100%; height:100%; object-fit:cover; display:block; }
-  .swatch-copy { padding:0 .11in; font-size:6.15pt; line-height:1.02; font-weight:800; overflow:hidden; }
+  .swatch-copy { padding:0 .10in; font-size:6.15pt; line-height:1.02; font-weight:800; overflow:hidden; }
+
   .dealer-panel { grid-column:3 / span 2; grid-row:1; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; border-bottom:2px solid #1f2937; }
-  .dealer-body { padding:.075in .16in; display:grid; grid-template-columns:1.15fr .85fr; gap:.18in; font-size:7.55pt; line-height:1.12; min-height:0; overflow:hidden; }
-  .dealer-name { font-size:10.6pt; line-height:1.03; font-weight:950; margin-bottom:.035in; }
-  .dealer-label { font-size:7.05pt; line-height:1.02; font-weight:950; text-transform:uppercase; margin-top:.040in; }
+  .dealer-body { padding:.090in .18in; display:grid; grid-template-columns:1.15fr .85fr; gap:.22in; font-size:7.75pt; line-height:1.13; min-height:0; overflow:hidden; }
+  .dealer-name { font-size:11.0pt; line-height:1.03; font-weight:950; margin-bottom:.040in; }
+  .dealer-label { font-size:7.15pt; line-height:1.02; font-weight:950; text-transform:uppercase; margin-top:.045in; }
 
   .epa-panel { grid-row:2; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; border-right:2px solid #1f2937; }
   .epa-panel.fuel { grid-column:1 / span 2; }
-  .epa-panel.power { grid-column:3; }
-  .epa-panel.guzzler { grid-column:4; border-right:0; }
+  .epa-panel.guzzler { grid-column:3 / span 2; border-right:0; }
   .epa-body { padding:.07in .09in; min-height:0; overflow:hidden; }
   .mpg-grid { display:grid; grid-template-columns:1fr 1.52in 1fr; align-items:center; gap:.08in; text-align:center; height:100%; }
   .mpg-number { font-size:21pt; line-height:.92; font-weight:500; }
@@ -3897,10 +3897,9 @@ function buildWindowStickerHTML() {
   .mpg-small { font-size:5.95pt; line-height:1.10; margin-top:.03in; }
   .cost-box { font-size:6.15pt; line-height:1.12; text-align:center; }
   .cost-big { font-size:15.0pt; font-weight:950; margin:.025in 0; }
-  .engine-copy { font-size:6.65pt; line-height:1.22; text-align:center; margin-top:.13in; }
-  .pump-icon { font-size:29pt; line-height:1; text-align:center; margin-top:.045in; }
-  .guzzler-copy { text-align:center; font-size:6.85pt; line-height:1.14; margin-top:.075in; }
-  .guzzler-copy strong { font-size:11.4pt; }
+  .pump-icon { font-size:30pt; line-height:1; text-align:center; margin-top:.055in; }
+  .guzzler-copy { text-align:center; font-size:7.15pt; line-height:1.16; margin-top:.11in; }
+  .guzzler-copy strong { font-size:12.2pt; }
 
   .footer { display:grid; grid-template-columns:4.45in 2.40in 1.12in 3.20in 1fr; align-items:center; font-size:6.35pt; min-height:0; overflow:hidden; }
   .footer > div { height:100%; display:flex; align-items:center; padding:.050in .10in; border-right:1px solid #6b7280; overflow:hidden; }
@@ -4000,17 +3999,22 @@ function buildWindowStickerHTML() {
               <div class="item">• Extended Novillo leather, when equipped</div>
               <div class="item">• Anthracite headliner</div>
             </div>
-            <div class="feature-col package-feature-col">
-              <div class="section-bar">Selected Package Details</div>
-              <div class="package-feature-grid fit-target" data-fit-start="5.95" data-fit-min="4.75">${packageCards}</div>
-            </div>
           </div>
         </div>
 
         <div class="pricing-panel">
           <div class="section-bar">Manufacturer's Suggested Retail Price</div>
           <div class="base-price"><span>Base Price</span><span>${esc(moneyFull(build.baseMSRP))}</span></div>
-          <div class="pricing-body fit-target" data-fit-start="7.35" data-fit-min="5.65"><div class="pricing-intro">Options and Additional Charges:</div>${priceRowsHtml}</div>
+          <div class="pricing-body fit-target" data-fit-start="7.35" data-fit-min="5.35">
+            <div class="pricing-intro">Options and Additional Charges:</div>
+            ${priceRowsHtml}
+            ${packageCards ? `
+              <div class="pricing-packages">
+                <div class="pricing-packages-title">Selected Package Details</div>
+                <div class="pricing-packages-grid">${packageCards}</div>
+              </div>
+            ` : ""}
+          </div>
           <div class="fee-line"><span>Destination &amp; Handling</span><strong>${esc(moneyFull(build.destinationCharge))}</strong></div>
           <div class="fee-line"><span>Gas Guzzler Tax</span><strong>${esc(moneyFull(build.gasGuzzlerTax))}</strong></div>
           <div class="total-msrp"><span>TOTAL MSRP</span><strong>${esc(moneyFull(build.totalMSRP))}</strong></div>
@@ -4020,9 +4024,8 @@ function buildWindowStickerHTML() {
       <section class="lower">
         <div class="swatch-panel exterior"><div class="section-bar">Exterior Color</div><div class="swatch"></div><div class="swatch-copy">${esc(build.exterior.name)}<br>${esc(build.exterior.code)}</div></div>
         <div class="swatch-panel interior"><div class="section-bar">Interior Upholstery</div><div class="swatch">${interiorImage ? `<img src="${esc(interiorImage)}">` : ""}</div><div class="swatch-copy">${esc(build.interior.name)}<br>${esc(build.interior.code)}</div></div>
-        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="7.55" data-fit-min="6.15"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
+        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="7.75" data-fit-min="6.35"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
         <div class="epa-panel fuel"><div class="section-bar">EPA Fuel Economy Estimates</div><div class="epa-body"><div class="mpg-grid"><div><div class="mpg-label">City MPG</div><div class="mpg-number">${esc(epa.city)}</div><div class="mpg-small">Expected range<br>${esc(epa.cityRange)}</div></div><div class="cost-box"><div>Estimated Annual Fuel Cost</div><div class="cost-big">${esc(moneyFull(epa.annualFuelCost))}</div><div>Based on ${Number(epa.annualMiles || 15000).toLocaleString("en-US")} miles<br>at ${esc(moneyFull(epa.fuelPrice))} per gallon</div><hr><strong>Combined Fuel Economy ${esc(epa.combined)} MPG</strong></div><div><div class="mpg-label">Highway MPG</div><div class="mpg-number">${esc(epa.highway)}</div><div class="mpg-small">Expected range<br>${esc(epa.highwayRange)}</div></div></div></div></div>
-        <div class="epa-panel power"><div class="section-bar">Powertrain</div><div class="epa-body"><div class="engine-copy">4.0L V8 Engine<br>${esc(build.transmission.name)}<br>Rear-Wheel Drive</div></div></div>
         <div class="epa-panel guzzler"><div class="section-bar">Gas Guzzler Tax</div><div class="epa-body"><div class="guzzler-copy">This vehicle is subject to a Gas Guzzler Tax of<br><strong>${esc(moneyFull(build.gasGuzzlerTax))}</strong></div><div class="pump-icon">⛽</div></div></div>
       </section>
 
