@@ -760,7 +760,7 @@ textarea {
 .footer-note {
   text-align: center;
   color: #aab3c0;
-  font-size: 18px;
+  font-size: 12px;
   margin-top: 10px;
 }
 
@@ -3835,8 +3835,8 @@ function buildWindowStickerHTML() {
   .header { display:grid; grid-template-columns:2.02in 1fr 3.28in; border-bottom:2px solid #1f2937; min-height:0; }
   .logo-zone { padding:.07in .13in .045in; display:flex; flex-direction:column; justify-content:center; min-width:0; overflow:hidden; }
   .logo-row { display:flex; align-items:center; gap:.11in; height:.43in; }
-  .bmw-logo { width:.75in; height:.75in; object-fit:contain; }
-  .m-logo { width:.75in; height:.45in; object-fit:contain; }
+  .bmw-logo { width:.38in; height:.38in; object-fit:contain; }
+  .m-logo { width:.60in; height:.32in; object-fit:contain; }
   .tagline { font-size:7.6pt; font-weight:800; line-height:1.01; margin-top:.01in; }
   .model-zone { padding:.10in .15in .07in; display:flex; flex-direction:column; justify-content:center; min-width:0; overflow:hidden; }
   .model-title { font-size:20.5pt; line-height:1; font-weight:950; letter-spacing:-.02em; text-transform:uppercase; white-space:nowrap; }
@@ -3845,52 +3845,51 @@ function buildWindowStickerHTML() {
   .spec-zone strong { font-weight:950; }
   .spec-zone span { min-width:0; overflow-wrap:anywhere; }
 
-  .main { display:grid; grid-template-columns:30.6% 43.2% 26.2%; border-bottom:2px solid #1f2937; min-height:0; }
+  .main { display:grid; grid-template-columns:29.5% 39.0% 31.5%; border-bottom:2px solid #1f2937; min-height:0; }
   .photo-panel { border-right:2px solid #1f2937; display:grid; grid-template-rows:1fr .30in; min-height:0; overflow:hidden; }
   .vehicle-photo { display:flex; align-items:center; justify-content:center; overflow:hidden; padding:.16in .17in .10in; background:#fff; }
   .vehicle-photo img { width:86%; height:82%; object-fit:contain; }
   .photo-caption { padding:.052in .10in; font-size:6.65pt; font-style:italic; border-top:1px solid #9ca3af; overflow:hidden; }
   .standard-panel { border-right:2px solid #1f2937; min-height:0; display:grid; grid-template-rows:.25in 1fr; overflow:hidden; }
   .section-bar { height:.25in; padding:.046in .085in; background:#263344; color:#fff; font-size:7.25pt; font-weight:950; text-transform:uppercase; letter-spacing:.03em; line-height:1.05; overflow:hidden; white-space:nowrap; }
-  .feature-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); min-height:0; overflow:hidden; }
+  .feature-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)) 1.16fr; min-height:0; overflow:hidden; }
   .feature-col { padding:.064in .078in; border-right:1px solid #9ca3af; font-size:6.15pt; line-height:1.08; min-width:0; overflow:hidden; }
   .feature-col:last-child { border-right:0; }
   .feature-head { font-size:6.45pt; font-weight:950; margin-bottom:.020in; text-transform:uppercase; }
   .feature-head.space { margin-top:.058in; }
   .feature-col div.item { margin-bottom:.008in; }
+  .package-feature-col { padding:0; display:grid; grid-template-rows:.25in 1fr; background:#f8fafc; }
+  .package-feature-col .section-bar { font-size:6.85pt; }
+  .package-feature-grid { padding:.060in .080in; overflow:hidden; align-content:start; font-size:5.95pt; line-height:1.04; }
+  .package-feature-grid .package-card { margin-bottom:.050in; }
 
   .pricing-panel { min-height:0; display:grid; grid-template-rows:.25in .31in minmax(0,1fr) .25in .25in .34in; overflow:hidden; }
-  .pricing-body { padding:.045in .095in .025in; font-size:6.75pt; line-height:1.00; min-height:0; overflow:hidden; }
-  .pricing-intro { font-size:5.95pt; margin-bottom:.025in; }
-  .price-line { display:grid; grid-template-columns:minmax(0,1fr) .80in; gap:.055in; align-items:start; padding:.006in 0; line-height:1.00; }
+  .pricing-body { padding:.052in .105in .030in; font-size:7.35pt; line-height:1.03; min-height:0; overflow:hidden; }
+  .pricing-intro { font-size:6.55pt; margin-bottom:.030in; }
+  .price-line { display:grid; grid-template-columns:minmax(0,1fr) .92in; gap:.065in; align-items:start; padding:.008in 0; line-height:1.02; }
   .price-line span { min-width:0; overflow-wrap:anywhere; }
-  .price-line strong { text-align:right; white-space:nowrap; font-size:6.65pt; font-variant-numeric:tabular-nums; }
-  .base-price { padding:.045in .095in; border-bottom:1px solid #6b7280; display:grid; grid-template-columns:1fr auto; font-size:7.0pt; font-weight:950; line-height:1; }
-  .fee-line { margin:0 .095in; padding:.030in 0; border-top:1px solid #4b5563; display:grid; grid-template-columns:1fr auto; font-size:6.75pt; font-variant-numeric:tabular-nums; line-height:1; }
-  .total-msrp { background:#263344; color:#fff; padding:.040in .10in; display:grid; grid-template-columns:1fr auto; align-items:center; font-size:9.8pt; letter-spacing:.02em; line-height:1; }
-  .total-msrp strong { font-size:11.2pt; font-variant-numeric:tabular-nums; }
+  .price-line strong { text-align:right; white-space:nowrap; font-size:7.25pt; font-variant-numeric:tabular-nums; }
+  .base-price { padding:.052in .105in; border-bottom:1px solid #6b7280; display:grid; grid-template-columns:1fr auto; font-size:7.75pt; font-weight:950; line-height:1; }
+  .fee-line { margin:0 .105in; padding:.035in 0; border-top:1px solid #4b5563; display:grid; grid-template-columns:1fr auto; font-size:7.35pt; font-variant-numeric:tabular-nums; line-height:1; }
+  .total-msrp { background:#263344; color:#fff; padding:.045in .11in; display:grid; grid-template-columns:1fr auto; align-items:center; font-size:10.6pt; letter-spacing:.02em; line-height:1; }
+  .total-msrp strong { font-size:12.4pt; font-variant-numeric:tabular-nums; }
 
-  .lower { display:grid; grid-template-columns:36.5% 13.2% 15.0% 35.3%; grid-template-rows:1.35in 2.37in; min-height:0; border-bottom:2px solid #1f2937; }
-  .packages { grid-column:1; grid-row:1; border-right:2px solid #1f2937; border-bottom:2px solid #1f2937; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; }
-  .package-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); padding:.045in .075in; column-gap:.10in; row-gap:.025in; overflow:hidden; align-content:start; font-size:5.90pt; line-height:1.04; }
-  .package-card { font-size:inherit; line-height:inherit; min-width:0; overflow:visible; break-inside:avoid; }
-  .package-name { font-size:1.05em; line-height:1.02; font-weight:950; text-transform:uppercase; margin-bottom:.012in; }
-  .package-card > div:not(.package-name) { font-size:inherit; line-height:inherit; }
-  .swatch-panel { grid-row:1; border-right:2px solid #1f2937; border-bottom:2px solid #1f2937; display:grid; grid-template-rows:.25in .68in 1fr; min-height:0; overflow:hidden; }
-  .swatch-panel.exterior { grid-column:2; }
-  .swatch-panel.interior { grid-column:3; }
-  .swatch { margin:.060in .19in .025in; border:1px solid #4b5563; overflow:hidden; background:${exteriorSwatch}; min-height:0; }
+  .lower { display:grid; grid-template-columns:15.5% 17.5% 31.7% 35.3%; grid-template-rows:1.22in 2.50in; min-height:0; border-bottom:2px solid #1f2937; }
+  .swatch-panel { grid-row:1; border-right:2px solid #1f2937; border-bottom:2px solid #1f2937; display:grid; grid-template-rows:.25in .60in 1fr; min-height:0; overflow:hidden; }
+  .swatch-panel.exterior { grid-column:1; }
+  .swatch-panel.interior { grid-column:2; }
+  .swatch { margin:.050in .16in .020in; border:1px solid #4b5563; overflow:hidden; background:${exteriorSwatch}; min-height:0; }
   .swatch img { width:100%; height:100%; object-fit:cover; display:block; }
-  .swatch-copy { padding:0 .13in; font-size:6.15pt; line-height:1.02; font-weight:800; overflow:hidden; }
-  .dealer-panel { grid-column:4; grid-row:1 / span 2; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; }
-  .dealer-body { padding:.11in .16in; display:grid; grid-template-columns:1.18fr .82fr; gap:.18in; font-size:8.25pt; line-height:1.18; min-height:0; overflow:hidden; }
-  .dealer-name { font-size:11.8pt; line-height:1.05; font-weight:950; margin-bottom:.055in; }
-  .dealer-label { font-size:7.6pt; line-height:1.05; font-weight:950; text-transform:uppercase; margin-top:.075in; }
+  .swatch-copy { padding:0 .11in; font-size:6.15pt; line-height:1.02; font-weight:800; overflow:hidden; }
+  .dealer-panel { grid-column:3 / span 2; grid-row:1; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; border-bottom:2px solid #1f2937; }
+  .dealer-body { padding:.075in .16in; display:grid; grid-template-columns:1.15fr .85fr; gap:.18in; font-size:7.55pt; line-height:1.12; min-height:0; overflow:hidden; }
+  .dealer-name { font-size:10.6pt; line-height:1.03; font-weight:950; margin-bottom:.035in; }
+  .dealer-label { font-size:7.05pt; line-height:1.02; font-weight:950; text-transform:uppercase; margin-top:.040in; }
 
   .epa-panel { grid-row:2; display:grid; grid-template-rows:.25in 1fr; min-height:0; overflow:hidden; border-right:2px solid #1f2937; }
-  .epa-panel.fuel { grid-column:1; }
-  .epa-panel.power { grid-column:2; }
-  .epa-panel.guzzler { grid-column:3; }
+  .epa-panel.fuel { grid-column:1 / span 2; }
+  .epa-panel.power { grid-column:3; }
+  .epa-panel.guzzler { grid-column:4; border-right:0; }
   .epa-body { padding:.07in .09in; min-height:0; overflow:hidden; }
   .mpg-grid { display:grid; grid-template-columns:1fr 1.52in 1fr; align-items:center; gap:.08in; text-align:center; height:100%; }
   .mpg-number { font-size:21pt; line-height:.92; font-weight:500; }
@@ -3898,10 +3897,10 @@ function buildWindowStickerHTML() {
   .mpg-small { font-size:5.95pt; line-height:1.10; margin-top:.03in; }
   .cost-box { font-size:6.15pt; line-height:1.12; text-align:center; }
   .cost-big { font-size:15.0pt; font-weight:950; margin:.025in 0; }
-  .engine-copy { font-size:6.30pt; line-height:1.20; text-align:center; margin-top:.09in; }
+  .engine-copy { font-size:6.65pt; line-height:1.22; text-align:center; margin-top:.13in; }
   .pump-icon { font-size:29pt; line-height:1; text-align:center; margin-top:.045in; }
-  .guzzler-copy { text-align:center; font-size:6.65pt; line-height:1.14; margin-top:.050in; }
-  .guzzler-copy strong { font-size:10.8pt; }
+  .guzzler-copy { text-align:center; font-size:6.85pt; line-height:1.14; margin-top:.075in; }
+  .guzzler-copy strong { font-size:11.4pt; }
 
   .footer { display:grid; grid-template-columns:4.45in 2.40in 1.12in 3.20in 1fr; align-items:center; font-size:6.35pt; min-height:0; overflow:hidden; }
   .footer > div { height:100%; display:flex; align-items:center; padding:.050in .10in; border-right:1px solid #6b7280; overflow:hidden; }
@@ -3934,6 +3933,7 @@ function buildWindowStickerHTML() {
       <header class="header">
         <div class="logo-zone">
           <div class="logo-row"><img class="bmw-logo" src="${esc(bmwLogo)}"><img class="m-logo" src="${esc(mLogo)}"></div>
+          <div class="tagline">The Ultimate<br>Driving Machine®</div>
         </div>
         <div class="model-zone">
           <div class="model-title">${esc(getModelName())}</div>
@@ -3956,7 +3956,7 @@ function buildWindowStickerHTML() {
 
         <div class="standard-panel">
           <div class="section-bar">Standard Features</div>
-          <div class="feature-columns fit-target" data-fit-start="6.15" data-fit-min="5.10">
+          <div class="feature-columns fit-target" data-fit-start="6.15" data-fit-min="4.95">
             <div class="feature-col">
               <div class="feature-head">Performance &amp; Efficiency</div>
               <div class="item">• 4.0-liter S65 V8 engine (414 hp / 295 lb-ft)</div>
@@ -3972,26 +3972,21 @@ function buildWindowStickerHTML() {
               <div class="item">• Advanced Head Protection System</div>
               <div class="item">• Tire Pressure Monitoring System</div>
               <div class="item">• BMW Assist Safety Plan</div>
-            </div>
-            <div class="feature-col">
-              <div class="feature-head">Exterior</div>
-              <div class="item">• Power glass moonroof</div>
+              <div class="feature-head space">Exterior</div>
               <div class="item">• M aerodynamic package</div>
               <div class="item">• Xenon Adaptive Headlights</div>
-              <div class="item">• Headlight washers</div>
               <div class="item">• Heated power mirrors</div>
               <div class="item">• Shadowline exterior trim</div>
-              <div class="item">• M quad exhaust tips</div>
               <div class="item">• Rain-sensing windshield wipers</div>
-              <div class="feature-head space">Interior</div>
+            </div>
+            <div class="feature-col">
+              <div class="feature-head">Interior</div>
               <div class="item">• Novillo leather upholstery</div>
               <div class="item">• 10-way power front seats</div>
               <div class="item">• Automatic climate control</div>
               <div class="item">• Leather-wrapped multifunction M steering wheel</div>
               <div class="item">• Brushed Aluminum interior trim</div>
-            </div>
-            <div class="feature-col">
-              <div class="feature-head">Technology &amp; Convenience</div>
+              <div class="feature-head space">Technology &amp; Convenience</div>
               <div class="item">• Driver system with 6.5-inch display</div>
               <div class="item">• AM/FM/CD/MP3 audio system</div>
               <div class="item">• HD Radio</div>
@@ -4005,13 +4000,17 @@ function buildWindowStickerHTML() {
               <div class="item">• Extended Novillo leather, when equipped</div>
               <div class="item">• Anthracite headliner</div>
             </div>
+            <div class="feature-col package-feature-col">
+              <div class="section-bar">Selected Package Details</div>
+              <div class="package-feature-grid fit-target" data-fit-start="5.95" data-fit-min="4.75">${packageCards}</div>
+            </div>
           </div>
         </div>
 
         <div class="pricing-panel">
           <div class="section-bar">Manufacturer's Suggested Retail Price</div>
           <div class="base-price"><span>Base Price</span><span>${esc(moneyFull(build.baseMSRP))}</span></div>
-          <div class="pricing-body fit-target" data-fit-start="6.75" data-fit-min="5.10"><div class="pricing-intro">Options and Additional Charges:</div>${priceRowsHtml}</div>
+          <div class="pricing-body fit-target" data-fit-start="7.35" data-fit-min="5.65"><div class="pricing-intro">Options and Additional Charges:</div>${priceRowsHtml}</div>
           <div class="fee-line"><span>Destination &amp; Handling</span><strong>${esc(moneyFull(build.destinationCharge))}</strong></div>
           <div class="fee-line"><span>Gas Guzzler Tax</span><strong>${esc(moneyFull(build.gasGuzzlerTax))}</strong></div>
           <div class="total-msrp"><span>TOTAL MSRP</span><strong>${esc(moneyFull(build.totalMSRP))}</strong></div>
@@ -4019,10 +4018,9 @@ function buildWindowStickerHTML() {
       </section>
 
       <section class="lower">
-        <div class="packages"><div class="section-bar">Packages</div><div class="package-grid fit-target" data-fit-start="5.90" data-fit-min="4.90">${packageCards}</div></div>
         <div class="swatch-panel exterior"><div class="section-bar">Exterior Color</div><div class="swatch"></div><div class="swatch-copy">${esc(build.exterior.name)}<br>${esc(build.exterior.code)}</div></div>
         <div class="swatch-panel interior"><div class="section-bar">Interior Upholstery</div><div class="swatch">${interiorImage ? `<img src="${esc(interiorImage)}">` : ""}</div><div class="swatch-copy">${esc(build.interior.name)}<br>${esc(build.interior.code)}</div></div>
-        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="8.25" data-fit-min="6.50"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
+        <div class="dealer-panel"><div class="section-bar">Dealer Information</div><div class="dealer-body fit-target" data-fit-start="7.55" data-fit-min="6.15"><div><div class="dealer-name">${dealerName}</div>${dealerAddress}${build.dealerPhone ? `<br>${esc(build.dealerPhone)}` : ""}</div><div><div class="dealer-label">Port of Entry</div>Jacksonville, FL<div class="dealer-label">Sold To</div>${dealerName}<div class="dealer-label">Ship To</div>${dealerName}</div></div></div>
         <div class="epa-panel fuel"><div class="section-bar">EPA Fuel Economy Estimates</div><div class="epa-body"><div class="mpg-grid"><div><div class="mpg-label">City MPG</div><div class="mpg-number">${esc(epa.city)}</div><div class="mpg-small">Expected range<br>${esc(epa.cityRange)}</div></div><div class="cost-box"><div>Estimated Annual Fuel Cost</div><div class="cost-big">${esc(moneyFull(epa.annualFuelCost))}</div><div>Based on ${Number(epa.annualMiles || 15000).toLocaleString("en-US")} miles<br>at ${esc(moneyFull(epa.fuelPrice))} per gallon</div><hr><strong>Combined Fuel Economy ${esc(epa.combined)} MPG</strong></div><div><div class="mpg-label">Highway MPG</div><div class="mpg-number">${esc(epa.highway)}</div><div class="mpg-small">Expected range<br>${esc(epa.highwayRange)}</div></div></div></div></div>
         <div class="epa-panel power"><div class="section-bar">Powertrain</div><div class="epa-body"><div class="engine-copy">4.0L V8 Engine<br>${esc(build.transmission.name)}<br>Rear-Wheel Drive</div></div></div>
         <div class="epa-panel guzzler"><div class="section-bar">Gas Guzzler Tax</div><div class="epa-body"><div class="guzzler-copy">This vehicle is subject to a Gas Guzzler Tax of<br><strong>${esc(moneyFull(build.gasGuzzlerTax))}</strong></div><div class="pump-icon">⛽</div></div></div>
