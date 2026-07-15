@@ -1148,6 +1148,14 @@ const EXTERIOR_PHOTOS = {
 }
 };
 
+// Specific BMW Individual paint images. Add new paint codes here as images are uploaded.
+// A single DEFAULT image can temporarily be used for every wheel option.
+const INDIVIDUAL_EXTERIOR_PHOTOS = {
+  "448": {
+    DEFAULT: "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/48836ead18e4b6da02332d709e4c401b7e59dbbc/1Laguna%20Seca%20Blue.png"
+  }
+};
+
 const INTERIOR_PHOTOS = {
   /*
     Upload your generated interior images to your repo using this folder structure:
@@ -1498,6 +1506,8 @@ const state = {
   mPerformanceParts: new Set(),
   premiumTrim: "",
   individualPaint: false,
+  individualPaintCode: "",
+  individualPaintName: "",
   showAllInteriors: false,
   vin: "",
   sellingDealer: "",
@@ -1709,9 +1719,11 @@ function calculate() {
   const exterior = {
     ...s.exterior,
     price: individualPaintPrice,
-    name: state.individualPaint && s.exterior.code !== "IND"
-      ? `${s.exterior.name} (BMW Individual Paint)`
-      : s.exterior.name
+    name: state.individualPaintName
+      ? `${state.individualPaintName} (BMW Individual Paint)`
+      : state.individualPaint && s.exterior.code !== "IND"
+        ? `${s.exterior.name} (BMW Individual Paint)`
+        : s.exterior.name
   };
 
   const total = state.baseMSRP + getDestinationCharge() + DATA.gasGuzzler + exterior.price + s.interior.price + s.transmission.price + wheelPrice + packageTotal + optionTotal + mPerformanceTotal;
@@ -1719,12 +1731,16 @@ function calculate() {
 }
 
 function getExteriorPhoto(exteriorCode, wheelCode) {
-  const byColor = EXTERIOR_PHOTOS[exteriorCode];
+  // For a VIN-coded Individual color, use its dedicated uploaded image first.
+  const individualCode = String(state.individualPaintCode || "").toUpperCase();
+  const specificIndividual = INDIVIDUAL_EXTERIOR_PHOTOS[individualCode];
+  const byColor = specificIndividual || EXTERIOR_PHOTOS[exteriorCode];
   if (!byColor) return null;
 
   return (
     byColor[wheelCode] ||
     (wheelCode === "2MT.1" ? byColor["2MT"] : null) ||
+    byColor.DEFAULT ||
     byColor.STD ||
     null
   );
@@ -2519,6 +2535,23 @@ function findDealerInfo(dealerValue) {
   return getDealerInfoFromRow(row);
 }
 
+function detectIndividualPaintDetails(value) {
+  const text = normalizeText(value);
+  const upper = text.toUpperCase();
+
+  // BMW paint codes are commonly three characters, such as 448 for Laguna Seca Blue.
+  const knownCode = Object.keys(INDIVIDUAL_EXTERIOR_PHOTOS).find(code =>
+    new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`, "i").test(text)
+  ) || "";
+
+  let name = "";
+  if (knownCode === "448" || upper.includes("LAGUNA SECA BLUE")) {
+    name = "Laguna Seca Blue";
+  }
+
+  return { code: knownCode, name };
+}
+
 function findMatchingExterior(value) {
   const text = normalizeText(value).toUpperCase();
   if (!text) return null;
@@ -2584,7 +2617,7 @@ function applyPackageCodes(packageText) {
   state.packages.clear();
   state.options.clear();
   state.mPerformanceParts.clear();
-  state.individualPaint = codeExistsInText(text, "IND");
+  state.individualPaint = codeExistsInText(text, "IND") || Boolean(state.individualPaintCode);
 
   [...DATA.packages, ...DATA.standaloneOptions, ...DATA.mPerformanceParts].forEach(item => {
     const code = String(item.code || "").toUpperCase();
@@ -2673,8 +2706,13 @@ async function lookupVIN() {
 
     state.vin = vin || input;
 
+    const individualDetails = detectIndividualPaintDetails([exterior, packageText].filter(Boolean).join(" "));
+    state.individualPaintCode = individualDetails.code;
+    state.individualPaintName = individualDetails.name;
+
     const matchedExterior = findMatchingExterior(exterior) || findMatchingExterior(packageText);
     if (matchedExterior) state.exterior = matchedExterior.code;
+    else if (state.individualPaintCode) state.exterior = "IND";
 
     const matchedInterior = findMatchingInterior(interior || packageText);
     if (matchedInterior) state.interior = matchedInterior.code;
@@ -4469,6 +4507,8 @@ $("resetBtn").onclick = () => {
   state.options.clear();
   state.premiumTrim = "";
   state.individualPaint = false;
+  state.individualPaintCode = "";
+  state.individualPaintName = "";
   state.showAllInteriors = false;
   state.vin = "";
   state.sellingDealer = "";
