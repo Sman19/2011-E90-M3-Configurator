@@ -2576,19 +2576,35 @@ function findDealerInfo(dealerValue) {
 
 function detectIndividualPaintDetails(value) {
   const text = normalizeText(value);
-  const upper = text.toUpperCase();
 
-  // BMW paint codes are commonly three characters, such as 448 for Laguna Seca Blue.
-  const knownCode = Object.keys(INDIVIDUAL_EXTERIOR_PHOTOS).find(code =>
+  // Match any Individual paint code that has a dedicated image or PDF swatch.
+  const knownCodes = [...new Set([
+    ...Object.keys(INDIVIDUAL_EXTERIOR_PHOTOS),
+    ...Object.keys(INDIVIDUAL_PAINT_COLORS)
+  ])];
+
+  const knownCode = knownCodes.find(code =>
     new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`, "i").test(text)
   ) || "";
 
-  let name = "";
-  if (knownCode === "448" || upper.includes("LAGUNA SECA BLUE")) {
-    name = "Laguna Seca Blue";
-  }
+  if (!knownCode) return { code: "", name: "" };
 
-  return { code: knownCode, name };
+  // Prefer the actual color name supplied in the CSV exterior field.
+  // Example: "U94 Fire Orange" becomes "Fire Orange".
+  const csvName = text
+    .replace(new RegExp(`(^|[^A-Z0-9])${knownCode}([^A-Z0-9]|$)`, "ig"), " ")
+    .replace(/\bBMW\s+INDIVIDUAL\b/ig, " ")
+    .replace(/\bINDIVIDUAL(?:\s+PAINT)?\b/ig, " ")
+    .replace(/^[\s,;:\-–—/|]+|[\s,;:\-–—/|]+$/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  const configuredName = INDIVIDUAL_PAINT_COLORS[knownCode]?.name || "";
+
+  return {
+    code: knownCode,
+    name: csvName || configuredName
+  };
 }
 
 function findMatchingExterior(value) {
@@ -2745,9 +2761,14 @@ async function lookupVIN() {
 
     state.vin = vin || input;
 
-    const individualDetails = detectIndividualPaintDetails([exterior, packageText].filter(Boolean).join(" "));
-    state.individualPaintCode = individualDetails.code;
-    state.individualPaintName = individualDetails.name;
+    // Read the Individual paint code and color name from the CSV exterior field first.
+    // Package text remains a fallback when the exterior column only contains "IND".
+    const individualDetails = detectIndividualPaintDetails(exterior) || { code: "", name: "" };
+    const fallbackIndividualDetails = individualDetails.code
+      ? individualDetails
+      : detectIndividualPaintDetails(packageText);
+    state.individualPaintCode = fallbackIndividualDetails.code;
+    state.individualPaintName = fallbackIndividualDetails.name;
 
     const matchedExterior = findMatchingExterior(exterior) || findMatchingExterior(packageText);
     if (matchedExterior) state.exterior = matchedExterior.code;
