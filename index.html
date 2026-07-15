@@ -1156,6 +1156,16 @@ const INDIVIDUAL_EXTERIOR_PHOTOS = {
   }
 };
 
+// VIN-specific BMW Individual paint colors used by the PDF swatches.
+// Laguna Seca Blue: RGB 0, 145, 193 / HEX #0091C1.
+const INDIVIDUAL_PAINT_COLORS = {
+  "448": {
+    name: "Laguna Seca Blue",
+    rgb: [0, 145, 193],
+    hex: "#0091C1"
+  }
+};
+
 const INTERIOR_PHOTOS = {
   /*
     Upload your generated interior images to your repo using this folder structure:
@@ -1716,9 +1726,20 @@ function calculate() {
   // This forces the $5,000 Individual Paint charge into the on-screen total, Spec Sheet PDF,
   // and Window Sticker total MSRP, even when the exterior color code is a custom Individual code.
   const individualPaintPrice = state.individualPaint ? 5000 : Number(s.exterior.price || 0);
+  const individualPaintCode = String(state.individualPaintCode || "").trim().toUpperCase();
+  const individualPaintColor = INDIVIDUAL_PAINT_COLORS[individualPaintCode] || null;
+
   const exterior = {
     ...s.exterior,
     price: individualPaintPrice,
+
+    // Both PDF generators already read exterior.paintHex. This assigns the
+    // correct VIN-specific solid color instead of the generic IND swatch.
+    paintHex: individualPaintColor?.hex || s.exterior.paintHex || s.exterior.hex,
+
+    // Retain the source RGB values for future PDF/export uses.
+    rgb: individualPaintColor?.rgb || s.exterior.rgb || null,
+
     name: state.individualPaintName
       ? `${state.individualPaintName} (BMW Individual Paint)`
       : state.individualPaint && s.exterior.code !== "IND"
