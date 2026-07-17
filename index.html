@@ -1201,15 +1201,15 @@ const INDIVIDUAL_PAINT_COLORS = {
   },
 
     "U83": {
-    name: "Frozen Grey Metallic",
-    rgb: [116, 127, 144],
-    hex: "#747f90"
-     },
-
-   "U91": {
     name: "Frozen Black Metallic",
     rgb: [61, 61, 61],
     hex: "#3d3d3d"
+     },
+
+   "U91": {
+    name: "Frozen Grey Metallic",
+    rgb: [116, 127, 144],
+    hex: "#747f90"
      },
 
   "U94": {
@@ -1811,17 +1811,41 @@ function calculate() {
 }
 
 function getExteriorPhoto(exteriorCode, wheelCode) {
-  // For a VIN-coded Individual color, use its dedicated uploaded image first.
-  const individualCode = String(state.individualPaintCode || "").toUpperCase();
-  const specificIndividual = INDIVIDUAL_EXTERIOR_PHOTOS[individualCode];
-  const byColor = specificIndividual || EXTERIOR_PHOTOS[exteriorCode];
-  if (!byColor) return null;
+  const normalizedExteriorCode = String(exteriorCode || "").trim().toUpperCase();
+  const individualCode = String(state.individualPaintCode || "").trim().toUpperCase();
+  const requestedWheelCode = String(wheelCode || "STD").trim().toUpperCase();
+
+  // Normalize every wheel selection to the same three image keys used by the
+  // standard-color image map. Option 2MT.1 uses the same photo as 2MT.
+  const imageWheelKey = requestedWheelCode === "ZCP"
+    ? "ZCP"
+    : requestedWheelCode === "2MT" || requestedWheelCode === "2MT.1"
+      ? "2MT"
+      : "STD";
+
+  // VIN-coded BMW Individual paint gets its dedicated image set first.
+  const individualImages = INDIVIDUAL_EXTERIOR_PHOTOS[individualCode] || null;
+  if (individualImages) {
+    return (
+      individualImages[imageWheelKey] ||
+      // When an Individual color has no dedicated 19-inch 2MT image, use its
+      // own standard-wheel image rather than accidentally using a ZCP image.
+      (imageWheelKey === "2MT" ? individualImages.STD : null) ||
+      individualImages.DEFAULT ||
+      individualImages.STD ||
+      null
+    );
+  }
+
+  // Standard exterior colors continue to use their normal STD/2MT/ZCP map.
+  const standardImages = EXTERIOR_PHOTOS[normalizedExteriorCode];
+  if (!standardImages) return null;
 
   return (
-    byColor[wheelCode] ||
-    (wheelCode === "2MT.1" ? byColor["2MT"] : null) ||
-    byColor.DEFAULT ||
-    byColor.STD ||
+    standardImages[imageWheelKey] ||
+    (imageWheelKey === "2MT" ? standardImages.STD : null) ||
+    standardImages.DEFAULT ||
+    standardImages.STD ||
     null
   );
 }
