@@ -933,6 +933,7 @@ html.silent-generator-mode body::before {
           <option value="54850">$54,850 — 2009 Build</option>
           <option value="55400">$55,400 — 2010 Build</option>
           <option value="55900">$55,900 — 2011 Build</option>
+          <option value="69900">$69,900 CAD — Canadian Build</option>
         </select>
         <p class="note">Base MSRP depends on build timing, not transmission.</p>
       </div>
@@ -1619,7 +1620,8 @@ const state = {
   dealerCity: "",
   dealerState: "",
   dealerZip: "",
-  dealerPhone: ""
+  dealerPhone: "",
+  dealerCountry: ""
 };
 
 const $ = id => document.getElementById(id);
@@ -1707,6 +1709,22 @@ function setupVinSearchUppercase() {
   });
 }
 const money = n => Number(n || 0).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
+
+function isCanadianDealer() {
+  const country = String(state.dealerCountry || "").trim().toUpperCase();
+  const dealer = String(state.sellingDealer || "").trim().toUpperCase();
+  return country === "CANADA" || country === "CAN" || /(?:^|[,\s])CAN(?:$|[,\s])/.test(dealer);
+}
+
+function getIndividualPaintPrice(selectedExterior) {
+  const selectedCode = String(selectedExterior?.code || "").trim().toUpperCase();
+  const vinPaintCode = String(state.individualPaintCode || "").trim().toUpperCase();
+
+  // Canadian BMW Individual paint code Z9B was CAD $3,900.
+  if (selectedCode === "Z9B" || vinPaintCode === "Z9B") return 3900;
+  if (state.individualPaint || selectedCode === "IND") return 5000;
+  return Number(selectedExterior?.price || 0);
+}
 const findByCode = (list, code) => list.find(item => item.code === code);
 
 function hasPremiumPackage() {
@@ -1767,6 +1785,7 @@ function getExteriorPrice(item) {
   const type = String(item.type || "").toLowerCase();
 
   if (code === "300" || code === "668") return 0;
+  if (code === "Z9B") return 3900;
   if (code === "IND") return 5000;
   if (type.includes("metallic")) return 550;
 
@@ -1818,7 +1837,7 @@ function calculate() {
   // If the CSV package text contains IND, treat the selected paint as BMW Individual Paint.
   // This forces the $5,000 Individual Paint charge into the on-screen total, Spec Sheet PDF,
   // and Window Sticker total MSRP, even when the exterior color code is a custom Individual code.
-  const individualPaintPrice = state.individualPaint ? 5000 : Number(s.exterior.price || 0);
+  const individualPaintPrice = getIndividualPaintPrice(s.exterior);
   const individualPaintCode = String(state.individualPaintCode || "").trim().toUpperCase();
   const individualPaintColor = INDIVIDUAL_PAINT_COLORS[individualPaintCode] || null;
 
@@ -2164,7 +2183,9 @@ function renderSummary() {
   updateCarPreview(c);
 
   $("previewCaption").textContent = activeView === "interior" ? `${c.interior.code} ${c.interior.name} | ${hasNavigationSelected() ? "Navigation" : "Slicktop / No Navigation"} | ${c.transmission.code === "2MK" ? "M DCT" : "6-Speed Manual"}` : `Shown with ${c.wheel.name} (${c.wheel.desc})`;
-  $("indLabel").textContent = state.individualPaint || c.exterior.code === "IND" ? "BMW Individual Paint    " + money(5000) : "";
+  $("indLabel").textContent = state.individualPaint || c.exterior.code === "IND" || c.exterior.code === "Z9B"
+    ? "BMW Individual Paint    " + money(c.exterior.price)
+    : "";
 
   const optionsAndPackages = c.packageTotal + c.optionTotal + c.wheelPrice + c.mPerformanceTotal;
   $("summaryLines").innerHTML = `
@@ -2636,13 +2657,14 @@ function getDealerDisplayLines(build = null) {
 }
 
 function getDealerInfoFromRow(row) {
-  if (!row) return { address: "", street: "", city: "", state: "", zip: "", phone: "" };
+  if (!row) return { address: "", street: "", city: "", state: "", zip: "", phone: "", country: "" };
 
   let street = dealerField(row, ["street", "Street", "STREET", "address", "Address", "ADDRESS", "Street Address", "STREET ADDRESS"]);
   let city = dealerField(row, ["city", "City", "CITY"]);
   let stateValue = dealerField(row, ["state", "State", "STATE"]);
   let zip = dealerField(row, ["zip", "Zip", "ZIP", "postal", "Postal", "POSTAL", "Postal Code", "POSTAL CODE"]);
   const phone = dealerField(row, ["phone", "Phone", "PHONE", "telephone", "Telephone", "TELEPHONE"]);
+  const country = dealerField(row, ["country", "Country", "COUNTRY"]);
 
   if ((!city || !stateValue || !zip) && street && street.includes(",")) {
     const parsed = parseDealerAddressParts(street);
@@ -2654,12 +2676,12 @@ function getDealerInfoFromRow(row) {
 
   const address = makeDealerAddress(street, city, stateValue, zip);
 
-  return { address, street, city, state: stateValue, zip, phone };
+  return { address, street, city, state: stateValue, zip, phone, country };
 }
 
 function findDealerInfo(dealerValue) {
   const key = normalizeDealerKey(dealerValue);
-  if (!key) return { address: "", street: "", city: "", state: "", zip: "", phone: "" };
+  if (!key) return { address: "", street: "", city: "", state: "", zip: "", phone: "", country: "" };
 
   let row = dealerMapByCode[key] || dealerMapByName[key];
 
@@ -2884,11 +2906,16 @@ async function lookupVIN() {
     state.dealerState = dealerInfo.state || "";
     state.dealerZip = dealerInfo.zip || "";
     state.dealerPhone = dealerInfo.phone || "";
+    state.dealerCountry = dealerInfo.country || "";
 
     // Base price and model year are separate:
     // MSRP.1 can be $55,400 on either a 2010 or a 2011 vehicle.
     // VIN year code A (AE) = 2010 and B (BE) = 2011.
     state.baseMSRP = detectBaseMSRPFromCSVRow(match, packageText);
+
+    // Canadian-market cars use the Canadian base MSRP regardless of the U.S. MSRP marker.
+    if (isCanadianDealer()) state.baseMSRP = 69900;
+
     state.modelYear = detectModelYearFromVIN(state.vin)
       || String(csvModelYear || "").trim()
       || (Number(state.baseMSRP) === 54850 ? "2009" : Number(state.baseMSRP) === 55400 ? "2010" : "2011");
@@ -4676,6 +4703,7 @@ $("resetBtn").onclick = () => {
   state.dealerState = "";
   state.dealerZip = "";
   state.dealerPhone = "";
+  state.dealerCountry = "";
   if ($("vinSearch")) $("vinSearch").value = "";
   if ($("vinSearchNote")) $("vinSearchNote").textContent = "";
   renderAll();
