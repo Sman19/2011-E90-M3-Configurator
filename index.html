@@ -1812,9 +1812,13 @@ function pricedExterior(item) {
 function getOptionPrice(item) {
   if (!item) return 0;
 
-  // 2009 E90 M3 pricing override: option 507 was $350 for 2009 models.
-  if (getModelYear() === "2009" && String(item.code || "").toUpperCase() === "507") {
-    return 350;
+  const modelYear = getModelYear();
+  const optionCode = String(item.code || "").trim().toUpperCase();
+
+  // 2009 E90 M3 year-specific option pricing overrides.
+  if (modelYear === "2009") {
+    if (optionCode === "507") return 350;
+    if (optionCode === "655") return 595;
   }
 
   return Number(item.price || 0);
