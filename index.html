@@ -1828,13 +1828,29 @@ function pricedOption(item) {
   return item ? { ...item, price: getOptionPrice(item) } : item;
 }
 
+function getPackagePrice(item) {
+  if (!item) return 0;
+
+  const modelYear = getModelYear();
+  const packageCode = String(item.code || "").trim().toUpperCase();
+
+  // 2009 E90 M3 year-specific package pricing override.
+  if (modelYear === "2009" && packageCode === "ZPP") return 1900;
+
+  return Number(item.price || 0);
+}
+
+function pricedPackage(item) {
+  return item ? { ...item, price: getPackagePrice(item) } : item;
+}
+
 function selectedItems() {
   return {
     exterior: pricedExterior(findByCode(DATA.exteriorColors, state.exterior)),
     interior: pricedInterior(findByCode(DATA.interiors, state.interior)),
     transmission: findByCode(DATA.transmissions, state.transmission),
     wheel: findByCode(DATA.wheels, state.wheel),
-    packages: [...state.packages].map(code => findByCode(DATA.packages, code)).filter(Boolean),
+    packages: [...state.packages].map(code => findByCode(DATA.packages, code)).filter(Boolean).map(pricedPackage),
     options: [...state.options].map(code => findByCode(DATA.standaloneOptions, code)).filter(Boolean).map(pricedOption),
     mPerformanceParts: [...state.mPerformanceParts].map(code => findByCode(DATA.mPerformanceParts, code)).filter(Boolean)
   };
@@ -2077,7 +2093,7 @@ function renderChecks(containerId, list, setName) {
         <div class="check-title">${item.code} ${item.name}</div>
         <div class="check-desc">${item.desc || ""}${disabled ? `<div class="lock-note">${disabledReason}</div>` : ""}</div>
       </div>
-      <div class="price">${disabled ? "Included" : money(setName === "options" ? getOptionPrice(item) : item.price)}</div>
+      <div class="price">${disabled ? "Included" : money(setName === "options" ? getOptionPrice(item) : setName === "packages" ? getPackagePrice(item) : item.price)}</div>
     `;
 
     const input = row.querySelector("input");
