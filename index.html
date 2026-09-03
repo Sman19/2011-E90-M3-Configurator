@@ -4121,8 +4121,36 @@ function buildFixedSvgWindowStickerHTML(){
 <text x="78" y="969" class="small">Sold To:</text><text x="78" y="984" class="small bold">${dealer}</text>${dealerLines.slice(0,3).map((line,i)=>`<text x="78" y="${999+i*14}" class="small">${line}</text>`).join("")}<text x="300" y="969" class="small">Ship To:</text><text x="300" y="984" class="small bold">${dealer}</text><text x="581" y="969" class="tiny">This vehicle is equipped with bumpers that meet applicable federal requirements.</text><text x="581" y="1019" class="small">Port of Entry: CHARLESTON, S.C.</text><text x="1250" y="984" class="small bold">BMW of North America, LLC</text><text x="1250" y="999" class="small bold">Woodcliff Lake, NJ 07677</text><text x="1250" y="1019" class="small">VPC Location: CHARLESTON, S.C.</text><text x="1572" y="1040" class="tiny end">Recreated by M ARHIV — not an original BMW-issued document.</text></g></svg></div><script>function fitPage(){const s=Math.min(1,(innerWidth-20)/1632);const w=document.getElementById('wrap');w.classList.add('fit');w.style.setProperty('--scale',s)}addEventListener('load',fitPage);addEventListener('resize',fitPage);<\/script></body></html>`;
 }
 
+function buildCurrentTemplateWindowStickerHTML(){
+  const build=buildOutput(),calc=calculate();
+  const esc=stickerEscape;
+  const cash=value=>Number(value||0).toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2});
+  const rows=[];
+  const add=(name,price,details=[])=>rows.push({name,price:Number(price||0),details});
+  add(build.exterior.name,build.exterior.price);
+  add(build.interior.name,build.interior.price);
+  sortedPackagesForPrint(build.packages).forEach(pkg=>add(pkg.name,pkg.price,String(pkg.desc||"").split("\n").map(v=>v.trim().replace(/^[-•]\s*/,"")).filter(Boolean).filter(v=>!/^choose one trim/i.test(v))));
+  if(Number(build.transmission.price||0)>0)add(build.transmission.name,build.transmission.price);
+  if(build.wheel.code!=="ZCP"&&Number(calc.wheelPrice||0)>0)add(build.wheel.name,calc.wheelPrice);
+  sortedRemainingOptionsForPrint(build.standaloneOptions).forEach(opt=>add(opt.name,opt.price));
+  build.mPerformanceParts.forEach(part=>add(part.name,part.price));
+  let oy=218;
+  const optionText=rows.map(row=>{
+    let s=`<text x="79" y="${oy}" class="item bold">${esc(row.name)}</text><text x="548" y="${oy}" class="item end">${row.price?esc(cash(row.price)):"Included"}</text>`;oy+=14;
+    row.details.slice(0,9).forEach(line=>{s+=`<text x="89" y="${oy}" class="detail">- ${esc(line)}</text>`;oy+=12});oy+=2;return s;
+  }).join("");
+  const p=new URLSearchParams(location.search);
+  const prod=esc(p.get("prod")||p.get("productionDate")||"—");
+  const port=esc(p.get("port")||"CHARLESTON, S.C.");
+  const carrier=esc(p.get("carrier")||"CENTURION AUTO LOGISTICS");
+  const vpc=esc(p.get("vpc")||"CHARLESTON, S.C.");
+  const template="MONRONEY-CURRENT-TEMPLATE.png";
+  const clean="https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/c2036974236a6db54ff15881caed2af631da40bd/MONRONEY%20BACKGROUND.jpg";
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${getModelYear()} BMW M3 Sedan Monroney</title><style>@page{size:17in 11in;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#d9dde2;font-family:Arial,sans-serif}.tools{text-align:center;padding:10px;font-weight:700}.tools button{border:0;border-radius:7px;background:#172033;color:#fff;padding:10px 18px;margin:0 5px;font-weight:800}.wrap{display:flex;justify-content:center;transform-origin:top center}.wrap.fit{transform:scale(var(--scale));margin-bottom:calc((1056px * var(--scale)) - 1056px)}svg{display:block;width:17in;height:11in;background:#fff}.txt{font-family:"Arial Narrow",Arial,sans-serif;fill:#000}.bold{font-weight:700}.end{text-anchor:end}.item{font-size:12.6px}.detail{font-size:11.2px}@media print{html,body{width:17in;height:11in;background:#fff}.tools{display:none}.wrap,.wrap.fit{display:block;transform:none!important;margin:0!important}svg{width:17in;height:11in}}</style></head><body><div class="tools">Current PowerPoint-template test <button onclick="fitPage()">Fit Screen</button><button onclick="window.print()">Print / Save PDF</button></div><div class="wrap" id="wrap"><svg viewBox="0 0 1632 1056" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="options"><rect x="62" y="185" width="504" height="708"/></clipPath><clipPath id="year"><rect x="62" y="83" width="180" height="23"/></clipPath><clipPath id="msrp"><rect x="482" y="109" width="80" height="22"/></clipPath><clipPath id="vin"><rect x="62" y="900" width="290" height="31"/></clipPath><clipPath id="prod"><rect x="49" y="949" width="90" height="31"/></clipPath><clipPath id="port"><rect x="581" y="1002" width="235" height="27"/></clipPath><clipPath id="carrier"><rect x="915" y="1002" width="220" height="27"/></clipPath><clipPath id="vpc"><rect x="1238" y="1002" width="245" height="27"/></clipPath></defs><image href="${template}" x="0" y="0" width="1632" height="1056"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#options)"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#year)"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#msrp)"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#vin)"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#prod)"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#port)"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#carrier)"/><image href="${clean}" x="0" y="0" width="1632" height="1056" clip-path="url(#vpc)"/><g class="txt">${optionText}<text x="65" y="100" style="font-size:20.2px;font-weight:700">${esc(getModelYear())}</text><text x="548" y="126" class="item bold end">${esc(cash(build.baseMSRP))}</text><text x="65" y="925" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:18.9px;font-weight:700">VIN: ${esc(build.vin||"VIN not supplied")}</text><text x="64" y="971" class="item">(${prod})</text><text x="651" y="1020" class="item">${port}</text><text x="1004" y="1020" class="item">${carrier}</text><text x="1340" y="1020" class="item">${vpc}</text></g></svg></div><script>function fitPage(){const s=Math.min(1,(innerWidth-20)/1632);const w=document.getElementById('wrap');w.classList.add('fit');w.style.setProperty('--scale',s)}addEventListener('load',fitPage);addEventListener('resize',fitPage);<\/script></body></html>`;
+}
+
 function buildWindowStickerHTML() {
-  return buildFixedSvgWindowStickerHTML();
+  return buildCurrentTemplateWindowStickerHTML();
   /* Legacy layout retained below temporarily while the PowerPoint version is narrowed down. */
   const build = buildOutput();
   const c = calculate();
