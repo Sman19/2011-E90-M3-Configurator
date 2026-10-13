@@ -1032,20 +1032,34 @@ function initializeConfiguratorClerk() {
 function getDocumentUsername() {
   const user = window.Clerk?.user;
   const value = String(user?.username || user?.primaryEmailAddress?.emailAddress || "").trim();
-  return /^(unknown|member|undefined|null)$/i.test(value) ? "" : value;
+  if (value && !/^(unknown|member|undefined|null)$/i.test(value)) return value;
+  // Compatibility with the existing signed-in BMW M ARCHIV Details-page handoff.
+  // NOTE: This URL parameter is not cryptographically verified. The quota backend
+  // must validate a Clerk session token before treating this as secure identity.
+  const params = new URLSearchParams(location.search);
+  const fromArchive = String(params.get("authuser") || "").trim();
+  return fromArchive && !/^(unknown|member|undefined|null)$/i.test(fromArchive)
+    ? fromArchive : "";
 }
 
 async function requireDocumentUsername() {
-  const clerk = await initializeConfiguratorClerk();
+  // The Details page passes authuser when launching the configurator.
+  // Do not block that existing workflow while loading Clerk on another origin.
   let username = getDocumentUsername();
   if (username) return username;
-  // A login on bmwmarchiv.com is not necessarily a login on github.io.
-  // Open Clerk's sign-in flow on this origin instead of trusting a URL username.
+  let clerk;
+  try {
+    clerk = await initializeConfiguratorClerk();
+  } catch (err) {
+    throw new Error("Clerk could not start on this GitHub Pages address: " + (err?.message || err) + ". Open this vehicle through BMW M ARCHIV, or check the allowed domains in Clerk.");
+  }
+  username = getDocumentUsername();
+  if (username) return username;
   if (typeof clerk.openSignIn === "function") {
     clerk.openSignIn();
-    throw new Error("Please sign in with BMW M ARCHIV in the Clerk window, then click the PDF button again. Your build has been preserved.");
+    throw new Error("Sign in using the Clerk window, then click the PDF button again. Your vehicle configuration is preserved.");
   }
-  throw new Error("Please sign in to BMW M ARCHIV before generating a PDF.");
+  throw new Error("Clerk is loaded but no signed-in account is available on this domain. Open the vehicle from BMW M ARCHIV while signed in.");
 }
 
 function sendPdfAlert(documentType, vinOverride = "") {
