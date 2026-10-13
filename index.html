@@ -1008,9 +1008,46 @@ const DOCUMENT_LIMIT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwv0
 function getDocumentUsername() {
   const params = new URLSearchParams(location.search);
   const clerkUser = window.Clerk?.user;
+  // A cross-origin configurator cannot read bmwmarchiv.com's Clerk session.
+  // BMW M ARCHIV must pass the username when launching this page.
   const username = clerkUser?.username || clerkUser?.primaryEmailAddress?.emailAddress ||
     params.get("authuser") || params.get("username") || params.get("user") || "";
   return String(username).trim();
+}
+
+async function documentLimitRequest(action, documentType) {
+  const username = getDocumentUsername();
+  if (!username) throw new Error("Member username missing. Please open this configurator from BMW M ARCHIV while signed in.");
+  const response = await fetch(DOCUMENT_LIMIT_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action, username, documentType, vin: state.vin || "",
+      page: `${getModelYear()} E90 M3 Configurator`, timestamp: new Date().toISOString() })
+  });
+  if (!response.ok) throw new Error(`Document service HTTP ${response.status}`);
+  const body = await response.text();
+  let result;
+  try { result = JSON.parse(body); }
+  catch (_) { throw new Error("Document service returned an invalid response. Check Apps Script deployment."); }
+  if (!result.success) throw new Error(result.error || result.message || "Document request failed.");
+  lastDocumentLimitResult = result;
+  updateDocumentRemainingBadge(result);
+  if (!result.allowed) {
+    documentLimitExhausted = true;
+    setDocumentButtonsLimitReached(true);
+    showDocumentLimitModal(result);
+  } else if (!result.admin && Number(result.remaining) <= 0) {
+    documentLimitExhausted = true;
+    setDocumentButtonsLimitReached(true);
+  }
+  return result;
+}
+
+async function recordSuccessfulDocument(documentType) {
+  // Records a successful generation; server rechecks the quota under a lock.
+  const result = await documentLimitRequest("recordDocumentUsage", documentType);
+  if (!result.allowed) throw new Error(result.message || "Document limit reached.");
+  return result;
 }
 
 function sendPdfAlert(documentType, vinOverride = "") {
@@ -1427,8 +1464,16 @@ function getInteriorPhoto(interiorCode, transmissionCode) {
   return byInterior[`${navKey}_${transKey}`] || null;
 }
   
-// VIN records are loaded from Supabase. No model-year CSV files are needed.
-// The separate parts and dealer CSV assets remain for their optional features.
+const CSV_URL_2009 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2009%20E90%20M3%20Sedan.csv";
+const CSV_URL_2010 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2010%20E90%20M3%20Sedan.csv";
+const CSV_URL_2011 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2011%20E90%20M3%20Sedan.csv";
+
+const CSV_URLS = [
+  { year: "2009", url: CSV_URL_2009, label: "2009 E90 M3 Sedan CSV" },
+  { year: "2010", url: CSV_URL_2010, label: "2010 E90 M3 Sedan CSV" },
+  { year: "2011", url: CSV_URL_2011, label: "2011 E90 M3 Sedan CSV" }
+];
+// Keep CSV_URL for M Performance parts fallback/source. VIN search uses CSV_URLS above.
 const CSV_URL = "m-performance-parts.csv";
 const DEALER_CSV_URL = "https://raw.githubusercontent.com/Sman19/DEALER-MAP/main/bmw_dealers.csv";
 const M_PERFORMANCE_CSV_URL = "m-performance-parts.csv";
@@ -2530,7 +2575,7 @@ function setMPerformanceParts(parts, sourceLabel = "CSV") {
 
 async function loadMPerformanceCSVFromUrl() {
   try {
-    // Optional M Performance parts data, separate from the Supabase VIN lookup.
+    // Pull M Performance Parts from the same main CSV used by the VIN loader.
     // Column C = description/code text, Column F = price.
     const response = await fetch(CSV_URL, { cache:"no-store" });
     if (!response.ok) throw new Error(String(response.status));
@@ -2878,11 +2923,7 @@ async function lookupVIN() {
 
   try {
     const match = await loadArchiveVIN(input);
-    try {
-      await loadDealerCSV();
-    } catch (dealerError) {
-      console.warn("Dealer directory unavailable; continuing VIN lookup without dealer details.", dealerError);
-    }
+    await loadDealerCSV();
 
     if (!match) {
       note.textContent = "No matching VIN found.";
@@ -3867,9 +3908,11 @@ async function buildBMWBuildSheetPDFBlob() {
 
   const c = calculate();
   const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
-  const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
-  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 1000);
-  const pdfInteriorImageData = await loadPdfSquareThumbData(getPdfInteriorImageUrl(c), 20);
+  const [pdfLogoImageData, pdfCarImageData, pdfInteriorImageData] = await Promise.all([
+    loadPdfImageData(logoUrl, 220),
+    loadPdfImageData(getPdfCarImageUrl(c), 1000),
+    loadPdfSquareThumbData(getPdfInteriorImageUrl(c), 20)
+  ]);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
   window.__pdfInteriorImageReady = Boolean(pdfInteriorImageData);
@@ -4694,48 +4737,7 @@ async function checkDocumentLimitBeforeGenerate(documentType) {
     return { allowed: false, blockedLocal: true };
   }
 
-  const verifiedUsername = getDocumentUsername();
-  if (!verifiedUsername) throw new Error("Username could not be verified. Open this vehicle through BMW M ARCHIV while signed in.");
-  const response = await fetch(DOCUMENT_LIMIT_WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({
-      action: "checkDocumentLimit",
-      username: verifiedUsername,
-      documentType,
-      vin: state.vin || "",
-      page: `${getModelYear()} E90 M3 Configurator`,
-      timestamp: new Date().toISOString()
-    })
-  });
-
-  const text = await response.text();
-  let result;
-  try {
-    result = JSON.parse(text || "{}");
-  } catch (err) {
-    throw new Error(text || "Unable to parse document limit response.");
-  }
-
-  if (!result.success) {
-    throw new Error(result.error || result.message || "Document limit check failed.");
-  }
-
-  lastDocumentLimitResult = result;
-  updateDocumentRemainingBadge(result);
-
-  if (!result.allowed) {
-    documentLimitExhausted = true;
-    setDocumentButtonsLimitReached(true);
-    showDocumentLimitModal(result);
-    return result;
-  }
-
-  if (!result.admin && Number(result.remaining) <= 0) {
-    documentLimitExhausted = true;
-    setDocumentButtonsLimitReached(true);
-  }
-
+  const result = await documentLimitRequest("checkDocumentLimit", documentType);
   return result;
 }
 
@@ -4751,7 +4753,6 @@ async function requestDocumentPermission(documentType) {
   const proceed = await showDocumentNoticeModal(documentType, result);
   if (!proceed) return { ...result, allowed: false, cancelled: true };
 
-  showDocumentRemainingToast(documentType, result);
   return result;
 }
 
@@ -4770,10 +4771,12 @@ async function handleWindowStickerClick() {
       return;
     }
 
+    const usage = await recordSuccessfulDocument("Window Sticker");
     generateWindowSticker(popup);
+    showDocumentRemainingToast("Window Sticker", usage);
   } catch (err) {
     console.error(err);
-    alert("Document limit could not be verified. Please try again later.");
+    alert(`Window Sticker failed: ${err.message || err}`);
   } finally {
     if (btn) btn.textContent = "🏷 Window Sticker";
   }
@@ -4795,12 +4798,15 @@ $("copyBuildBtn").onclick = async () => {
     }
 
     btn.textContent = "Downloading...";
-    await downloadBMWBuildSheetPDF();
+    const pdfResult = await buildBMWBuildSheetPDFBlob();
+    const usage = await recordSuccessfulDocument("BMW Spec Sheet");
+    downloadBlob(pdfResult.blob, pdfResult.filename);
+    showDocumentRemainingToast("BMW Spec Sheet", usage);
     sendPdfAlert("BMW Spec Sheet", state.vin);
     btn.textContent = "Downloaded";
   } catch (err) {
     console.error(err);
-    alert("Document limit could not be verified or the build sheet PDF could not be generated. Please try again later.");
+    alert(`BMW Spec Sheet failed: ${err.message || err}`);
     btn.textContent = "PDF Error";
   }
   setTimeout(() => btn.textContent = "▣ BMW Spec Sheet PDF", 1200);
@@ -4904,7 +4910,10 @@ async function runAutoActionFromUrl() {
     const btn = $("copyBuildBtn");
     if (btn) btn.textContent = "Generating...";
     try {
+      const permission = await checkDocumentLimitBeforeGenerate("BMW Spec Sheet");
+      if (!permission.allowed) throw new Error("Document limit reached.");
       const result = await buildBMWBuildSheetPDFBlob();
+      await recordSuccessfulDocument("BMW Spec Sheet");
       sendPdfAlert("BMW Spec Sheet", state.vin || vinFromUrl);
       if (handoffMode) {
         const dataUrl = await blobToDataURL(result.blob);
@@ -4922,14 +4931,18 @@ async function runAutoActionFromUrl() {
     } catch (err) {
       console.error(err);
       if (btn) btn.textContent = "PDF Error";
-      if (handoffMode) postGeneratorMessage({ type: "e90-document-error", auto: "spec", vin: state.vin || vinFromUrl });
+      if (handoffMode) postGeneratorMessage({ type: "e90-document-error", auto: "spec", vin: state.vin || vinFromUrl, message: err.message });
       else alert("BMW Spec Sheet could not be generated. Check the browser console for details.");
     }
     return;
   }
 
   if (autoMode === "sticker" || autoMode === "window-sticker" || autoMode === "window_sticker") {
+    try {
+    const permission = await checkDocumentLimitBeforeGenerate("Window Sticker");
+    if (!permission.allowed) throw new Error("Document limit reached.");
     const stickerHtml = buildWindowStickerHTML();
+    await recordSuccessfulDocument("Window Sticker");
     sendPdfAlert("Sticker", state.vin || vinFromUrl);
 
     if (handoffMode) {
@@ -4941,6 +4954,11 @@ async function runAutoActionFromUrl() {
     document.open();
     document.write(stickerHtml);
     document.close();
+    } catch (err) {
+      console.error("Window Sticker auto-generation failed:", err);
+      if (handoffMode) postGeneratorMessage({ type: "e90-document-error", auto: "sticker", vin: state.vin || vinFromUrl, message: err.message });
+      else alert(`Window Sticker failed: ${err.message || err}`);
+    }
   }
 }
 
