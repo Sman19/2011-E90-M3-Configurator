@@ -1427,16 +1427,8 @@ function getInteriorPhoto(interiorCode, transmissionCode) {
   return byInterior[`${navKey}_${transKey}`] || null;
 }
   
-const CSV_URL_2009 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2009%20E90%20M3%20Sedan.csv";
-const CSV_URL_2010 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2010%20E90%20M3%20Sedan.csv";
-const CSV_URL_2011 = "https://raw.githubusercontent.com/Sman19/Active-Website/main/2011%20E90%20M3%20Sedan.csv";
-
-const CSV_URLS = [
-  { year: "2009", url: CSV_URL_2009, label: "2009 E90 M3 Sedan CSV" },
-  { year: "2010", url: CSV_URL_2010, label: "2010 E90 M3 Sedan CSV" },
-  { year: "2011", url: CSV_URL_2011, label: "2011 E90 M3 Sedan CSV" }
-];
-// Keep CSV_URL for M Performance parts fallback/source. VIN search uses CSV_URLS above.
+// VIN records are loaded from Supabase. No model-year CSV files are needed.
+// The separate parts and dealer CSV assets remain for their optional features.
 const CSV_URL = "m-performance-parts.csv";
 const DEALER_CSV_URL = "https://raw.githubusercontent.com/Sman19/DEALER-MAP/main/bmw_dealers.csv";
 const M_PERFORMANCE_CSV_URL = "m-performance-parts.csv";
@@ -2538,7 +2530,7 @@ function setMPerformanceParts(parts, sourceLabel = "CSV") {
 
 async function loadMPerformanceCSVFromUrl() {
   try {
-    // Pull M Performance Parts from the same main CSV used by the VIN loader.
+    // Optional M Performance parts data, separate from the Supabase VIN lookup.
     // Column C = description/code text, Column F = price.
     const response = await fetch(CSV_URL, { cache:"no-store" });
     if (!response.ok) throw new Error(String(response.status));
@@ -2886,7 +2878,11 @@ async function lookupVIN() {
 
   try {
     const match = await loadArchiveVIN(input);
-    await loadDealerCSV();
+    try {
+      await loadDealerCSV();
+    } catch (dealerError) {
+      console.warn("Dealer directory unavailable; continuing VIN lookup without dealer details.", dealerError);
+    }
 
     if (!match) {
       note.textContent = "No matching VIN found.";
