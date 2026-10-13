@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>BMW E90 M3 Sedan Configurator - Window Sticker + Spec Sheet PDF</title>
 <link id="favicon" rel="icon" type="image/svg+xml">
+<!-- Legacy AuthPro removed: BMW M ARCHIV uses Clerk. -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.css">
 <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.js"></script>
 
@@ -1004,21 +1005,12 @@ html.silent-generator-mode body::before {
 const PDF_ALERT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbySY4Rkafl7wyVB4BlxMvWr5SGf2Gl6TfGx6kdPL6WORnigikJ3wqjxQRgGJl6Qo-Yd/exec";
 const DOCUMENT_LIMIT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwv0OPdwq6qDc4oYusUfSokS2aW0BOLktR2P01SCVq87y8mKIXwDUu2_l32-vpo-oLlEA/exec";
 
-// Legacy webhook compatibility: the supplied username is NOT proof of authentication.
-// The document-limit endpoint must verify Clerk identity server-side before enforcing quotas.
 function getDocumentUsername() {
-  try {
-    const clerkUser = window.Clerk && window.Clerk.user;
-    if (clerkUser) {
-      return clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress || clerkUser.id || "Unknown";
-    }
-    const params = new URLSearchParams(window.location.search);
-    const supplied = params.get("username") || params.get("user");
-    if (supplied) return supplied;
-  } catch (error) {
-    console.warn("Could not read document username", error);
-  }
-  return "Unknown";
+  const params = new URLSearchParams(location.search);
+  const clerkUser = window.Clerk?.user;
+  const username = clerkUser?.username || clerkUser?.primaryEmailAddress?.emailAddress ||
+    params.get("authuser") || params.get("username") || params.get("user") || "";
+  return String(username).trim();
 }
 
 function sendPdfAlert(documentType, vinOverride = "") {
@@ -1445,7 +1437,7 @@ const CSV_URLS = [
   { year: "2011", url: CSV_URL_2011, label: "2011 E90 M3 Sedan CSV" }
 ];
 // Keep CSV_URL for M Performance parts fallback/source. VIN search uses CSV_URLS above.
-const CSV_URL = CSV_URL_2011;
+const CSV_URL = "m-performance-parts.csv";
 const DEALER_CSV_URL = "https://raw.githubusercontent.com/Sman19/DEALER-MAP/main/bmw_dealers.csv";
 const M_PERFORMANCE_CSV_URL = "m-performance-parts.csv";
 let vinRows = [];
@@ -2558,37 +2550,45 @@ async function loadMPerformanceCSVFromUrl() {
   }
 }
 
-async function loadCSV() {
-  if (vinRows.length) return vinRows;
-
-  const loadedRows = [];
-  const errors = [];
-
-  for (const source of CSV_URLS) {
-    try {
-      const response = await fetch(source.url, { cache: "no-store" });
-      if (!response.ok) throw new Error(`${response.status}`);
-
-      const text = await response.text();
-      const rows = parseCSV(text).map(row => ({
-        ...row,
-        __SOURCE_YEAR: source.year,
-        __SOURCE_LABEL: source.label
-      }));
-
-      loadedRows.push(...rows);
-    } catch (error) {
-      console.warn(`CSV load failed for ${source.label}:`, error);
-      errors.push(`${source.label}: ${error.message || error}`);
-    }
-  }
-
-  if (!loadedRows.length) {
-    throw new Error(`CSV could not be loaded. ${errors.join(" | ")}`);
-  }
-
-  vinRows = loadedRows;
-  return vinRows;
+// VIN records now live in Supabase; query only the requested VIN, not every model-year CSV.
+const ARCHIVE_SUPABASE_URL = "https://qaikzwqdjdxkhhzscish.supabase.co";
+const ARCHIVE_SUPABASE_KEY = "sb_publishable_vYctD5nCWCFg5l02VHg8uA_OFOLOlYH";
+function adaptArchiveRecord(record) {
+  const original = record.original_csv_data && typeof record.original_csv_data === "object" &&
+    !Array.isArray(record.original_csv_data) ? record.original_csv_data : {};
+  const result = { ...original };
+  const assign = (name, value) => { if (value !== undefined && value !== null && String(value).trim()) result[name] = String(value); };
+  assign("VIN", record.vin);
+  assign("Year", record.model_year);
+  assign("Model", record.model);
+  assign("Exterior", record.exterior_color);
+  assign("Interior", record.interior_color);
+  assign("Packages", Array.isArray(record.package_codes) ? record.package_codes.join(",") : record.package_codes);
+  assign("Dealer Name", record.dealer_name);
+  assign("MSRP", record.msrp);
+  const values = Array.isArray(original.__values) ? original.__values : [];
+  values.forEach((v, i) => { if (result[`__COL_${i+1}`] === undefined) result[`__COL_${i+1}`] = v; });
+  result.__SOURCE_YEAR = String(record.model_year || original.Year || "");
+  return result;
+}
+async function loadArchiveVIN(input) {
+  const normalized = normalizeVIN(input);
+  if (normalized.length < 7) throw new Error("Enter a full VIN or last 7 characters.");
+  const url = new URL(`${ARCHIVE_SUPABASE_URL}/rest/v1/vehicles`);
+  url.searchParams.set("select", "*");
+  url.searchParams.set("vin", normalized.length === 7 ? `ilike.*${normalized}` : `eq.${normalized}`);
+  url.searchParams.set("limit", "25");
+  const response = await fetch(url, { headers: { apikey: ARCHIVE_SUPABASE_KEY, Accept: "application/json" } });
+  if (!response.ok) throw new Error(`Supabase VIN lookup failed (HTTP ${response.status}).`);
+  const records = await response.json();
+  const matched = records.find(record => {
+    const vin = normalizeVIN(record.vin);
+    const model = String(record.model || record.original_csv_data?.Model || record.original_csv_data?.MODEL || "");
+    const source = String(record.original_csv_data?.__sourceFile || "");
+    return (vin === normalized || vin.slice(-7) === normalized) &&
+      (/E90|M3 Sedan/i.test(model) || /E90/i.test(source));
+  });
+  return matched ? adaptArchiveRecord(matched) : null;
 }
 
 function normalizeDealerKey(value) {
@@ -2882,16 +2882,11 @@ async function lookupVIN() {
     return false;
   }
 
-  note.textContent = "Searching CSV...";
+  note.textContent = "Searching Supabase...";
 
   try {
-    const rows = await loadCSV();
+    const match = await loadArchiveVIN(input);
     await loadDealerCSV();
-
-    const match = rows.find(row => {
-      const vin = normalizeVIN(findCSVValue(row, ["VIN", "Vin", "vin", "FULL VIN", "Full VIN", "Full Vin", "__COL_5"]));
-      return vin === input || vin.slice(-7) === input;
-    });
 
     if (!match) {
       note.textContent = "No matching VIN found.";
@@ -2969,7 +2964,7 @@ async function lookupVIN() {
     return true;
   } catch (error) {
     console.error(error);
-    note.textContent = "CSV lookup failed. Check the console or CSV URL.";
+    note.textContent = "Vehicle lookup failed. Check the console or Supabase access.";
     return false;
   }
 }
@@ -3876,12 +3871,9 @@ async function buildBMWBuildSheetPDFBlob() {
 
   const c = calculate();
   const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
-  // Fetch independent images concurrently instead of waiting for each in sequence.
-  const [pdfLogoImageData, pdfCarImageData, pdfInteriorImageData] = await Promise.all([
-    loadPdfImageData(logoUrl, 220),
-    loadPdfImageData(getPdfCarImageUrl(c), 1000),
-    loadPdfSquareThumbData(getPdfInteriorImageUrl(c), 20)
-  ]);
+  const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
+  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 1000);
+  const pdfInteriorImageData = await loadPdfSquareThumbData(getPdfInteriorImageUrl(c), 20);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
   window.__pdfInteriorImageReady = Boolean(pdfInteriorImageData);
@@ -4706,12 +4698,14 @@ async function checkDocumentLimitBeforeGenerate(documentType) {
     return { allowed: false, blockedLocal: true };
   }
 
+  const verifiedUsername = getDocumentUsername();
+  if (!verifiedUsername) throw new Error("Username could not be verified. Open this vehicle through BMW M ARCHIV while signed in.");
   const response = await fetch(DOCUMENT_LIMIT_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({
       action: "checkDocumentLimit",
-      username: getDocumentUsername(),
+      username: verifiedUsername,
       documentType,
       vin: state.vin || "",
       page: `${getModelYear()} E90 M3 Configurator`,
