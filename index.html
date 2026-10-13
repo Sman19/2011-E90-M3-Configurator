@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>BMW E90 M3 Sedan Configurator - Window Sticker + Spec Sheet PDF</title>
 <link id="favicon" rel="icon" type="image/svg+xml">
-<script type="text/javascript" src="https://www.authpro.com/auth/sman201/?action=pp"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.css">
 <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.js"></script>
 
@@ -1005,20 +1004,20 @@ html.silent-generator-mode body::before {
 const PDF_ALERT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbySY4Rkafl7wyVB4BlxMvWr5SGf2Gl6TfGx6kdPL6WORnigikJ3wqjxQRgGJl6Qo-Yd/exec";
 const DOCUMENT_LIMIT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwv0OPdwq6qDc4oYusUfSokS2aW0BOLktR2P01SCVq87y8mKIXwDUu2_l32-vpo-oLlEA/exec";
 
-function getAuthProUsername() {
+// Legacy webhook compatibility: the supplied username is NOT proof of authentication.
+// The document-limit endpoint must verify Clerk identity server-side before enforcing quotas.
+function getDocumentUsername() {
   try {
-    const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get("username") || params.get("user") || params.get("authproUser") || params.get("authpro_username");
-    if (fromUrl) return fromUrl;
-
-    if (typeof login !== "undefined" && login) return login;
-
-    const visibleUser = document.getElementById("auth-username");
-    if (visibleUser && visibleUser.textContent && visibleUser.textContent.trim() !== "Member") {
-      return visibleUser.textContent.trim();
+    const clerkUser = window.Clerk && window.Clerk.user;
+    if (clerkUser) {
+      return clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress || clerkUser.id || "Unknown";
     }
-  } catch (err) {}
-
+    const params = new URLSearchParams(window.location.search);
+    const supplied = params.get("username") || params.get("user");
+    if (supplied) return supplied;
+  } catch (error) {
+    console.warn("Could not read document username", error);
+  }
   return "Unknown";
 }
 
@@ -1041,7 +1040,7 @@ function sendPdfAlert(documentType, vinOverride = "") {
   if (!cleanDocumentType) cleanDocumentType = "Unknown";
 
   const payload = {
-    username: getAuthProUsername(),
+    username: getDocumentUsername(),
     vin: vin || "Unknown",
 
     // Multiple names so Apps Script / Sheets can read it no matter which field is used.
@@ -3877,9 +3876,12 @@ async function buildBMWBuildSheetPDFBlob() {
 
   const c = calculate();
   const logoUrl = "https://raw.githubusercontent.com/Sman19/2011-E90-M3-Configurator/cd7f09d386c00ecd7635438940d543a256b54a47/Carboi-creations%20logo.png";
-  const pdfLogoImageData = await loadPdfImageData(logoUrl, 220);
-  const pdfCarImageData = await loadPdfImageData(getPdfCarImageUrl(c), 1000);
-  const pdfInteriorImageData = await loadPdfSquareThumbData(getPdfInteriorImageUrl(c), 20);
+  // Fetch independent images concurrently instead of waiting for each in sequence.
+  const [pdfLogoImageData, pdfCarImageData, pdfInteriorImageData] = await Promise.all([
+    loadPdfImageData(logoUrl, 220),
+    loadPdfImageData(getPdfCarImageUrl(c), 1000),
+    loadPdfSquareThumbData(getPdfInteriorImageUrl(c), 20)
+  ]);
   window.__pdfLogoImageReady = Boolean(pdfLogoImageData);
   window.__pdfCarImageReady = Boolean(pdfCarImageData);
   window.__pdfInteriorImageReady = Boolean(pdfInteriorImageData);
@@ -4709,7 +4711,7 @@ async function checkDocumentLimitBeforeGenerate(documentType) {
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({
       action: "checkDocumentLimit",
-      username: getAuthProUsername(),
+      username: getDocumentUsername(),
       documentType,
       vin: state.vin || "",
       page: `${getModelYear()} E90 M3 Configurator`,
