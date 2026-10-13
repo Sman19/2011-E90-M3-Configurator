@@ -667,25 +667,21 @@ function getPriceForCode(code,year){if(year==="2009"&&code==="655")return 595;re
 function descriptionFor(code,year){if(year==="2009"&&code==="655")return"Satellite Radio with 1-year subscription - $595.00";return PACKAGE_TEXT[code]||code}
 
 function getDetailsUsername(){
-  // Clerk is initialized and authenticated before vehicle details are shown.
-  // Never substitute a generic "Member" username for document accounting.
   const user=window.Clerk?.user;
-  return String(user?.username || user?.primaryEmailAddress?.emailAddress || user?.id || "").trim();
+  return user?.username || user?.primaryEmailAddress?.emailAddress || user?.id || "Member";
 }
 function getDetailsEmail(){
   return window.Clerk?.user?.primaryEmailAddress?.emailAddress || "";
 }
 
 async function checkDocumentLimit(documentType,vehicle){
-  const username=getDetailsUsername();
-  if(!username)throw new Error("Clerk member identity is unavailable. Please sign in again.");
   const response=await fetch(DOCUMENT_LIMIT_WEBHOOK_URL,{
     method:"POST",
     mode:"cors",
     headers:{"Content-Type":"text/plain;charset=utf-8"},
     body:JSON.stringify({
       action:"checkDocumentLimit",
-      username,
+      username:getDetailsUsername(),
       documentType,
       vin:vehicle&&vehicle.vin?vehicle.vin:"",
       source:"E90 Details",
@@ -775,15 +771,13 @@ function removeExistingGeneratorFrame(){
   if(existing)existing.remove();
 }
 function runConfiguratorInBackground(mode,vehicle){
-  // Validate the member before removing an existing frame or starting work.
-  const configuratorUrl=buildConfiguratorUrl(mode,vehicle);
   removeExistingGeneratorFrame();
   const iframe=document.createElement("iframe");
   iframe.id="details-configurator-generator-frame";
   iframe.title="Configurator document generator";
   iframe.style.cssText="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;border:0";
   iframe.setAttribute("aria-hidden","true");
-  iframe.src=configuratorUrl;
+  iframe.src=buildConfiguratorUrl(mode,vehicle);
   document.body.appendChild(iframe);
 }
 async function handleBackgroundSpecSheet(){
@@ -832,20 +826,11 @@ window.addEventListener("message",event=>{
 });
 
 function buildConfiguratorUrl(mode,v){
-  const username=getDetailsUsername();
-  if(!username)throw new Error("Your Clerk account is not ready. Please sign in to BMW M ARCHIV again before downloading.");
-  const u=new URL(CONFIGURATOR_URL);
-  u.searchParams.set("vin",v.vin);
-  u.searchParams.set("auto",mode);
-  u.searchParams.set("handoff","1");
-  // The configurator is on another origin and cannot read our Clerk session.
-  // Compatibility handoff for the existing Apps Script username-based limit.
-  u.searchParams.set("authuser",username);
-  if(v.codes.length)u.searchParams.set("packages",v.codes.join(","));
-  if(v.year)u.searchParams.set("year",v.year);
-  if(v.year==="2009"&&v.codes.includes("655"))u.searchParams.set("option655Price","595");
-  u.searchParams.set("_",Date.now());
-  return u.toString();
+  const u=new URL(CONFIGURATOR_URL);u.searchParams.set("vin",v.vin);u.searchParams.set("auto",mode);u.searchParams.set("handoff","1");
+  u.searchParams.set("authuser",getDetailsUsername());
+  const authEmail=getDetailsEmail();if(authEmail)u.searchParams.set("authemail",authEmail);
+  if(v.codes.length)u.searchParams.set("packages",v.codes.join(","));if(v.year)u.searchParams.set("year",v.year);
+  if(v.year==="2009"&&v.codes.includes("655"))u.searchParams.set("option655Price","595");u.searchParams.set("_",Date.now());return u.toString()
 }
 function openConfigurator(mode,v){window.open(buildConfiguratorUrl(mode,v),"_blank","noopener,noreferrer")}
 
