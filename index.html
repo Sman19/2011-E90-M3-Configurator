@@ -1010,7 +1010,20 @@ function getDocumentUsername() {
   const clerkUser = window.Clerk?.user;
   const username = clerkUser?.username || clerkUser?.primaryEmailAddress?.emailAddress ||
     params.get("authuser") || params.get("username") || params.get("user") || "";
-  return String(username).trim();
+  const value = String(username).trim();
+  return /^(unknown|member|undefined|null)$/i.test(value) ? "" : value;
+}
+
+// Clerk on bmwmarchiv.com does not automatically share a session with github.io.
+// Give visitors a clear way back to the authenticated website rather than
+// displaying a generic PDF generation failure.
+function requireDocumentUsername() {
+  const username = getDocumentUsername();
+  if (username) return username;
+  const message = "BMW M ARCHIV could not identify your member account on this configurator. " +
+    "Please open this vehicle from BMW M ARCHIV while signed in. " +
+    "Your vehicle configuration has not been changed.";
+  throw new Error(message);
 }
 
 function sendPdfAlert(documentType, vinOverride = "") {
@@ -4698,8 +4711,7 @@ async function checkDocumentLimitBeforeGenerate(documentType) {
     return { allowed: false, blockedLocal: true };
   }
 
-  const verifiedUsername = getDocumentUsername();
-  if (!verifiedUsername) throw new Error("Username could not be verified. Open this vehicle through BMW M ARCHIV while signed in.");
+  const verifiedUsername = requireDocumentUsername();
   const response = await fetch(DOCUMENT_LIMIT_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -4777,7 +4789,7 @@ async function handleWindowStickerClick() {
     generateWindowSticker(popup);
   } catch (err) {
     console.error(err);
-    alert("Document limit could not be verified. Please try again later.");
+    alert(err.message || "Document limit could not be verified. Please try again later.");
   } finally {
     if (btn) btn.textContent = "🏷 Window Sticker";
   }
@@ -4804,7 +4816,7 @@ $("copyBuildBtn").onclick = async () => {
     btn.textContent = "Downloaded";
   } catch (err) {
     console.error(err);
-    alert("Document limit could not be verified or the build sheet PDF could not be generated. Please try again later.");
+    alert(err.message || "Document limit could not be verified or the build sheet PDF could not be generated. Please try again later.");
     btn.textContent = "PDF Error";
   }
   setTimeout(() => btn.textContent = "▣ BMW Spec Sheet PDF", 1200);
